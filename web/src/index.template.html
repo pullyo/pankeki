@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#f5f5f3"><title>Pankeki · 캐릭터 디자인 작업실</title>
+<style>{{STYLE}}</style>
+</head>
+<body>
+<a href="#workspace" class="skip-link">작업 공간으로 이동</a>
+<header class="app-header">
+ <a class="brand" href="/" aria-label="Pankeki 캐릭터 작업실"><img class="brand-logo" src="{{LOGO_URL}}" width="44" height="44" alt=""><span class="brand-name">Pankeki</span></a>
+ <div class="project-name"><label for="projectName">프로젝트</label><input id="projectName" type="text" maxlength="80" placeholder="이름 없는 프로젝트" autocomplete="off"></div>
+ <div class="project-actions" aria-label="프로젝트 관리"><button id="newProject" class="button subtle-button" title="새 프로젝트">{{icon:plus}}<span>새 작업</span></button><button id="saveProject" class="button subtle-button">{{icon:download}}<span>저장</span></button><label for="loadProject" class="button subtle-button project-upload">{{icon:upload}}<span>불러오기</span></label><input id="loadProject" class="file-input" type="file" accept="application/json,.json"><button id="exportBoard" class="button export-button">{{icon:image}}<span>보드 내보내기</span></button></div>
+ <span class="connection" id="health"><span class="status-dot"></span><span id="healthText">연결 확인 중</span></span>
+ <button id="helpButton" class="icon-button help-button" aria-label="사용 안내 열기" title="사용 안내">{{icon:circle-help}}</button>
+</header>
+<nav class="mobile-workspace-tabs" aria-label="작업 화면 전환"><button id="showChat" class="active" type="button" aria-pressed="true">대화</button><button id="showResult" type="button" aria-pressed="false">결과 · 후보</button></nav>
+<div class="app-shell">
+ <aside class="chat-panel" id="chatPanel" aria-label="캐릭터 디자인 대화">
+  <div class="chat-panel-header"><div><h1>디자인 대화</h1><span id="chatModelStatus">로컬 대화 모델 미연결</span></div><span class="chat-state-dot" aria-hidden="true"></span></div>
+  <details class="detail-panel" id="detailPanel"><summary>{{icon:sliders-horizontal}}<span>캐릭터 상세 설정</span><span class="detail-open-label">대화로 돌아가기</span>{{icon:chevron-down}}</summary><div class="detail-content"> <div class="settings-panel" aria-label="캐릭터 디자인 설정">
+  <nav class="tool-rail" aria-label="작업 모드"><button class="rail-button active" data-mode="txt2img" aria-pressed="true">{{icon:sparkles}}새 캐릭터</button><button class="rail-button" data-mode="inpaint" aria-pressed="false">{{icon:brush}}부분 수정</button></nav>
+  <div class="settings-scroll">
+   <details class="brief-drawer" id="briefDrawer" open>
+    <summary class="brief-summary"><span>캐릭터 설정</span><span class="drawer-state"><span class="when-open">접기</span><span class="when-closed">펼치기</span>{{icon:chevron-down}}</span></summary>
+    <div class="brief-body">
+     <h1 id="modeTitle" class="sr-only">캐릭터 후보 만들기</h1><p id="modeDescription" class="sr-only">설정을 바탕으로 디자인을 탐색합니다.</p>
+     <label for="mode" class="sr-only">작업</label><select id="mode" class="sr-only" tabindex="-1"><option value="txt2img">캐릭터 디자인 탐색</option><option value="inpaint">마스크 부분 수정</option></select>
+     <div class="field"><label for="profile">사용할 곳</label><select id="profile" aria-describedby="profileHelp"><option value="original">자유 창작</option><option value="comic">웹툰 · 웹소설</option><option value="avatar">버튜버</option><option value="mascot">마스코트</option><option value="game">게임</option></select><p class="hint" id="profileHelp">쓰임에 맞는 디자인 방향을 정합니다.</p></div>
+     <div class="field"><div class="label-row"><label for="brief">어떤 캐릭터인가요?</label><button class="text-button" id="presetExample" type="button">{{icon:sparkles}}예시 넣기</button></div><textarea id="brief" maxlength="1200" rows="4" placeholder="성격, 역할, 살아가는 세계를 적어주세요.&#10;예: 숲속 마을의 소식을 전하는 호기심 많은 우체부"></textarea></div>
+     <div class="field"><label for="appearance">외형과 의상</label><textarea id="appearance" maxlength="1200" rows="3" placeholder="실루엣, 머리, 옷, 소품처럼 눈에 띄는 특징"></textarea></div>
+     <details class="settings-group character-details"><summary><span>색상과 세부 특징</span>{{icon:chevron-down}}</summary><div class="details-body">
+      <div class="field"><label id="profileDetailLabel" for="designDetail">디자인에서 중요한 점</label><textarea id="designDetail" maxlength="800" rows="3" aria-describedby="profileDetailHint" placeholder="꼭 살리고 싶은 특징"></textarea><p class="hint" id="profileDetailHint">다른 캐릭터와 구별되는 특징을 정합니다.</p></div>
+      <fieldset class="palette-field"><legend>팔레트</legend><div class="palette-swatches"><label><input type="color" id="palette1" value="#78845b" aria-label="주요 색상"><span>주요</span></label><label><input type="color" id="palette2" value="#f1d6a8" aria-label="보조 색상"><span>보조</span></label><label><input type="color" id="palette3" value="#b76d50" aria-label="포인트 색상"><span>포인트</span></label></div><p class="hint">생성 방향을 위한 색상입니다. 정확한 색 재현은 결과마다 다릅니다.</p></fieldset>
+     </div></details>
+     <details class="settings-group" id="advanced"><summary><span>{{icon:settings-2}}생성 옵션</span>{{icon:chevron-down}}</summary><div class="details-body">
+      <div class="field"><label for="prompt">추가 지시</label><textarea id="prompt" maxlength="4000" rows="3" placeholder="포즈, 구도, 표현 방식"></textarea></div>
+      <label class="toggle-row" for="useBrief"><span><strong>캐릭터 설정 함께 사용</strong><small>소개·외형·용도·색상 반영</small></span><input id="useBrief" type="checkbox" checked></label>
+      <details class="prompt-details"><summary>실제 전달 문장 {{icon:chevron-down}}</summary><pre id="compiledPrompt">설정을 입력하면 생성 문장이 표시됩니다.</pre></details>
+      <div class="option-heading">이미지와 생성</div>
+      <div class="two-fields"><div class="field"><label for="width">너비 · px</label><input id="width" type="number" min="64" max="2048" step="8" value="512"></div><div class="field"><label for="height">높이 · px</label><input id="height" type="number" min="64" max="2048" step="8" value="512"></div></div>
+      <div class="two-fields"><div class="field"><label for="seed">Seed</label><input id="seed" type="number" min="0" max="9007199254740991" value="42"></div><div class="field"><label for="steps">Steps</label><input id="steps" type="number" min="1" max="100" value="1"></div></div>
+      <div class="two-fields"><div class="field"><label for="cfg">CFG</label><input id="cfg" type="number" min="0" max="30" step=".5" value="1"></div><div class="field"><label for="denoise">수정 강도</label><input id="denoise" type="number" min=".01" max="1" step=".05" value="1"></div></div>
+      <div class="field"><label for="negative">제외 프롬프트</label><input id="negative" type="text" placeholder="제외할 요소"><p class="hint">SD Turbo 권장값: CFG 1, 1–4 steps. CFG 1에서는 제외 프롬프트가 적용되지 않습니다.</p></div>
+      <div class="option-heading">실행</div>
+      <label class="toggle-row" for="cache"><span><strong>동일 결과 재사용</strong><small>같은 조건의 완료 결과 사용</small></span><input id="cache" type="checkbox" checked></label>
+      <label class="toggle-row" for="previewOn"><span><strong>생성 중 미리보기</strong><small>화면 갱신 최대 초당 5회</small></span><input id="previewOn" type="checkbox" checked></label><button id="clearCache" class="text-button">{{icon:trash-2}}결과 캐시 비우기</button>
+      <section id="roiOptions" hidden><div class="option-heading">부분 수정 · 실험 옵션</div><label class="toggle-row" for="roi"><span><strong>선택 영역만 처리</strong><small>ROI crop · 기본 비활성</small></span><input id="roi" type="checkbox"></label><p class="hint">켜면 문맥과 결과가 달라질 수 있습니다. 선택 밖 픽셀은 원본에서 복사합니다.</p><div class="two-fields"><div class="field"><label for="halo">문맥 여백 · px</label><input id="halo" type="number" min="0" max="512" value="32"></div><div class="field"><label for="feather">경계 부드럽게 · px</label><input id="feather" type="number" min="0" max="64" value="4"></div></div></section>
+      <p class="model-note">{{icon:cpu}}<span>SD Turbo · 영어 설명 권장<br>디자인 방향 탐색용이며 세부 특징과 색 재현은 결과마다 다릅니다.</span></p>
+     </div></details>
+     <details class="settings-group notes-card"><summary><span id="notesHeading">{{icon:brush}}작업 노트</span>{{icon:chevron-down}}</summary><div class="details-body"><label class="sr-only" for="notes">디자인 설명과 후보 선택 이유</label><textarea id="notes" maxlength="1200" rows="4" placeholder="좋아하는 점과 다음에 바꿀 부분" aria-describedby="notesHelp"></textarea><p class="hint" id="notesHelp">프로젝트와 보드에 저장됩니다. 생성 문장에는 포함되지 않습니다.</p></div></details>
+    </div>
+   </details>
+  </div>
+  <div class="generate-dock"><div class="generation-count"><label for="candidateCount">생성할 후보</label><select id="candidateCount"><option value="1">1개</option><option value="2" selected>2개</option></select></div><button id="generate" class="primary-button">{{icon:wand-sparkles}}<span id="generateLabel">캐릭터 후보 생성</span>{{icon:arrow-right}}</button><button id="cancel" class="cancel-button" disabled hidden>결과 표시 취소</button></div>
+ </div></div></details>
+  <div class="chat-messages"><div class="message-log" id="chatMessages" role="log" aria-live="polite" aria-relevant="additions text">
+   <div class="chat-empty" id="chatEmpty"><span class="chat-eyebrow">새로운 캐릭터의 시작</span><h2>어떤 캐릭터를<br>만들고 싶으세요?</h2><p>성격과 생김새, 바꾸고 싶은 부분을<br>대화로 정리하는 작업 공간입니다.</p><div class="chat-prompts" aria-label="대화 초안 예시"><button type="button" data-chat-example="숲속 마을의 소식을 전하는 호기심 많은 우체부를 만들고 싶어요.">{{icon:sparkles}}새로운 캐릭터 구상하기{{icon:arrow-up-right}}</button><button type="button" data-chat-example="캐릭터의 외형과 의상 방향을 함께 정리하고 싶어요.">{{icon:brush}}외형과 의상 구체화하기{{icon:arrow-up-right}}</button></div><span class="chat-example-hint">예시를 누르면 입력창에 초안이 들어갑니다.</span></div>
+   </div><div class="chat-message system image-activity" aria-label="실제 이미지 작업 상태"><div class="message-label"><span id="activityIcon" class="activity-icon">{{icon:check}}</span>이미지 작업</div><div class="message-body" id="status" role="status" aria-live="polite">설정으로 첫 후보를 만들 수 있습니다.</div><button id="chatViewResult" type="button" class="text-button" hidden>결과 캔버스 보기{{icon:arrow-right}}</button></div>
+  </div>
+  <div class="chat-composer-area"><p id="chatNotice" class="chat-notice" role="status">로컬 대화 모델이 아직 연결되지 않았습니다.<button id="openDetails" type="button">상세 설정으로 생성{{icon:arrow-up-right}}</button></p><div id="chatAttachment" class="chat-attachment" hidden></div><div class="chat-composer" id="chatComposer"><label for="chatInput" class="sr-only">캐릭터 디자인 메시지</label><textarea id="chatInput" maxlength="4000" rows="3" placeholder="만들고 싶은 캐릭터나 바꿀 부분을 적어주세요."></textarea><div class="composer-tools"><label for="upload" class="composer-attach" title="원본 이미지 첨부">{{icon:plus}}<span>이미지 첨부</span></label><span class="composer-hint">연결 후 대화 전송 가능</span><button id="chatSend" class="chat-send" type="button" disabled aria-label="메시지 보내기">{{icon:arrow-right}}</button></div></div><p class="composer-footnote">첨부 이미지는 현재 부분 수정의 원본으로 사용됩니다.</p></div>
+ </aside>
+ <main class="workspace" id="workspace" tabindex="-1">
+  <div class="workspace-header"><div class="workspace-title"><strong>캔버스</strong><span id="workspaceMode">후보 생성</span><a class="candidate-jump" href="#candidatesHeading">후보 <span id="mobileCandidateCount">0</span>개 {{icon:chevron-down}}</a><h2 id="canvasHeading" class="sr-only">나만의 캐릭터를 만들어보세요.</h2></div><div class="header-actions"><label for="upload" class="button upload-button">{{icon:upload}}원본 불러오기</label><input id="upload" class="file-input" type="file" accept="image/png,image/jpeg,image/webp"><a id="download" class="button dark-button" download="pankeki-character.png" hidden>{{icon:download}}이미지 저장</a></div></div>
+  <div class="canvas-stack">
+   <div class="canvas-card">
+    <div class="canvas-topbar"><div class="view-tabs" role="group" aria-label="작업 화면"><button id="sourceView" hidden>원본 · 마스크</button><button id="resultView" class="active" aria-pressed="true">디자인 미리보기</button></div><div class="canvas-topbar-right"><span class="result-badge" id="resultLabel">준비됨</span><span class="canvas-size" id="canvasSize">512 × 512</span></div></div>
+    <div class="editor-tools" id="editorTools" hidden><div class="tool-group"><button id="brushTool" class="icon-button selected" aria-label="브러시" aria-pressed="true" title="브러시">{{icon:brush}}</button><button id="eraserTool" class="icon-button" aria-label="지우개" aria-pressed="false" title="지우개">{{icon:eraser}}</button><input type="checkbox" id="erase" hidden></div><label class="brush-control" for="brush">크기<input id="brush" type="range" min="1" max="128" value="40"><output id="brushValue" for="brush">40</output></label><button id="clearMask" class="tool-button">{{icon:rotate-ccw}}마스크 지우기</button><label for="maskUpload" class="tool-button">{{icon:upload}}마스크 불러오기</label><input id="maskUpload" class="file-input" type="file" accept="image/png"></div>
+    <div class="canvas-viewport" id="canvasViewport">
+     <div class="empty-state" id="empty">
+      <span class="canvas-placeholder-icon">{{icon:image}}</span><h3 class="empty-title">캐릭터를 기다리는 캔버스</h3><p class="empty-intro">생성한 후보를 크게 보고,<br>비교하고 필요한 부분만 수정하세요.</p>
+      <h3 id="emptyHeading" class="sr-only">첫 후보 만들기</h3><p id="emptyDescription" class="sr-only">설정 또는 원본 이미지로 시작합니다.</p>
+      <div class="canvas-start-actions"><button id="startFromBrief" type="button" class="button">상세 설정으로 시작{{icon:arrow-right}}</button><label for="upload" class="button">원본 불러오기{{icon:upload}}</label></div><button id="startFromExample" type="button" class="text-button canvas-example">캐릭터 예시 불러오기</button>
+     </div>
+     <section id="editor" hidden aria-label="원본과 수정 마스크"><div class="stage" id="sourceStage"><canvas id="source" width="512" height="512"></canvas><canvas id="paint" width="512" height="512" aria-label="브러시로 수정할 영역을 칠하는 캔버스"></canvas></div></section><img id="preview" hidden alt="생성 중 미리보기 — 최종 이미지 아님"><img id="result" hidden alt="생성 완료 캐릭터"><div id="previewTag" class="preview-tag" hidden>{{icon:loader-circle}}후보를 만드는 중</div>
+    </div>
+    <div class="canvas-footer"><span id="canvasHint">설정을 작성하거나 원본을 불러와 시작하세요.</span><button id="useResult" class="text-button" hidden>{{icon:brush}}이 후보 다듬기{{icon:arrow-up-right}}</button></div>
+   </div>
+   <section id="comparePanel" class="compare-panel" hidden aria-labelledby="compareHeading"><div class="section-heading"><div><h2 id="compareHeading">후보 비교</h2><p>디테일을 비교하고 수정할 후보를 고르세요.</p></div><button id="closeCompare" class="button subtle-button">{{icon:x}}비교 닫기</button></div><div id="compareGrid" class="compare-grid"></div></section>
+  </div>
+  <div class="status-bar"><span class="workspace-footnote">Pankeki · 이미지 작업 공간</span><div class="status-details"><details class="project-feedback"><summary>저장 상태</summary><div class="status-popover"><p id="projectStatus" class="project-status" role="status" aria-live="polite">프로젝트 파일로 저장할 수 있습니다.</p></div></details><details class="run-details"><summary>실행 기록</summary><pre id="metrics">실행이 완료되면 기록이 표시됩니다.</pre></details></div></div>
+  <aside class="candidates-section" aria-labelledby="candidatesHeading"><div class="candidate-header"><h2 id="candidatesHeading" tabindex="-1">디자인 후보</h2><span id="selectionCount" class="selection-count" aria-live="polite">0/2 선택</span></div><p class="candidate-instruction">후보를 골라 비교하거나 이어서 수정하세요.</p><div class="candidate-scroll"><div id="galleryEmpty" class="gallery-empty"><span>{{icon:layers}}</span><strong>후보를 기다리는 중</strong><p>생성한 이미지와 불러온 원본이<br>여기에 쌓입니다.</p><div class="candidate-placeholder" aria-hidden="true"><span>01</span><span>02</span></div></div><div id="gallery" class="candidate-gallery" aria-label="생성한 캐릭터 후보"></div></div><div class="candidate-compare-actions"><button id="compareSelected" class="button compare-button" type="button">{{icon:layers}}선택한 두 후보 비교</button></div></aside>
+ </main>
+</div>
+<dialog id="helpDialog" aria-labelledby="helpHeading"><div class="dialog-head"><h2 id="helpHeading">캐릭터 작업실 사용 안내</h2><button id="closeHelp" class="icon-button" aria-label="사용 안내 닫기">{{icon:x}}</button></div><ol><li><strong>용도·소개·외형을 입력하세요.</strong><p>예시 넣기로 시작할 수도 있습니다. 용도는 디자인 지시를 바꾸며 생성 모델을 바꾸지는 않습니다.</p></li><li><strong>후보를 만들고 비교하세요.</strong><p>한 번에 1–2개를 탐색합니다. 오른쪽 후보에서 크게 보기, 비교 선택, 이어서 수정을 이용하세요.</p></li><li><strong>필요한 부분만 수정하세요.</strong><p>원본을 불러와 브러시로 수정할 곳을 칠하세요. 키보드로는 마스크 파일을 불러올 수 있습니다.</p></li><li><strong>프로젝트와 보드를 저장하세요.</strong><p>프로젝트 파일에는 설정과 이미지가 포함됩니다. 마스크는 포함되지 않습니다. 작업 노트는 보드에 담기며 생성 문장에는 사용되지 않습니다.</p></li></ol><p class="hint">현재 SD Turbo는 디자인 방향 탐색용입니다. 영어 설명을 권장하며 세부 특징·색상·후보 사이의 일관성은 보장되지 않습니다. 취소 후에도 이미 시작한 GPU 연산은 계속될 수 있습니다.</p></dialog>
+<script>{{SCRIPT}}</script>
+<script>
+(() => {
+ const compact = window.matchMedia('(max-width: 780px)');
+ const drawer = document.getElementById('briefDrawer');
+ const syncBriefLayout = () => { drawer.open = !compact.matches; };
+ syncBriefLayout(); compact.addEventListener('change', syncBriefLayout);
+ const setMobileView = value => {
+  document.body.dataset.mobileView = value;
+  for (const [id, selected] of [['showChat',value === 'chat'],['showResult',value === 'result']]) {
+   const button = document.getElementById(id); button.classList.toggle('active',selected); button.setAttribute('aria-pressed',String(selected));
+  }
+ };
+ setMobileView('chat');
+ document.getElementById('showChat').addEventListener('click', () => setMobileView('chat'));
+ document.getElementById('showResult').addEventListener('click', () => setMobileView('result'));
+ const detailPanel = document.getElementById('detailPanel');
+ const focusBrief = () => { setMobileView('chat'); detailPanel.open = true; drawer.open = true; document.getElementById('brief').focus(); };
+ document.getElementById('openDetails').addEventListener('click', focusBrief);
+ detailPanel.addEventListener('toggle', () => { if (detailPanel.open) drawer.open = true; });
+ document.querySelectorAll('[data-chat-example]').forEach(button => button.addEventListener('click', () => {
+  const input = document.getElementById('chatInput'); input.value = button.dataset.chatExample; input.dispatchEvent(new Event('input',{bubbles:true})); input.focus();
+ }));
+ document.getElementById('chatViewResult').addEventListener('click', () => { setMobileView('result'); document.getElementById('workspace').focus(); });
+ const syncResultLink = () => { const count = document.querySelectorAll('.candidate-card').length; document.getElementById('chatViewResult').hidden = count === 0; document.getElementById('mobileCandidateCount').textContent = String(count); };
+ new MutationObserver(syncResultLink).observe(document.getElementById('gallery'),{childList:true}); syncResultLink();
+ // Fit both bitmap layers to one shared display rectangle; bitmap data is unchanged.
+ const sourceCanvas = document.getElementById('source'), sourceStage = document.getElementById('sourceStage');
+ const editor = document.getElementById('editor'), viewport = document.getElementById('canvasViewport');
+ let fitPending = false;
+ const fitSource = () => {
+  if (fitPending) return; fitPending = true;
+  requestAnimationFrame(() => {
+   fitPending = false;
+   const style = getComputedStyle(viewport);
+   const availableWidth = editor.clientWidth || viewport.clientWidth - parseFloat(style.paddingLeft) - parseFloat(style.paddingRight);
+   const availableHeight = editor.clientHeight || viewport.clientHeight - parseFloat(style.paddingTop) - parseFloat(style.paddingBottom);
+   if (availableWidth <= 0 || availableHeight <= 0) return;
+   const scale = Math.min(availableWidth / sourceCanvas.width, availableHeight / sourceCanvas.height);
+   sourceStage.style.width = sourceCanvas.width * scale + 'px';
+   sourceStage.style.height = sourceCanvas.height * scale + 'px';
+  });
+ };
+ const editorSizeObserver = new ResizeObserver(fitSource); editorSizeObserver.observe(editor); editorSizeObserver.observe(viewport);
+ new MutationObserver(fitSource).observe(sourceCanvas,{attributes:true,attributeFilter:['width','height']}); fitSource();
+ document.getElementById('startFromBrief').addEventListener('click', focusBrief);
+ document.getElementById('startFromExample').addEventListener('click', () => { document.getElementById('presetExample').click(); focusBrief(); });
+ // Presentation-only navigation: existing close action owns comparison state/focus.
+ document.addEventListener('click', event => {
+  const action = event.target.closest('[data-action="view"],[data-action="edit"],#compareGrid button,[data-mode],#useResult');
+  if (action && !document.getElementById('comparePanel').hidden) document.getElementById('closeCompare').click();
+  if (action?.matches('[data-action="view"],[data-action="edit"],#compareGrid button,#useResult')) {
+   setMobileView('result');
+   if (compact.matches) requestAnimationFrame(() => document.querySelector('.canvas-stack').scrollIntoView({block:'start',behavior:'instant'}));
+  }
+ }, true);
+ document.getElementById('upload').addEventListener('change', () => {
+  if (!document.getElementById('comparePanel').hidden) document.getElementById('closeCompare').click();
+  setMobileView('result');
+ });
+})();
+</script>
+</body></html>
