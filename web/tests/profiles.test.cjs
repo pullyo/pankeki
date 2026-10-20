@@ -88,6 +88,19 @@ test('project round-trip preserves snapshots and request settings but excludes s
   assert.equal(entry.brief.palette[0], '#C49A6C');
 });
 
+test('project round-trip retains selected model without guessing a model for legacy images', () => {
+  const entry = version();
+  entry.request.model_id = 'sdxl-base';
+  entry.request.steps = 25; entry.request.cfg = 6;
+  entry.request.width = entry.request.height = 1024;
+  const saved = parseProject(JSON.stringify(createProject(brief(), [entry])));
+  assert.equal(saved.versions[0].request.model_id, 'sdxl-base');
+  assert.equal(saved.versions[0].request.steps, 25);
+  assert.equal(createProject(brief(), [version()]).versions[0].request.model_id, undefined);
+  entry.request.model_id = '../../arbitrary.safetensors';
+  assert.throws(() => createProject(brief(), [entry]), /model/i);
+});
+
 test('import rejects remote, SVG, mismatched and malformed image payloads', () => {
   for (const image of ['https://example.com/image.png', 'javascript:alert(1)', 'data:image/svg+xml;base64,PHN2Zy8+', PNG.replace('image/png', 'image/jpeg'), PNG + '\n', PNG.replace('iVBOR', 'i=OR')]) {
     assert.throws(() => parseProject({ version: 1, brief: brief(), versions: [{ ...version(), image }] }), /image|Image|embedded/);

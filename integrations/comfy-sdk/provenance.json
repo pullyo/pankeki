@@ -1,0 +1,28 @@
+[
+  {
+    "name": "comfy-sdk",
+    "version": "0.5.0",
+    "license": "MIT",
+    "url": "https://files.pythonhosted.org/packages/f8/a7/4ae8c85f4dfcf83e184a4302dd2344b61c651790d022c36953eda24c3e16/comfy_sdk-0.5.0-py3-none-any.whl",
+    "sha256": "dfcd3ab026cfc42e83681148766fe8b3d619fdc476ec995e793c1efcab2fd1c5",
+    "project_urls": [
+      "Homepage, https://docs.comfy.org",
+      "Documentation, https://docs.comfy.org",
+      "Repository, https://github.com/Comfy-Org/comfy-python-sdk",
+      "Issues, https://github.com/Comfy-Org/comfy-python-sdk/issues"
+    ]
+  },
+  {
+    "name": "comfy-api-proxy",
+    "version": "0.1.6",
+    "license": "MIT",
+    "url": "https://files.pythonhosted.org/packages/98/5a/d1c0dd440ffe8277ffabd6900efe01e61716f500223e9c34f45cdc82ac98/comfy_api_proxy-0.1.6-py3-none-any.whl",
+    "sha256": "1ea405f1a4dc5886d06d630bc1de57fd8754062776ace797e66969636ca941c6",
+    "project_urls": [
+      "Homepage, https://docs.comfy.org",
+      "Documentation, https://docs.comfy.org",
+      "Repository, https://github.com/Comfy-Org/comfy-api-proxy",
+      "Issues, https://github.com/Comfy-Org/comfy-api-proxy/issues"
+    ]
+  }
+]

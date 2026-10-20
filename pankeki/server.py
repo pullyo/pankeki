@@ -5,7 +5,7 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import urlsplit
 
-from .engine import Engine, validate_request
+from .engine import Engine
 from .jobs import JobManager
 
 
@@ -47,11 +47,15 @@ def make_server(root, port=8190, comfy_url='http://127.0.0.1:8188', config=None)
                 path = urlsplit(self.path).path
                 if path == '/':
                     return self.send(200, (root / 'web' / 'index.html').read_bytes(), 'text/html; charset=utf-8')
+                if path == '/api/models':
+                    return self.send(200, engine.models_info())
                 if path == '/api/health':
                     try:
                         health_check = getattr(engine.client, 'health', None)
                         status = health_check() if health_check else engine.client.get('/system_stats')
-                        return self.send(200, {'comfy': True, 'system': status, 'cache': engine.cache.stats(), 'managed': engine.config.get('managed_builtin_only', False), 'transport': engine.config.get('transport', 'direct'), 'model_name': engine.config.get('model_name')})
+                        default_id = engine.models_info()['default_model_id']
+                        default_model = engine.models.get(default_id, engine.config)
+                        return self.send(200, {'comfy': True, 'system': status, 'cache': engine.cache.stats(), 'managed': engine.config.get('managed_builtin_only', False), 'transport': engine.config.get('transport', 'direct'), 'model_name': default_model.get('model_name'), 'default_model_id': default_id})
                     except Exception as exc:
                         return self.send(200, {'comfy': False, 'error': str(exc), 'cache': engine.cache.stats()})
                 match = re.fullmatch(r'/api/(jobs|previews|results)/([0-9a-f]{32})', path)
@@ -94,7 +98,7 @@ def make_server(root, port=8190, comfy_url='http://127.0.0.1:8188', config=None)
                 if not isinstance(body, dict):
                     raise ValueError('Expected JSON object')
                 if self.path == '/api/jobs':
-                    recipe = validate_request(body['request'])
+                    recipe = engine.validate_request(body['request'])
                     return self.send(202, manager.submit(body['session'], recipe))
                 match = re.fullmatch(r'/api/jobs/([0-9a-f]{32})/cancel', self.path)
                 if match:
@@ -106,7 +110,12 @@ def make_server(root, port=8190, comfy_url='http://127.0.0.1:8188', config=None)
             except (KeyError, ValueError, TypeError, OSError) as exc:
                 self.send(400, {'error': str(exc)})
 
-    server = ThreadingHTTPServer(('127.0.0.1', port), Handler)
+    try:
+        server = ThreadingHTTPServer(('127.0.0.1', port), Handler)
+    except BaseException:
+        manager.close()
+        engine.close()
+        raise
     server.manager = manager
     server.engine = engine
     return server

@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="640" viewBox="0 0 640 640">
+ <title>Pankeki original demo — a clean breakfast nook</title>
+ <rect width="640" height="640" fill="#fff5e5"/>
+ <path d="M0 456 Q320 425 640 456V640H0Z" fill="#f5dfbc"/>
+ <path d="M0 456Q320 425 640 456" fill="none" stroke="#e4c295" stroke-width="3"/>
+ <ellipse cx="321" cy="546" rx="205" ry="29" fill="#d9b684" opacity=".25"/>
+ <ellipse cx="320" cy="528" rx="207" ry="40" fill="#fffdfa" stroke="#dcc5a5" stroke-width="4"/>
+ <ellipse cx="320" cy="523" rx="176" ry="24" fill="#f7ead8" stroke="#e8d7bf" stroke-width="2"/>
+ <path d="M89 176q-18-20 1-39m461 44q18-20-1-39M144 105q-10-12 0-23m352 25q10-12 0-23" fill="none" stroke="#e9cc9c" stroke-width="6" stroke-linecap="round"/>
+ <circle cx="100" cy="306" r="5" fill="#edcf99"/><circle cx="538" cy="321" r="5" fill="#edcf99"/>
+ <path d="m116 231 4 9 10 3-10 3-4 10-3-10-9-3 9-3Zm402-20 3 8 8 3-8 3-3 8-3-8-8-3 8-3Z" fill="#efcf8f"/>
+</svg>

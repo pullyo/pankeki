@@ -20,6 +20,7 @@ from .composite import composite
 from .environment import process_start_token, server_signature, source_fingerprint
 from .metrics import JsonlMetrics
 from .model_lease import ReadOnlyModelLease
+from .model_presets import MODEL_PRESETS, configured_models, is_available, model_listing
 from .planning import crop_for_plan, plan_roi, unpad_generated
 from .workflows import inpaint, txt2img
 
@@ -51,15 +52,19 @@ def file_sha256(path):
     return digest.hexdigest()
 
 
-def validate_request(value):
+def validate_request(value, model_defaults=None):
     if not isinstance(value, dict):
         raise ValueError('Request must be an object')
     result = dict(value)
     defaults = dict(mode='txt2img', prompt='', negative='', seed=1, width=512, height=512,
                     steps=1, cfg=1., denoise=1., cache=True, roi=False, halo=32,
                     feather=4, preview=True, preview_interval=.2, sampler='euler', scheduler='normal')
+    if model_defaults:
+        defaults.update(model_defaults)
     for name, default in defaults.items():
         result.setdefault(name, default)
+    if 'model_id' in result and (not isinstance(result['model_id'], str) or result['model_id'] not in MODEL_PRESETS):
+        raise ValueError('Unknown model_id')
     if result['mode'] not in ('txt2img', 'inpaint'):
         raise ValueError('mode must be txt2img or inpaint')
     for name in ('prompt', 'negative'):
@@ -103,20 +108,30 @@ class Engine:
         self.config = copy.deepcopy(config or {})
         self._closed = False
         self._model_lease = None
+        self._model_leases = {}
+        self.models, self._preferred_model, self._explicit_models = configured_models(self.config)
         self.fingerprint_policy = self.config.get('fingerprint_policy', 'strict')
         if self.fingerprint_policy not in ('strict', 'windows_read_lock'):
             raise ValueError('Unknown fingerprint policy')
         self.fingerprint_fallback = None
         setup_started = time.perf_counter()
-        if self.fingerprint_policy == 'windows_read_lock' and self.config.get('managed_builtin_only'):
-            try:
-                self._model_lease = ReadOnlyModelLease(self.config['model_path'], self.config['manifest']['model_sha256'])
-            except OSError as exc:
-                # Unsupported paths/platforms or incompatible open handles retain full byte checks.
-                self.fingerprint_policy = 'strict'
-                self.fingerprint_fallback = str(exc)
-        self.fingerprint_setup_s = time.perf_counter() - setup_started
         try:
+            if self.fingerprint_policy == 'windows_read_lock' and self.config.get('managed_builtin_only'):
+                try:
+                    if self.models:
+                        for model_id, entry in self.models.items():
+                            if is_available(entry):
+                                self._model_leases[model_id] = ReadOnlyModelLease(entry['model_path'], entry['manifest']['model_sha256'])
+                    elif self.config.get('model_path'):
+                        self._model_lease = ReadOnlyModelLease(self.config['model_path'], self.config['manifest']['model_sha256'])
+                except OSError as exc:
+                    # If any requested lease is unavailable, all requests retain full byte checks.
+                    for lease in self._model_leases.values():
+                        lease.close()
+                    self._model_leases.clear()
+                    self.fingerprint_policy = 'strict'
+                    self.fingerprint_fallback = str(exc)
+            self.fingerprint_setup_s = time.perf_counter() - setup_started
             self.adapter_sources = source_fingerprint(Path(__file__).parent)
             self.client_software = {'python': platform.python_version(), 'numpy': np.__version__, 'pillow': pillow_version}
             if client is not None:
@@ -134,7 +149,23 @@ class Engine:
             self.close()
             raise
 
-    def _dependencies(self, workflow, input_hashes, recipe):
+    def models_info(self):
+        return model_listing(self.models, self._preferred_model)
+
+    def validate_request(self, value):
+        if not isinstance(value, dict):
+            raise ValueError('Request must be an object')
+        model_id = value.get('model_id') if 'model_id' in value else self.models_info()['default_model_id']
+        if 'model_id' in value or self.models or self._explicit_models:
+            if not isinstance(model_id, str) or model_id not in MODEL_PRESETS:
+                raise ValueError('Unknown model_id or no model is available')
+            if not is_available(self.models.get(model_id)):
+                raise ValueError(f'Model {model_id} is not installed/configured')
+            return validate_request(dict(value, model_id=model_id), MODEL_PRESETS[model_id]['defaults'])
+        # Unconfigured legacy engines keep their offline empty-mask and discovery behavior.
+        return validate_request(value)
+
+    def _dependencies(self, workflow, input_hashes, recipe, model_id=None):
         # An arbitrary existing ComfyUI server cannot be attested by node names alone.
         if not self.config.get('managed_builtin_only'):
             return {}, 'unmanaged server: exact cache bypass'
@@ -150,11 +181,13 @@ class Engine:
             for path, expected_hash in guard.get('configuration_files', {}).items():
                 if file_sha256(path) != expected_hash:
                     raise ValueError('ComfyUI configuration changed after start; restart and rebuild manifest')
-        expected = self.config.get('manifest', {})
-        model_path = self.config.get('model_path')
+        selected = self.models[model_id] if model_id is not None else self.config
+        expected = selected.get('manifest', {})
+        model_path = selected.get('model_path')
         if not model_path:
             return {}, 'model content is not verifiable'
-        current = self._model_lease.sha256 if self._model_lease else file_sha256(model_path)
+        lease = self._model_leases.get(model_id) if model_id is not None else self._model_lease
+        current = lease.sha256 if lease else file_sha256(model_path)
         if current != expected.get('model_sha256'):
             raise ValueError('Model bytes changed since managed server start. Restart and rebuild manifest before generating.')
         dependencies = dict(expected)
@@ -166,13 +199,15 @@ class Engine:
                 'server_signature': guard['server_signature'], 'source_trees': guard['source_trees'],
                 'configuration_files': guard.get('configuration_files', {})})
         reason = ('managed builtin graph; checkpoint SHA256 verified once and Windows read-only lease retained'
-                  if self._model_lease else 'managed builtin graph; full checkpoint SHA256 checked this request')
+                  if lease else 'managed builtin graph; full checkpoint SHA256 checked this request')
         return dependencies, reason
 
     def close(self):
         self._closed = True
         if self._model_lease is not None:
             self._model_lease.close()
+        for lease in self._model_leases.values():
+            lease.close()
 
     def __call__(self, job, on_preview):
         if self._closed:
@@ -180,7 +215,9 @@ class Engine:
         started = time.perf_counter()
         directory = self.runs / job.job_id
         directory.mkdir(exist_ok=False)
-        r = validate_request(job.request)
+        r = self.validate_request(job.request)
+        model_id = r.get('model_id')
+        selected_model = self.models[model_id] if model_id is not None else self.config
         recipe = {key: value for key, value in r.items() if key not in ('source', 'mask', 'cache', 'preview', 'preview_interval')}
         if source_fingerprint(Path(__file__).parent) != self.adapter_sources:
             raise ValueError('Pankeki source changed while running. Restart Pankeki before generating.')
@@ -189,6 +226,7 @@ class Engine:
         if hasattr(self.client, 'fingerprint'):
             recipe['transport'] = self.client.fingerprint()
         observations = {'job_id': job.job_id, 'revision': job.revision, 'queue_s': job.queue_s,
+                        'model_id': model_id, 'model_name': selected_model.get('model_name'),
                         'created_utc': datetime.now(timezone.utc).isoformat(), 'kind': 'real_comfyui',
                         'cache': 'off', 'model_calls': 0, 'gpu_completed': False,
                         'fingerprint_policy': self.fingerprint_policy,
@@ -199,7 +237,7 @@ class Engine:
                         'preview_received_count': 0, 'preview_received_bytes': 0,
                         'comfy_cached_nodes': [], 'node_wall_s': None}
         try:
-            model = self.config.get('model_name')
+            model = selected_model.get('model_name')
             if not model and r['mode'] != 'inpaint':
                 names = self.client.get('/object_info/CheckpointLoaderSimple')['CheckpointLoaderSimple']['input']['required']['ckpt_name'][0]
                 if not names:
@@ -252,7 +290,7 @@ class Engine:
                 workflow = txt2img(width=r['width'], height=r['height'], **common)
                 observations.update(model_pixels=r['width'] * r['height'], model_size=[r['width'], r['height']], plan_mode='baseline')
             fingerprint_started = time.perf_counter()
-            dependencies, reason = self._dependencies(workflow, input_hashes, recipe)
+            dependencies, reason = self._dependencies(workflow, input_hashes, recipe, model_id)
             key = make_cache_key(workflow, dependencies) if r['cache'] else None
             observations.update(fingerprint_s=time.perf_counter() - fingerprint_started, cache_reason=reason,
                                 cache_key=key, workflow_sha256=canonical_hash(workflow))

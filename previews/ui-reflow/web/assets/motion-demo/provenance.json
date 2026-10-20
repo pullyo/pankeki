@@ -1,0 +1,96 @@
+{
+  "title": "Pankeki original pancake motion demo",
+  "created": "2026-10-20",
+  "creator": "Original vector artwork authored by Codex for the Pankeki project",
+  "license": "CC0-1.0 (artwork only; application modules retain their licenses)",
+  "method": "Manually authored SVG shapes and existing Chrome Canvas rasterization. No Image Gen, external assets, downloaded model, inference, prerecorded animation, or rectangular stand-in fixture.",
+  "sources": [
+    "source-design.svg",
+    "background.svg",
+    "body.svg",
+    "eyes.svg",
+    "mouth.svg",
+    "render-assets.cjs",
+    "make-project.cjs"
+  ],
+  "manualPreparation": [
+    "Body contains syrup, butter, cheeks and limbs but no eyes or mouth.",
+    "Eyes and mouth are separate RGBA PNG materials. Background is a separately drawn clean breakfast nook.",
+    "Source is composed from actual PNG layers at the default pose; it is reference-only and is not used as an overdraw background.",
+    "Eye closed key compresses to 6.16px height, never zero-area. Mouth interior uses an ordinary 68x36 material-size grid, a normal part scaleY of 8/36, and valid keys that produce 8px default and 40px open height.",
+    "Breath uses 1.8% horizontal and 2.5% vertical body displacement; eye and mouth layers have matching small vertical displacement.",
+    "Mesh/keyforms/parents/curves are manually prepared and use the same document parser, controller, renderer and exporter as user PNG parts."
+  ],
+  "defaultComposition": [
+    {
+      "asset": "background.png",
+      "rect": [
+        0,
+        0,
+        640,
+        640
+      ]
+    },
+    {
+      "asset": "body.png",
+      "rect": [
+        100,
+        125,
+        440,
+        410
+      ]
+    },
+    {
+      "asset": "eyes.png",
+      "rect": [
+        240,
+        319,
+        160,
+        44
+      ]
+    },
+    {
+      "asset": "mouth.png",
+      "rect": [
+        286,
+        369,
+        68,
+        8
+      ]
+    }
+  ],
+  "assetFiles": {
+    "source.png": {
+      "sha256": "df6fd7b1107481e8dc42baed8be18fa6ace0c5dfc8e99c798c336f7707014cfd",
+      "width": 640,
+      "height": 640,
+      "mime": "image/png"
+    },
+    "background.png": {
+      "sha256": "29fb9f0c58a9ce9f8d69f9fdef7a3278c534692afd958365ccd7b0ca1cd1b5e4",
+      "width": 640,
+      "height": 640,
+      "mime": "image/png"
+    },
+    "body.png": {
+      "sha256": "0096d72327f1a3586fe02ec6d281fd625fe02e5a0ead5ccf5c93ee630623e489",
+      "width": 440,
+      "height": 410,
+      "mime": "image/png"
+    },
+    "eyes.png": {
+      "sha256": "26bdd63c665aa131194fba43c458e340b4805d079f16d2b4464429967e760069",
+      "width": 160,
+      "height": 44,
+      "mime": "image/png"
+    },
+    "mouth.png": {
+      "sha256": "ea6f2e3f945f4cd2e616f498b8ca227b733ec063f97480186c4220622a4976a6",
+      "width": 68,
+      "height": 36,
+      "mime": "image/png"
+    }
+  },
+  "projectSha256": "f66cb7462833a7414f156b818be9c67bafca0d9373a6e0f9bf943a24ed707b70",
+  "sourceInvariant": "Original PNG bytes and UV/topology are never rewritten by parameters. The app validates references, geometry and hashes before accepting poses."
+}

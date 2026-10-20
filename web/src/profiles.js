@@ -165,9 +165,13 @@
   }
   var REQUEST_DEFAULTS = { mode: 'txt2img', prompt: '', negative: '', seed: 1, steps: 1, width: 512, height: 512, cfg: 1, denoise: 1, halo: 32, feather: 4, cache: true, roi: false, preview: true, preview_interval: 0.2, sampler: 'euler', scheduler: 'normal' };
   function validateRequest(value, allowInputImages) {
-    safeKeys(value, Object.keys(REQUEST_DEFAULTS).concat(allowInputImages ? ['source', 'mask'] : []), 'request');
+    safeKeys(value, Object.keys(REQUEST_DEFAULTS).concat(['model_id'], allowInputImages ? ['source', 'mask'] : []), 'request');
     var result = {};
     Object.keys(REQUEST_DEFAULTS).forEach(function (key) { result[key] = value[key] === undefined ? REQUEST_DEFAULTS[key] : value[key]; });
+    if (value.model_id !== undefined) {
+      if (['sdxl-base', 'sd-turbo'].indexOf(value.model_id) < 0) throw new Error('Unsupported image model');
+      result.model_id = value.model_id;
+    }
     if (result.mode !== 'txt2img' && result.mode !== 'inpaint') throw new Error('Unsupported request mode');
     strictText(result.prompt, MAX_PROMPT, 'Request prompt');
     strictText(result.negative, MAX_PROMPT, 'Negative prompt');

@@ -212,6 +212,10 @@ let latestUrl = null, latestId = null, sourceId = null, sourceDataURL = null;
 let sourceRevision = 0, maskRevision = 0, maskLoading = false, importRevision = 0;
 let editEpoch = 0, importing = false, view = 'result', previewVisible = false, busy = false;
 let selectedIds = [], saveTimer = null, saveQueue = Promise.resolve();
+let imageModels = [], modelsReady = false, modelLoadError = '';
+const studioListeners = new Set();
+let motionController = null, motionDatabase = null, motionSaveTimer = null;
+let motionSaveQueue = Promise.resolve(), motionPersistenceEpoch = 0;
 const canvas = $('source'), paint = $('paint'), context = paint.getContext('2d');
 const clone = value => JSON.parse(JSON.stringify(value));
 const briefFields = {name:'projectName', brief:'brief', appearance:'appearance', detail:'designDetail', notes:'notes', prompt:'prompt'};
@@ -224,6 +228,7 @@ let project = Design.createProject(readBrief(), [], []);
 let emptyBriefSnapshot = JSON.stringify(project.brief);
 function projectStatus(message, error = false) {
   $('projectStatus').textContent = message; $('projectStatus').classList.toggle('error', error);
+  notifyStudio();
 }
 function status(message, error = false) {
   $('status').textContent = message; $('status').classList.toggle('error', error);
@@ -247,6 +252,7 @@ function updateBrief() {
   $('profileHelp').textContent = profile.description; $('profileDetailLabel').textContent = profile.detailLabel;
   $('profileDetailHint').textContent = profile.detailHint;
   $('compiledPrompt').textContent = Design.buildPrompt(project.brief, $('mode').value);
+  notifyStudio();
 }
 function applyBrief(brief) {
   $('profile').value = brief.profile;
@@ -264,6 +270,7 @@ $('presetExample').onclick = () => {
   status('예시 설정을 적용했어요. 세부 내용을 바꿔 나만의 캐릭터로 만들어보세요.');
 };
 function renderView() {
+  $('generate').disabled = !modelsReady;
   const showSource = view === 'source' && sourceLoaded, showPreview = view === 'result' && previewVisible;
   const showResult = view === 'result' && !showPreview && latestUrl !== null;
   $('editor').hidden = !showSource; $('editorTools').hidden = !showSource; $('sourceView').hidden = !sourceLoaded;
@@ -281,6 +288,7 @@ function renderView() {
   $('cancel').hidden = !busy; $('cancel').disabled = !busy;
   if ($('emptyHeading')) $('emptyHeading').textContent = $('mode').value === 'inpaint' ? '수정할 원본을 먼저 불러오세요.' : '아직 이름 없는 아이디어도 좋아요.';
   if ($('emptyDescription')) $('emptyDescription').textContent = $('mode').value === 'inpaint' ? '이미지를 업로드하거나 후보의 ‘이어서 수정’을 선택한 뒤, 바꾸고 싶은 부분을 칠해주세요.' : '성격과 생김새를 적고 첫 후보를 만들어보세요. 기존 캐릭터를 불러와 다듬을 수도 있어요.';
+  notifyStudio();
 }
 function setMode(value) {
   $('mode').value = value; const editing = value === 'inpaint';
@@ -336,6 +344,7 @@ function commitSource(image,data,parentId) {
 async function loadSource(url,{parentId = null,record = false} = {}) {
   if (record && project.versions.length >= 20) throw Error('후보는 최대 20개입니다. 프로젝트를 저장한 뒤 새 프로젝트를 시작해주세요.');
   if (parentId && !project.versions.some(item => item.id === parentId)) throw Error('수정할 후보가 현재 프로젝트에 없습니다.');
+  motionController?.suspend();
   touch(); void stopBatch(); const token = ++sourceRevision, snapshot = readBrief();
   const previous = {sourceDataURL,sourceLoaded:sourceDataURL !== null,sourceId};
   sourceLoaded = false; drawing = false; ++maskRevision; maskLoading = false; renderView();
@@ -359,7 +368,7 @@ document.querySelectorAll('[data-mode]').forEach(button => button.onclick = () =
 $('sourceView').onclick = () => { touch(); setMode('inpaint'); };
 $('resultView').onclick = () => { touch(); view = 'result'; renderView(); };
 $('result').onload = $('preview').onload = renderView;
-for (const id of ['width','height','seed','steps','cfg','denoise','halo','feather','candidateCount','negative','cache','roi','previewOn']) $(id).oninput = () => { touch(); renderView(); };
+for (const id of ['width','height','seed','steps','cfg','denoise','halo','feather','candidateCount','negative','cache','roi','previewOn','sampler','scheduler']) $(id).oninput = () => { touch(); renderView(); };
 $('upload').onchange = async () => {
   const file = $('upload').files[0]; if (!file) return;
   const url = URL.createObjectURL(file);
@@ -406,7 +415,9 @@ function displayError(message) {
   return String(message).includes('Pankeki source changed') ? '앱 코드가 갱신되었습니다. Pankeki 생성 서버를 다시 시작한 뒤 생성해주세요.' : message;
 }
 function requestSnapshot(brief) {
-  const request = {mode:$('mode').value,prompt:Design.buildPrompt(brief,$('mode').value),negative:$('negative').value,cache:$('cache').checked,roi:$('roi').checked,preview:$('previewOn').checked};
+  const model = imageModels.find(item => item.id === $('imageModel').value && item.available);
+  if (!modelsReady || !model) throw Error(modelLoadError || '사용 가능한 이미지 모델을 먼저 선택해주세요.');
+  const request = {model_id:model.id,mode:$('mode').value,prompt:Design.buildPrompt(brief,$('mode').value),negative:$('negative').value,cache:$('cache').checked,roi:$('roi').checked,preview:$('previewOn').checked,sampler:$('sampler').value,scheduler:$('scheduler').value};
   const limits = {seed:[0,Number.MAX_SAFE_INTEGER,true],steps:[1,100,true],width:[64,2048,true],height:[64,2048,true],cfg:[0,30],denoise:[.01,1],halo:[0,512,true],feather:[0,64,true]};
   for (const [key,[min,max,integer]] of Object.entries(limits)) {
     const text = $(key).value, value = Number(text);
@@ -456,6 +467,7 @@ async function poll(id,token,index,count) {
 async function generate() {
   let token, completed = 0;
   try {
+    await modelCatalogReady;
     if (importing) throw Error('프로젝트를 불러오는 중입니다. 잠시 후 생성해주세요.');
     const brief = readBrief(), count = Number($('candidateCount').value);
     const requests = Design.makeRequests(requestSnapshot(brief),count);
@@ -538,6 +550,7 @@ function renderGallery() {
     const image = element('img'); image.src = item.image; image.alt = item.label; image.loading = 'lazy';
     const info = element('div',undefined,'candidate-info');
     info.append(element('strong',item.label),element('span',kindLabel(item)),element('span',Design.profiles[item.brief.profile].label));
+    if (item.kind === 'generated' && item.request.model_id) info.append(element('small',`${item.request.model_id === 'sdxl-base' ? 'SDXL Base' : 'SD Turbo'} · ${item.request.steps} steps · CFG ${item.request.cfg}`));
     if (item.parentId) info.append(element('small','수정 원본: ' + (project.versions.find(v => v.id === item.parentId)?.label || item.parentId)));
     const actions = element('div',undefined,'candidate-actions');
     const select = button(selectedIds.includes(item.id) ? '비교 선택 해제' : '비교 선택',() => {
@@ -571,6 +584,7 @@ function renderGallery() {
     details.append(list); $('gallery').append(details);
   }
   if (focusTarget) focusTarget.focus({preventScroll:true});
+  notifyStudio();
 }
 $('compareSelected').onclick = () => {
   if (selectedIds.length !== 2) return;
@@ -586,7 +600,8 @@ $('compareSelected').onclick = () => {
 $('closeCompare').onclick = () => { $('comparePanel').hidden = true; $('compareSelected').focus(); };
 $('comparePanel').onkeydown = event => { if (event.key === 'Escape') { event.preventDefault(); $('closeCompare').onclick(); } };
 function hasWork() {
-  return busy || sourceLoaded || project.versions.length > 0 || JSON.stringify(readBrief()) !== emptyBriefSnapshot;
+  const motion = motionController?.getSummary();
+  return busy || sourceLoaded || project.versions.length > 0 || motion?.dirty || motion?.partCount > 0 || JSON.stringify(readBrief()) !== emptyBriefSnapshot;
 }
 function exportProject() { return JSON.stringify(Design.createProject(readBrief(),project.versions,project.selectionHistory)); }
 function downloadBlob(blob,name) {
@@ -594,16 +609,39 @@ function downloadBlob(blob,name) {
   document.body.append(link); link.click(); link.remove(); setTimeout(() => URL.revokeObjectURL(url),1000);
 }
 function safeName(brief = readBrief()) { return (brief.name || 'pankeki-character').replace(/[<>:"/\\|?*\u0000-\u001F]/g,'_').slice(0,80); }
-$('saveProject').onclick = () => {
-  try { downloadBlob(new Blob([exportProject()],{type:'application/json'}),safeName() + '.pankeki.json'); projectStatus('프로젝트 파일을 내보냈어요. 브리프·후보 이미지·선택 기록이 포함됩니다.'); }
+$('saveProject').onclick = async () => {
+  try {
+    const motion = motionController?.getSummary();
+    if (motion && (motion.isMotionProject || motion.dirty || motion.partCount > 0)) {
+      downloadBlob(new Blob([await motionController.saveProject()],{type:'application/json'}),safeName() + '.motion.v2.json');
+      projectStatus('움직임 v2 프로젝트를 저장했어요. 재개 시 이전 undo는 복원되지 않습니다.'); return;
+    }
+    downloadBlob(new Blob([exportProject()],{type:'application/json'}),safeName() + '.pankeki.json'); projectStatus('프로젝트 파일을 내보냈어요. 브리프·후보 이미지·선택 기록이 포함됩니다.');
+  }
   catch (error) { projectStatus('저장 실패: ' + error.message,true); }
 };
 async function importProject(raw,{restore = false} = {}) {
   let token;
   try {
+    if (typeof raw === 'string' && (raw.length > MAX_FILE || new TextEncoder().encode(raw).length > MAX_FILE)) throw Error('프로젝트 파일은 최대 64MiB까지입니다.');
+    const incoming = typeof raw === 'string' ? JSON.parse(raw) : raw;
+    const versionField = Object.getOwnPropertyDescriptor(incoming || {},'version');
+    if (versionField && !Object.hasOwn(versionField,'value')) throw Error('프로젝트 필드에 접근자를 사용할 수 없습니다.');
+    const version = versionField?.value;
+    if (version === 2) {
+      if (!motionController) throw Error('움직임 편집기를 사용할 수 없습니다.');
+      if (!restore && hasWork() && !confirm('현재 프로젝트를 움직임 v2 파일로 교체할까요? 필요한 작업은 먼저 저장해주세요.')) return false;
+      void stopBatch(); ++sourceRevision; ++maskRevision; ++importRevision; ++motionPersistenceEpoch;
+      motionController.suspend();
+      const loaded = await motionController.loadDocument(raw);
+      if (loaded) { projectStatus('움직임 v2를 불러왔어요. 이전 undo는 복원되지 않습니다.'); notifyStudio('motion-import'); }
+      return loaded;
+    }
     const next = Design.parseProject(raw);
     if (!restore && hasWork() && !confirm('현재 프로젝트를 불러온 파일로 교체할까요? 저장하지 않은 작업은 사라집니다. 필요하면 취소하고 프로젝트 파일을 먼저 저장해주세요.')) return false;
     if (!restore) touch();
+    // The legacy confirmation also authorizes replacing the active motion scene.
+    if (!restore) { ++motionPersistenceEpoch; motionController?.suspend(); }
     token = ++importRevision; const epoch = editEpoch; importing = true;
     // A confirmed import supersedes earlier jobs/uploads even during decoding.
     // Keep committed images and masks untouched until every imported image passes.
@@ -627,7 +665,8 @@ async function importProject(raw,{restore = false} = {}) {
     else { clearMask(); $('result').removeAttribute('src'); badge('준비'); }
     setMode('txt2img'); renderGallery(); ++editEpoch;
     projectStatus(restore ? '이전 프로젝트를 자동 복원했어요. 편집 마스크는 다시 칠해주세요.' : '프로젝트를 불러왔어요. 편집 마스크는 다시 칠해주세요.');
-    if (!restore) scheduleSave(); return true;
+    if (!restore) { scheduleSave(); void replaceMotionWithLegacy(); }
+    notifyStudio(restore ? 'restore' : 'import'); return true;
   } catch (error) { if (token === undefined || token === importRevision) projectStatus('불러오기 실패: ' + error.message,true); return false; }
   finally { if (token === importRevision) importing = false; }
 }
@@ -642,12 +681,13 @@ $('loadProject').onchange = async () => {
 };
 function resetProject() {
   if (hasWork() && !confirm('새 프로젝트를 시작할까요? 저장하지 않은 작업은 사라집니다. 필요하면 취소하고 프로젝트 파일을 먼저 저장해주세요.')) return false;
+  ++motionPersistenceEpoch; motionController?.suspend();
   touch(); void stopBatch(); ++sourceRevision; clearMask(); drawing = false;
   project = Design.createProject(Design.sanitizeBrief({}),[],[]);
   emptyBriefSnapshot = JSON.stringify(project.brief);
   sourceLoaded = false; sourceDataURL = null; sourceId = null; latestUrl = null; latestId = null; selectedIds = [];
   $('result').removeAttribute('src'); $('preview').removeAttribute('src'); $('download').hidden = true; $('comparePanel').hidden = true;
-  applyBrief(project.brief); setMode('txt2img'); renderGallery(); badge('준비'); scheduleSave(); status('새 캐릭터 프로젝트를 시작했어요.'); return true;
+  applyBrief(project.brief); setMode('txt2img'); renderGallery(); badge('준비'); scheduleSave(); void replaceMotionWithLegacy(); status('새 캐릭터 프로젝트를 시작했어요.'); notifyStudio('reset'); return true;
 }
 const database = typeof indexedDB === 'undefined' ? Promise.resolve(null) : new Promise((resolve,reject) => {
   const request = indexedDB.open('pankeki-character-studio',1);
@@ -719,9 +759,113 @@ $('helpButton').onclick = () => $('helpDialog').showModal(); $('closeHelp').oncl
 $('helpDialog').onclick = event => {
   if (event.target === $('helpDialog')) { const box = $('helpDialog').getBoundingClientRect(); if (event.clientX < box.left || event.clientX > box.right || event.clientY < box.top || event.clientY > box.bottom) $('helpDialog').close(); }
 };
-globalThis.PankekiStudio = Object.freeze({generate,cancel,loadSource,importProject,exportProject,resetProject,
+// A small read-only boundary for navigation; do not clone embedded images on
+// every status update or expose mutable project/candidate objects to observers.
+function getSummary() {
+  return Object.freeze({name:readBrief().name,candidateCount:project.versions.length,selectedCount:selectedIds.length,
+    sourceLoaded,sourceId,latestId,imageUrl:view === 'source' && sourceLoaded ? sourceDataURL : latestUrl || sourceDataURL,mode:$('mode').value,busy,
+    projectStatus:$('projectStatus').textContent,modelsReady,editEpoch,sourceRevision,importing});
+}
+function notifyStudio(reason = 'state') {
+  motionController?.refreshSources();
+  if (!studioListeners.size) return;
+  const summary = getSummary();
+  for (const listener of studioListeners) {
+    try { listener(summary,reason); } catch (error) { console.error('Pankeki studio observer failed',error); }
+  }
+}
+function subscribe(listener) {
+  if (typeof listener !== 'function') throw TypeError('A studio listener is required.');
+  studioListeners.add(listener); listener(getSummary());
+  return () => studioListeners.delete(listener);
+}
+globalThis.PankekiStudio = Object.freeze({generate,cancel,loadSource,importProject,exportProject,resetProject,getSummary,subscribe,
+  setMode:mode => { if (!['txt2img','inpaint'].includes(mode)) throw Error('Unsupported workspace mode'); touch(); setMode(mode); },
   getState:() => clone({project,sourceDataURL,sourceLoaded,latestUrl,selectedIds,sourceId,serial,busy,sourceRevision,maskRevision,maskLoading,importing})});
-clearMask(); setMode('txt2img'); renderGallery(); void restoreSaved();
+// Motion uses its own database/key. A v1 restore never overwrites a v2 scene.
+function mountMotionWorkspace() {
+  if (motionController || !globalThis.PankekiMotion || !globalThis.PankekiRenderer || !$('motionEditor')) return motionController;
+  motionDatabase = typeof indexedDB === 'undefined' ? Promise.resolve(null) : new Promise((resolve,reject) => {
+    const request = indexedDB.open('pankeki-motion-studio-v2',1);
+    request.onupgradeneeded = () => { if (!request.result.objectStoreNames.contains('projects')) request.result.createObjectStore('projects'); };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error || Error('움직임 저장소를 열지 못했습니다.'));
+    request.onblocked = () => reject(Error('다른 탭이 움직임 저장소를 사용하고 있습니다.'));
+  });
+  motionController = globalThis.PankekiMotion.mount(document,{
+    renderer:globalThis.PankekiRenderer,exporter:globalThis.PankekiExport,
+    getSourceCandidates:() => project.versions.map(c => ({id:c.id,label:c.label})),
+    getSourceDocument:async candidateId => {
+      const candidate = project.versions.find(c => c.id === candidateId);
+      if (!candidate) throw Error('현재 프로젝트의 후보를 선택해주세요.');
+      return JSON.stringify(Design.createProject(readBrief(),project.versions,[...project.selectionHistory,{candidateId,action:'edit',at:new Date().toISOString()}].slice(-1000)));
+    },
+    onError:error => projectStatus('움직임 작업 실패: ' + error.message,true),
+    onChange:() => scheduleMotionSave()
+  });
+  globalThis.PankekiMotionController = motionController;
+  const persistenceEpoch = motionPersistenceEpoch;
+  const controllerGeneration = motionController.getSummary().generation;
+  void motionController.ready.then(async () => {
+    const db = await motionDatabase, raw = db ? await storage(db,false) : null;
+    if (persistenceEpoch !== motionPersistenceEpoch || controllerGeneration !== motionController.getSummary().generation || motionController.getSummary().dirty || motionController.getSummary().partCount > 0) return;
+    await motionController.loadDocument(raw || exportProject());
+    if (raw) projectStatus('움직임 v2를 자동 복원했어요. 이전 undo는 복원되지 않습니다.');
+  }).catch(error => projectStatus('움직임 자동 복원 실패: ' + error.message,true));
+  return motionController;
+}
+function scheduleMotionSave() {
+  if (!motionController) return;
+  clearTimeout(motionSaveTimer);
+  const persistenceEpoch = motionPersistenceEpoch;
+  motionSaveTimer = setTimeout(() => {
+    motionSaveQueue = motionSaveQueue.then(async () => {
+      const summary = motionController.getSummary(), db = await motionDatabase;
+      if (persistenceEpoch !== motionPersistenceEpoch || !db) return;
+      if (summary.isMotionProject || summary.dirty || summary.partCount > 0) {
+        const raw = await motionController.snapshotProject();
+        if (persistenceEpoch === motionPersistenceEpoch) await storage(db,true,raw);
+      } else await new Promise((resolve,reject) => {
+        const tx = db.transaction('projects','readwrite'); tx.objectStore('projects').delete('current');
+        tx.oncomplete = resolve; tx.onerror = tx.onabort = () => reject(tx.error || Error('움직임 저장소 초기화 실패'));
+      });
+    }).catch(error => projectStatus('움직임 자동 저장 실패: ' + error.message + ' v2 파일로 저장해주세요.',true));
+  },200);
+}
+async function replaceMotionWithLegacy() {
+  if (!motionController) return;
+  try { await motionController.loadDocument(exportProject()); }
+  catch (error) { projectStatus('움직임 프로젝트 교체 실패: ' + error.message,true); }
+}
+clearMask(); setMode('txt2img'); renderGallery(); void restoreSaved(); mountMotionWorkspace();
+function applyModelPreset() {
+  const model = imageModels.find(item => item.id === $('imageModel').value && item.available);
+  if (!model) return;
+  for (const key of ['width','height','steps','cfg','denoise','sampler','scheduler']) $(key).value = String(model.defaults[key]);
+  $('imageModelHelp').textContent = model.description;
+  $('imageModelNote').textContent = `${model.label} · 영어 설명 권장. 세부 특징·색상·부분 수정의 정확성은 결과 확인이 필요합니다.`;
+  renderView();
+}
+$('imageModel').onchange = () => { touch(); applyModelPreset(); };
+$('resetModelPreset').onclick = () => { touch(); applyModelPreset(); };
+const modelCatalogReady = api('/api/models').then(catalog => {
+  if (!Array.isArray(catalog.models)) throw Error('이미지 모델 목록 형식이 올바르지 않습니다.');
+  imageModels = catalog.models.filter(item => ['sdxl-base','sd-turbo'].includes(item.id));
+  const initial = imageModels.find(item => item.id === catalog.default_model_id && item.available);
+  if (!initial) throw Error('기본 이미지 모델을 사용할 수 없습니다. 설치 설정을 확인해주세요.');
+  $('imageModel').replaceChildren();
+  for (const model of imageModels) {
+    const option = document.createElement('option'); option.value = model.id; option.disabled = !model.available;
+    option.textContent = model.label + (model.available ? '' : ' · 미설치'); $('imageModel').appendChild(option);
+  }
+  $('imageModel').value = initial.id; modelsReady = true;
+  $('imageModel').disabled = $('resetModelPreset').disabled = false;
+  applyModelPreset();
+}).catch(error => {
+  modelLoadError = '이미지 모델을 확인하지 못했습니다. 서버를 확인하고 새로고침해주세요. ' + error.message;
+  $('imageModelHelp').textContent = $('imageModelNote').textContent = modelLoadError;
+  modelsReady = false; renderView();
+});
 api('/api/health').then(health => {
   $('healthText').textContent = health.comfy ? 'ComfyUI 연결됨' : 'ComfyUI 연결 필요'; $('health').classList.toggle('offline',!health.comfy);
   if (!health.comfy && editEpoch === 0) status(health.error || 'ComfyUI 서버를 먼저 시작해주세요.',true);

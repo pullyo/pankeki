@@ -15,3 +15,6 @@ Pankeki의 MIT 라이선스는 별도 조건이 있는 외부 소프트웨어·�
 `docs/images/studio-preview.png`는 실제 개발 화면이며 AI 생성 예시 이미지를 포함합니다. 모델 출력물의 이용 조건은 모델 제공자의 조건을 함께 확인해야 합니다. 공개 코드의 MIT 표기를 제3자 모델·출력물의 무조건적인 이용 허가로 해석하지 마세요.
 
 폰트 파일과 다운로드한 Lucide/Pretendard 패키지는 이 스냅샷에 포함하지 않습니다. 웹 빌드는 시스템 글꼴과 소스에 포함된 기본 SVG 아이콘을 사용합니다.
+
+
+The original SVG/PNG motion demo artwork is dedicated under CC0-1.0; see web/assets/motion-demo/LICENSE.txt. UI preview code is unfinished and shares the application licenses.

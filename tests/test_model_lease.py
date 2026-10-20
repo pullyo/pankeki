@@ -58,7 +58,7 @@ except OSError as exc:
 class ModelLeaseTests(unittest.TestCase):
     def setUp(self):
         # Ancestor directory handles require read access; the workspace has it,
-        # whereas restricted user profiles may permit traversal only.
+        # whereas sandboxed C:\Users\Administrator may permit traversal only.
         self.temp = tempfile.TemporaryDirectory(prefix="lease-test-", dir=Path(__file__).resolve().parents[1])
         self.addCleanup(self.temp.cleanup)
         self.root = Path(self.temp.name)

@@ -1,0 +1,507 @@
+{
+  "fixtureVersion": 1,
+  "purpose": "Contract-only synthetic PNG and geometry; no user images. cases are future implementation expectations.",
+  "document": {
+    "version": 2,
+    "id": "synthetic-character",
+    "canvas": {
+      "width": 32,
+      "height": 32,
+      "colorSpace": "srgb",
+      "alpha": "straight"
+    },
+    "brief": {
+      "profile": "original",
+      "name": "Synthetic geometry fixture",
+      "brief": "",
+      "appearance": "",
+      "detail": "",
+      "notes": "No real character or user image.",
+      "prompt": "",
+      "palette": [
+        "#B89166",
+        "#385C59",
+        "#E9DCC8"
+      ],
+      "useBrief": true
+    },
+    "assets": [
+      {
+        "id": "sha256:32b80b1d9b7b3d1bca7fd4066672c335b6a633e69dd0cac9df65dc2ab0098795",
+        "mime": "image/png",
+        "width": 32,
+        "height": 32,
+        "data": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAMElEQVR4nO3OIQEAAAgDMPr3oAYhKAQxbibmVzt9SSUgICAgICAgICAgICAgIJAOPEHu0LWw0880AAAAAElFTkSuQmCC"
+      },
+      {
+        "id": "sha256:a83bfbbde1c3988877b50c77c58821f122f40a50e97fa9c0af5653bf136f3ea9",
+        "mime": "image/png",
+        "width": 8,
+        "height": 8,
+        "data": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAGElEQVR4nGOYZmPDgA/DGAdw4KGlACcGAM2YXoGrg3YiAAAAAElFTkSuQmCC"
+      },
+      {
+        "id": "sha256:4f3155c064c869b1243bbf15ee2f870d2523af1b199b6b1f9ed09b12be3087c9",
+        "mime": "image/png",
+        "width": 8,
+        "height": 8,
+        "data": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAgAAAAICAYAAADED76LAAAAGElEQVR4nGPQrahlwIdhjAM48NBSgBMDADnFY4GdO/7KAAAAAElFTkSuQmCC"
+      },
+      {
+        "id": "sha256:36440a367d14d100f072474ebb2526788c0672447d8a7abae51c4398539542d2",
+        "mime": "image/png",
+        "width": 32,
+        "height": 32,
+        "data": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAAAAABWESUoAAAAF0lEQVR4nGNgGAWjYBCD/1Aw0hUMEAAAxe8/wa6RgeoAAAAASUVORK5CYII="
+      },
+      {
+        "id": "sha256:10da1dff3837404c0d9ab594ed59afd787d17a9ada2f5d352243043e9094185b",
+        "mime": "image/png",
+        "width": 32,
+        "height": 32,
+        "data": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAAAAABWESUoAAAAFklEQVR4nGNgGHngPxSMdAWjYBQQAgCg9D/BmNHxzwAAAABJRU5ErkJggg=="
+      },
+      {
+        "id": "sha256:a1c7d8b4deb27f4af996afab3d3f07e5ea91eef26948e12f052a091607ab50b5",
+        "mime": "image/png",
+        "width": 32,
+        "height": 32,
+        "data": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAAAAABWESUoAAAAFklEQVR4nGNgGAXDFPyHgpGuYBRQAAAXXT/BsspHcAAAAABJRU5ErkJggg=="
+      }
+    ],
+    "candidates": [
+      {
+        "id": "source-fixture",
+        "createdAt": "2026-10-20T00:00:00.000Z",
+        "label": "Synthetic source",
+        "brief": {
+          "profile": "original",
+          "name": "Synthetic geometry fixture",
+          "brief": "",
+          "appearance": "",
+          "detail": "",
+          "notes": "No real character or user image.",
+          "prompt": "",
+          "palette": [
+            "#B89166",
+            "#385C59",
+            "#E9DCC8"
+          ],
+          "useBrief": true
+        },
+        "request": {
+          "mode": "txt2img",
+          "prompt": "",
+          "negative": "",
+          "seed": 1,
+          "steps": 1,
+          "width": 512,
+          "height": 512,
+          "cfg": 1,
+          "denoise": 1,
+          "halo": 32,
+          "feather": 4,
+          "cache": true,
+          "roi": false,
+          "preview": true,
+          "preview_interval": 0.2,
+          "sampler": "euler",
+          "scheduler": "normal"
+        },
+        "parentId": null,
+        "metrics": {},
+        "kind": "upload",
+        "assetId": "sha256:32b80b1d9b7b3d1bca7fd4066672c335b6a633e69dd0cac9df65dc2ab0098795"
+      }
+    ],
+    "selectionHistory": [],
+    "sourceCandidateId": "source-fixture",
+    "parts": [
+      {
+        "id": "body",
+        "name": "Synthetic body",
+        "parentId": null,
+        "order": 0,
+        "sourceAssetId": "sha256:32b80b1d9b7b3d1bca7fd4066672c335b6a633e69dd0cac9df65dc2ab0098795",
+        "maskAssetId": "sha256:36440a367d14d100f072474ebb2526788c0672447d8a7abae51c4398539542d2",
+        "materialAssetId": "sha256:a83bfbbde1c3988877b50c77c58821f122f40a50e97fa9c0af5653bf136f3ea9",
+        "sourceRect": [12,20,8,8],
+        "transform": [1,0,0,1,12,20],
+        "visible": true,
+        "opacity": 1,
+        "lockMaterial": false,
+        "lockTransform": false,
+        "backgroundReady": true
+      },
+      {
+        "id": "eye",
+        "name": "Synthetic eye",
+        "parentId": "body",
+        "order": 1,
+        "sourceAssetId": "sha256:32b80b1d9b7b3d1bca7fd4066672c335b6a633e69dd0cac9df65dc2ab0098795",
+        "maskAssetId": "sha256:10da1dff3837404c0d9ab594ed59afd787d17a9ada2f5d352243043e9094185b",
+        "materialAssetId": "sha256:a83bfbbde1c3988877b50c77c58821f122f40a50e97fa9c0af5653bf136f3ea9",
+        "sourceRect": [12,7,8,8],
+        "transform": [1,0,0,1,0,-13],
+        "visible": true,
+        "opacity": 1,
+        "lockMaterial": false,
+        "lockTransform": false,
+        "backgroundReady": true
+      },
+      {
+        "id": "mouth",
+        "name": "Synthetic mouth",
+        "parentId": "body",
+        "order": 2,
+        "sourceAssetId": "sha256:32b80b1d9b7b3d1bca7fd4066672c335b6a633e69dd0cac9df65dc2ab0098795",
+        "maskAssetId": "sha256:a1c7d8b4deb27f4af996afab3d3f07e5ea91eef26948e12f052a091607ab50b5",
+        "materialAssetId": "sha256:a83bfbbde1c3988877b50c77c58821f122f40a50e97fa9c0af5653bf136f3ea9",
+        "sourceRect": [12,14,8,8],
+        "transform": [1,0,0,1,0,-6],
+        "visible": true,
+        "opacity": 1,
+        "lockMaterial": false,
+        "lockTransform": false,
+        "backgroundReady": true
+      }
+    ],
+    "rigs": [
+      {
+        "id": "rig-body",
+        "partId": "body",
+        "materialAssetId": "sha256:a83bfbbde1c3988877b50c77c58821f122f40a50e97fa9c0af5653bf136f3ea9",
+        "rigHash": "4f002f16dd95e65333c60d1e862b844b5a8a2aa196c13305cbb5d777d25057a2",
+        "status": "ready",
+        "vertices": [0,0,8,0,8,8,0,8],
+        "uv": [0,0,1,0,1,1,0,1],
+        "triangles": [0,1,2,0,2,3],
+        "bindings": [
+          {
+            "parameterId": "breath",
+            "keys": [
+              {
+                "at": 0,
+                "deltas": [0,0,0,0,0,0,0,0]
+              },
+              {
+                "at": 0.5,
+                "deltas": [-0.1,-0.1,0.1,-0.1,0.1,0.1,-0.1,0.1]
+              },
+              {
+                "at": 1,
+                "deltas": [-0.2,-0.2,0.2,-0.2,0.2,0.2,-0.2,0.2]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "rig-eye",
+        "partId": "eye",
+        "materialAssetId": "sha256:a83bfbbde1c3988877b50c77c58821f122f40a50e97fa9c0af5653bf136f3ea9",
+        "rigHash": "130f288f8632c3064c903bf0cefed6cbf7d7de7114553202ae064e037f8c6cd4",
+        "status": "ready",
+        "vertices": [0,0,8,0,8,8,0,8],
+        "uv": [0,0,1,0,1,1,0,1],
+        "triangles": [0,1,2,0,2,3],
+        "bindings": [
+          {
+            "parameterId": "eyeOpen",
+            "keys": [
+              {
+                "at": 0,
+                "deltas": [0,3.9,0,3.9,0,-3.9,0,-3.9]
+              },
+              {
+                "at": 0.5,
+                "deltas": [0,1.95,0,1.95,0,-1.95,0,-1.95]
+              },
+              {
+                "at": 1,
+                "deltas": [0,0,0,0,0,0,0,0]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "rig-mouth",
+        "partId": "mouth",
+        "materialAssetId": "sha256:a83bfbbde1c3988877b50c77c58821f122f40a50e97fa9c0af5653bf136f3ea9",
+        "rigHash": "538e479b108e3b85d0efa377aad064cbf29f5b4b28c17f6c411bba885c833c4c",
+        "status": "ready",
+        "vertices": [0,0,8,0,8,8,0,8],
+        "uv": [0,0,1,0,1,1,0,1],
+        "triangles": [0,1,2,0,2,3],
+        "bindings": [
+          {
+            "parameterId": "mouthOpen",
+            "keys": [
+              {
+                "at": 0,
+                "deltas": [0,0,0,0,0,0,0,0]
+              },
+              {
+                "at": 0.5,
+                "deltas": [0,-0.5,0,-0.5,0,0.5,0,0.5]
+              },
+              {
+                "at": 1,
+                "deltas": [0,-1,0,-1,0,1,0,1]
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "parameters": [
+      {
+        "id": "eyeOpen",
+        "min": 0,
+        "max": 1,
+        "default": 1,
+        "value": 1
+      },
+      {
+        "id": "mouthOpen",
+        "min": 0,
+        "max": 1,
+        "default": 0,
+        "value": 0
+      },
+      {
+        "id": "breath",
+        "min": 0,
+        "max": 1,
+        "default": 0,
+        "value": 0
+      }
+    ],
+    "presets": [
+      {
+        "id": "neutral",
+        "values": {
+          "eyeOpen": 1,
+          "mouthOpen": 0,
+          "breath": 0
+        },
+        "rigHashes": [
+          "4f002f16dd95e65333c60d1e862b844b5a8a2aa196c13305cbb5d777d25057a2",
+          "130f288f8632c3064c903bf0cefed6cbf7d7de7114553202ae064e037f8c6cd4",
+          "538e479b108e3b85d0efa377aad064cbf29f5b4b28c17f6c411bba885c833c4c"
+        ]
+      }
+    ],
+    "motions": [],
+    "selection": {
+      "activeCandidateId": "source-fixture",
+      "compareCandidateIds": [],
+      "partId": "eye"
+    },
+    "backgroundAssetId": "sha256:32b80b1d9b7b3d1bca7fd4066672c335b6a633e69dd0cac9df65dc2ab0098795"
+  },
+  "legacyV1": {
+    "version": 1,
+    "brief": {
+      "profile": "original",
+      "name": "Synthetic geometry fixture",
+      "brief": "",
+      "appearance": "",
+      "detail": "",
+      "notes": "No real character or user image.",
+      "prompt": "",
+      "palette": [
+        "#B89166",
+        "#385C59",
+        "#E9DCC8"
+      ],
+      "useBrief": true
+    },
+    "versions": [
+      {
+        "id": "source-fixture",
+        "createdAt": "2026-10-20T00:00:00.000Z",
+        "label": "Synthetic source",
+        "image": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAAgCAYAAABzenr0AAAAMElEQVR4nO3OIQEAAAgDMPr3oAYhKAQxbibmVzt9SSUgICAgICAgICAgICAgIJAOPEHu0LWw0880AAAAAElFTkSuQmCC",
+        "brief": {
+          "profile": "original",
+          "name": "Synthetic geometry fixture",
+          "brief": "",
+          "appearance": "",
+          "detail": "",
+          "notes": "No real character or user image.",
+          "prompt": "",
+          "palette": [
+            "#B89166",
+            "#385C59",
+            "#E9DCC8"
+          ],
+          "useBrief": true
+        },
+        "request": {
+          "mode": "txt2img",
+          "prompt": "",
+          "negative": "",
+          "seed": 1,
+          "steps": 1,
+          "width": 512,
+          "height": 512,
+          "cfg": 1,
+          "denoise": 1,
+          "halo": 32,
+          "feather": 4,
+          "cache": true,
+          "roi": false,
+          "preview": true,
+          "preview_interval": 0.2,
+          "sampler": "euler",
+          "scheduler": "normal"
+        },
+        "parentId": null,
+        "metrics": {},
+        "kind": "upload"
+      }
+    ],
+    "selectionHistory": []
+  },
+  "cases": [
+    {
+      "id": "v1-import",
+      "input": "legacyV1",
+      "expected": {
+        "parts": [],
+        "rigs": [],
+        "readyParameters": [],
+        "compareCandidateIds": [],
+        "sourceCandidateId": "source-fixture",
+        "originalImageBytesPreserved": true
+      }
+    },
+    {
+      "id": "v1-reject-unknown-field",
+      "input": "legacyV1",
+      "patch": {
+        "parts": []
+      },
+      "expected": {
+        "throws": "Unsupported project field: parts"
+      }
+    },
+    {
+      "id": "three-parameter-midpoints",
+      "values": {
+        "eyeOpen": 0.5,
+        "mouthOpen": 0.5,
+        "breath": 0.5
+      },
+      "expected": {
+        "localFirstVertex": {
+          "body": [-0.1,-0.1],
+          "eye": [0,1.95],
+          "mouth": [0,-0.5]
+        },
+        "imageGenerationCalls": 0
+      }
+    },
+    {
+      "id": "material-replacement-invalidates-rig",
+      "replace": {
+        "partId": "eye",
+        "materialAssetId": "sha256:4f3155c064c869b1243bbf15ee2f870d2523af1b199b6b1f9ed09b12be3087c9"
+      },
+      "expected": {
+        "staleRigIds": [
+          "rig-eye"
+        ],
+        "stalePresetIds": [
+          "neutral"
+        ],
+        "blockedParameterPartIds": [
+          "eye"
+        ],
+        "retainedOldAssetId": "sha256:a83bfbbde1c3988877b50c77c58821f122f40a50e97fa9c0af5653bf136f3ea9"
+      }
+    },
+    {
+      "id": "undo-source-does-not-reuse-generation",
+      "submitted": {
+        "project_token": "fixture-open-A",
+        "source_revision": 4,
+        "client_request_id": "fixture-request-1",
+        "revision": 1
+      },
+      "afterSourceReplace": {
+        "source_revision": 5
+      },
+      "afterUndo": {
+        "source_revision": 6,
+        "document_revision": 9
+      },
+      "lateReply": {
+        "project_token": "fixture-open-A",
+        "source_revision": 4,
+        "client_request_id": "fixture-request-1",
+        "revision": 1,
+        "is_current": true
+      },
+      "expected": {
+        "appendReply": false,
+        "applyProposal": false
+      }
+    },
+    {
+      "id": "same-document-new-open-token",
+      "documentId": "synthetic-character",
+      "submittedProjectToken": "fixture-open-A",
+      "currentProjectToken": "fixture-open-B",
+      "expected": {
+        "appendReply": false,
+        "applyProposal": false
+      }
+    },
+    {
+      "id": "resource-budget-overflow",
+      "accountingInput": {
+        "utf8JsonBytes": 67108865
+      },
+      "expected": {
+        "save": false,
+        "discardCandidates": false
+      }
+    },
+    {
+      "id": "parameter-out-of-range",
+      "values": {
+        "eyeOpen": 1.01,
+        "mouthOpen": 0,
+        "breath": 0
+      },
+      "expected": {
+        "error": "parameter_out_of_range"
+      }
+    },
+    {
+      "id": "source-switch-does-not-transplant-parts",
+      "sceneOverride": {
+        "sourceAssetId": "sha256:4f3155c064c869b1243bbf15ee2f870d2523af1b199b6b1f9ed09b12be3087c9",
+        "backgroundAssetId": null,
+        "canvas": {
+          "width": 8,
+          "height": 8,
+          "colorSpace": "srgb",
+          "alpha": "straight"
+        }
+      },
+      "expected": {
+        "blockedParts": [
+          "body",
+          "eye",
+          "mouth"
+        ],
+        "reason": "source_mismatch",
+        "automaticMaskRemap": false
+      }
+    }
+  ]
+}

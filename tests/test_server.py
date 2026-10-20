@@ -1,5 +1,6 @@
 """Real loopback HTTP tests; controlled runners do not perform GPU inference."""
 import base64
+import hashlib
 import http.client
 import io
 import json
@@ -9,6 +10,7 @@ import struct
 import tempfile
 import threading
 import unittest
+from unittest.mock import patch
 import zlib
 
 from PIL import Image, ImageOps
@@ -51,6 +53,7 @@ class ServerTests(unittest.TestCase):
         self.server.shutdown()
         self.server.server_close()
         self.server.manager.close()
+        self.server.engine.close()
         self.thread.join(timeout=2)
         self.temp.cleanup()
 
@@ -263,6 +266,83 @@ class ServerTests(unittest.TestCase):
         self.assertIn('controlled failure', public['error'])
         self.assertIsNone(public['result'])
         self.assertEqual(self.request('GET', '/api/results/' + job['job_id'])[0], 404)
+
+    def configure_two_models(self):
+        self.server.shutdown()
+        self.server.server_close()
+        self.server.manager.close()
+        self.server.engine.close()
+        self.thread.join(timeout=2)
+        models = {}
+        for model_id, filename in [('sdxl-base', 'sd_xl_base_1.0.safetensors'), ('sd-turbo', 'sd_turbo.safetensors')]:
+            path = self.root / filename
+            path.write_bytes(model_id.encode())
+            models[model_id] = {'model_name': filename, 'model_path': str(path), 'manifest': {
+                'schema': 1, 'model_name': filename, 'model_sha256': hashlib.sha256(path.read_bytes()).hexdigest(),
+                'comfy_commit': '1' * 40, 'input_hashes': {},
+                'software': {'torch': 'test', 'cuda': 'test', 'dtype': 'test', 'attention': 'test', 'adapter_revision': 'test'}}}
+        self.server = make_server(self.root, port=0, config={'models': models, 'managed_builtin_only': True})
+        self.server.engine.client = self.client
+        self.thread = threading.Thread(target=self.server.serve_forever, kwargs={'poll_interval': .02}, daemon=True)
+        self.thread.start()
+
+    def test_models_endpoint_lists_local_availability_and_defaults_without_comfy_calls(self):
+        self.configure_two_models()
+        code, _, raw = self.request('GET', '/api/models')
+        self.assertEqual(code, 200, raw)
+        info = json.loads(raw)
+        self.assertEqual(info['default_model_id'], 'sdxl-base')
+        models = {row['id']: row for row in info['models']}
+        self.assertEqual(set(models), {'sdxl-base', 'sd-turbo'})
+        self.assertTrue(all(row['available'] for row in models.values()))
+        self.assertEqual(models['sdxl-base']['defaults']['steps'], 25)
+        self.assertEqual(models['sd-turbo']['defaults']['width'], 512)
+        self.assertEqual(self.client.calls, 0)
+        self.assertNotIn('model_path', raw.decode())
+
+    def test_model_defaulting_happens_before_queue_and_invalid_selection_preserves_revision(self):
+        self.configure_two_models()
+        self.server.manager.runner = lambda job, preview: {'accepted': job.request}
+        first = self.submit({'prompt': 'single character'})
+        accepted = self.wait(first)['result']['accepted']
+        self.assertEqual(accepted['model_id'], 'sdxl-base')
+        self.assertEqual((accepted['width'], accepted['steps'], accepted['cfg']), (1024, 25, 6))
+        previous_revision = self.server.manager.revisions['http-tests']
+        for value in ['unknown', None, 4]:
+            code, _, raw = self.request('POST', '/api/jobs', {'session': 'http-tests', 'request': {'model_id': value}})
+            self.assertEqual(code, 400, raw)
+            self.assertEqual(self.server.manager.revisions['http-tests'], previous_revision)
+        (self.root / 'sd_xl_base_1.0.safetensors').unlink()
+        code, _, raw = self.request('POST', '/api/jobs', {'session': 'http-tests', 'request': {'model_id': 'sdxl-base'}})
+        self.assertEqual(code, 400, raw)
+        self.assertEqual(self.server.manager.revisions['http-tests'], previous_revision)
+        second = self.submit({'model_id': 'sd-turbo', 'steps': 9, 'width': 768, 'height': 768})
+        explicit = self.wait(second)['result']['accepted']
+        self.assertEqual((explicit['model_id'], explicit['steps'], explicit['width']), ('sd-turbo', 9, 768))
+
+    def test_failed_server_bind_closes_worker_and_engine_resources(self):
+        from pankeki.engine import Engine
+        from pankeki.jobs import JobManager
+        engines, managers = [], []
+        def capture_engine(*args, **kwargs):
+            engine = Engine(*args, **kwargs)
+            engines.append(engine)
+            return engine
+        def capture_manager(*args, **kwargs):
+            manager = JobManager(*args, **kwargs)
+            managers.append(manager)
+            return manager
+        try:
+            with patch('pankeki.server.Engine', side_effect=capture_engine), patch('pankeki.server.JobManager', side_effect=capture_manager), patch('pankeki.server.ThreadingHTTPServer', side_effect=OSError('bind failed')):
+                with self.assertRaises(OSError):
+                    make_server(self.root, port=self.server.server_port)
+            self.assertTrue(engines[0]._closed)
+            self.assertFalse(managers[0].worker.is_alive())
+        finally:
+            for manager in managers:
+                manager.close()
+            for engine in engines:
+                engine.close()
 
 
 if __name__ == '__main__':

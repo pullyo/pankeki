@@ -1,0 +1,10 @@
+Pankeki motion demo artwork
+SPDX-License-Identifier: CC0-1.0
+
+The original SVG drawings and derived PNG files in this folder were authored
+for Pankeki on 2026-10-20. No third-party character art, generated image,
+downloaded model, brand logo, or stock imagery is included in these drawings.
+To the extent possible under law, the creators dedicate these original demo
+artworks to the public domain under CC0 1.0 Universal.
+
+The application modules and repository materials retain their own licenses.

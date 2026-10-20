@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="68" height="36" viewBox="0 0 68 36">
+ <title>Pankeki original demo — prepared mouth interior</title>
+ <path d="M7 6Q34-1 61 6C61 39 7 39 7 6Z" fill="#69301e" stroke="#542b1b" stroke-width="3" stroke-linejoin="round"/>
+ <path d="M12 7Q34 3 56 7L53 13Q34 17 15 13Z" fill="#fff2d6"/>
+ <path d="M20 28c1-14 27-14 28 0-8 7-20 7-28 0Z" fill="#e98c7c"/>
+ <path d="M25 25q9-6 18 0" fill="none" stroke="#f7b5a1" stroke-width="2.5" stroke-linecap="round"/>
+</svg>

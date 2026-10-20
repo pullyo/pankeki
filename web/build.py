@@ -59,7 +59,15 @@ def build():
     logo = ROOT/'assets'/'pankeki-selected-base.png'
     logo_url = 'data:image/png;base64,' + base64.b64encode(logo.read_bytes()).decode()
     # CharacterDesign must be available before application initialization.
-    scripts = '\n;\n'.join((ROOT/'src'/name).read_text(encoding='utf-8') for name in ('profiles.js', 'app.js'))
+    scripts = '\n;\n'.join((ROOT/'src'/name).read_text(encoding='utf-8') for name in (
+        'profiles.js', 'character-document.js', 'character-renderer.js',
+        'character-export.js', 'character-motion.js', 'app.js', 'studio.js'))
+    # The original demo follows the same validated v2 load path as user projects.
+    # Embed its own PNG bytes; never rely on an asset-serving route or remote URL.
+    demo = json.loads((ROOT/'assets'/'motion-demo'/'project.json').read_text(encoding='utf-8'))
+    demo_json = json.dumps(demo, ensure_ascii=False, separators=(',', ':'))
+    demo_json = demo_json.replace('<', '\\u003c').replace('>', '\\u003e').replace('&', '\\u0026')
+    html = html.replace('{{MOTION_DEMO_JSON}}', demo_json)
     html = html.replace('{{STYLE}}', css).replace('{{SCRIPT}}', scripts).replace('{{LOGO_URL}}', logo_url)
     html = re.sub(r'\{\{icon:([a-z0-9-]+)\}\}', icon, html)
     # Nested JavaScript object literals may contain '{{' legitimately.

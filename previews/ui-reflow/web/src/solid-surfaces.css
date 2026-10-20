@@ -1,0 +1,56 @@
+/* Latest user steering: remove glass, keep the selected structure.
+   Solid surfaces, neutral dividers and quiet elevation replace blur/glow. */
+body.lg-reflow {
+  --page:#f4f1eb;
+  --surface:#fffdf9;
+  --canvas:#f9f6ef;
+  --line:#e2dcd2;
+  --glass-chrome:#fffdf9;
+  --glass-panel:#fffdf9;
+  --glass-border:#e4ded4;
+  --glass-shadow:none;
+  background:#f4f1eb;
+}
+body.lg-reflow::before { display:none; }
+body.lg-reflow *,body.lg-reflow *::before,body.lg-reflow *::after {
+  -webkit-backdrop-filter:none!important;
+  backdrop-filter:none!important;
+}
+.lg-reflow .app-header { background:#fffdf9; border-color:#e4ded4; box-shadow:0 1px 3px #3b2a1408; }
+.lg-reflow .studio-primary-nav,
+body.lg-reflow:is([data-studio-screen=design],[data-studio-screen=inpaint]) .studio-primary-nav { background:#fffdf9; border-color:#e4ded4; box-shadow:none; }
+.lg-reflow .studio-primary-nav button:hover { background:#f8f3eb; }
+.lg-reflow .studio-primary-nav button[aria-current] { background:#faf0e1; }
+.lg-reflow .chat-panel,.lg-reflow .motion-pane,.lg-reflow .lg-motion-transport,
+.lg-reflow .home-sidebar,.lg-reflow .home-ready-card,.lg-reflow .current-project-card,
+.lg-reflow .motion-export-panel,.lg-reflow .warm-side-panel {
+  background:#fffdf9;
+  border-color:#e4ded4;
+  box-shadow:none;
+}
+.lg-reflow .canvas-card { border-color:#e6dfd4; box-shadow:none; background:#fbf8f2; }
+.lg-reflow .canvas-viewport { background:#f8f4ec; }
+.lg-reflow .editor-tools,.lg-reflow .canvas-topbar,.lg-reflow .header-actions .button {
+  background:#fffdf8;
+  border-color:#e1d8ca;
+  box-shadow:0 2px 5px #4b35100a;
+}
+.lg-reflow .button { background:#fffdf9; border-color:#ded6ca; box-shadow:none; }
+.lg-reflow .subtle-button { background:transparent; border-color:transparent; box-shadow:none; }
+.lg-reflow .primary-button,.lg-reflow .export-button,.lg-reflow .dark-button {
+  background:var(--accent);
+  color:#fff;
+  border-color:#b44b0d;
+  box-shadow:0 1px 2px #6b310c12;
+}
+.lg-reflow .lg-motion-actions #motionLoadDemo { background:#fff7ec; border-color:#e1d5c3; }
+.lg-reflow .lg-motion-actions #motionSaveProject { background:transparent; border-color:transparent; }
+.lg-reflow .motion-part-list [role=option][aria-selected=true] { background:#fff0dc; border-color:#d88743; }
+.lg-reflow .lg-timeline-track { background:#f0e9df; }
+.lg-reflow .lg-file-menu-items,.lg-reflow .lg-motion-transport .motion-precision-content { background:#fffdf9; border-color:#ded4c4; box-shadow:0 7px 22px #4a301211; }
+.lg-reflow .motion-precision-tools { background:#fffdf9; border-color:#e4ded4; box-shadow:none; }
+.lg-reflow[data-studio-screen=compare] .compare-waiting,
+.lg-reflow[data-studio-screen=compare] .warm-selected-panel,
+.lg-reflow[data-studio-screen=compare] .compare-panel { background:#fffdf9; border-color:#e4ded4; box-shadow:none; }
+
+.lg-reflow #useResult { background:#fffdf9; }

@@ -31,7 +31,11 @@ async function until(predicate, label) {
   assert.fail(`application never reached: ${label}`);
 }
 
-function page({ autoJobs = false, holdRestore = false } = {}) {
+const MODEL_CATALOG = { default_model_id: 'sd-turbo', models: [
+  { id:'sd-turbo',label:'SD Turbo · 빠른 초안',available:true,description:'빠른 초안',defaults:{width:512,height:512,steps:1,cfg:1,denoise:1,sampler:'euler',scheduler:'normal'} },
+  { id:'sdxl-base',label:'SDXL Base 1.0',available:true,description:'세부 묘사 비교',defaults:{width:1024,height:1024,steps:25,cfg:6,denoise:.55,sampler:'dpmpp_2m',scheduler:'karras'} }
+] };
+function page({ autoJobs = false, holdRestore = false, catalog = MODEL_CATALOG } = {}) {
   const elements = new Map(), blobs = new Map(), images = new Map(), heldImages = new Set();
   const requests = [], polls = new Map(), cancellations = [], revoked = [], writes = [], restores = [];
   const objectURLs = new Map(), downloads = [], exportCanvases = [];
@@ -200,6 +204,10 @@ function page({ autoJobs = false, holdRestore = false } = {}) {
     },
     fetch: async (url, options = {}) => {
       if (url === '/api/health') return response({ comfy: true });
+      if (url === '/api/models') {
+        if (catalog === null) throw Error('catalog offline');
+        return response(catalog);
+      }
       if (url === '/api/jobs') {
         const pending = { ...deferred(), id: 'job-' + (requests.length + 1), body: JSON.parse(options.body) };
         requests.push(pending);
@@ -282,6 +290,28 @@ function page({ autoJobs = false, holdRestore = false } = {}) {
     input, project, response, images, heldImages, blobs, requests, polls, cancellations, revoked, restores, writes,
     downloads, exportCanvases, Event };
 }
+
+test('selected model preset reaches the submitted job and the saved candidate', async () => {
+  const ui = page({autoJobs:true,catalog:{...MODEL_CATALOG,default_model_id:'sdxl-base'}});
+  await settle();
+  ui.element('candidateCount').value = '1';
+  assert.equal(await ui.studio().generate(), true);
+  const request = ui.requests[0].body.request;
+  assert.equal(request.model_id, 'sdxl-base');
+  assert.deepEqual([request.width,request.height,request.steps,request.cfg,request.sampler,request.scheduler], [1024,1024,25,6,'dpmpp_2m','karras']);
+  assert.equal(ui.state().project.versions[0].request.model_id, 'sdxl-base');
+  await ui.input('imageModel','sd-turbo');
+  assert.equal(await ui.studio().generate(), true);
+  assert.deepEqual([ui.requests[1].body.request.model_id,ui.requests[1].body.request.steps,ui.requests[1].body.request.cfg], ['sd-turbo',1,1]);
+});
+
+test('unavailable model catalog blocks generation instead of silently using Turbo defaults', async () => {
+  const ui = page({autoJobs:true,catalog:null});
+  await settle();
+  assert.equal(await ui.studio().generate(), false);
+  assert.equal(ui.requests.length, 0);
+  assert.match(ui.element('status').textContent, /모델/);
+});
 
 test('newest source wins when decode and original-file reads finish out of order', async () => {
   for (const delayRead of [false, true]) {

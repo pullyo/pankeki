@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="160" height="44" viewBox="0 0 160 44">
+ <title>Pankeki original demo — two separate illustrated eyes</title>
+ <g stroke="#64381e" stroke-width="3">
+  <ellipse cx="38" cy="23" rx="18" ry="19" fill="#fff8de"/>
+  <ellipse cx="122" cy="23" rx="18" ry="19" fill="#fff8de"/>
+ </g>
+ <ellipse cx="40" cy="25" rx="10" ry="14" fill="#4b2c1b"/>
+ <ellipse cx="120" cy="25" rx="10" ry="14" fill="#4b2c1b"/>
+ <ellipse cx="43" cy="19" rx="3.8" ry="4.5" fill="#fff"/>
+ <ellipse cx="123" cy="19" rx="3.8" ry="4.5" fill="#fff"/>
+ <circle cx="35" cy="30" r="2" fill="#dca164"/><circle cx="115" cy="30" r="2" fill="#dca164"/>
+</svg>

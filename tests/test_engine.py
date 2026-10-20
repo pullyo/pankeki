@@ -518,6 +518,165 @@ class EngineTests(unittest.TestCase):
         recipe = json.loads((Path(result["image_path"]).parent / "recipe.json").read_text(encoding="utf-8"))
         self.assertEqual(result["metrics"]["recipe_sha256"], canonical_hash(recipe))
 
+    def multiple_models(self, *, policy='strict', missing_sdxl=False):
+        turbo = self.root / 'sd_turbo.safetensors'
+        turbo.write_bytes(self.model.read_bytes())
+        self.model = turbo
+        turbo_manifest = copy.deepcopy(self.config['manifest'])
+        turbo_manifest.update(model_name=turbo.name, model_sha256=hashlib.sha256(turbo.read_bytes()).hexdigest())
+        sdxl = self.root / 'sd_xl_base_1.0.safetensors'
+        sdxl.write_bytes(b'separate SDXL checkpoint fixture')
+        second_manifest = copy.deepcopy(self.config['manifest'])
+        second_manifest.update(model_name=sdxl.name, model_sha256=hashlib.sha256(sdxl.read_bytes()).hexdigest())
+        config = {'managed_builtin_only': True, 'fingerprint_policy': policy, 'models': {
+            'sd-turbo': {'model_name': turbo.name, 'model_path': str(turbo), 'manifest': turbo_manifest},
+            'sdxl-base': {'model_name': sdxl.name, 'model_path': str(sdxl), 'manifest': second_manifest},
+        }}
+        if missing_sdxl:
+            sdxl.unlink()
+        engine = Engine(self.root, config=config, client=self.client)
+        manager = JobManager(engine)
+        self.addCleanup(engine.close)
+        self.addCleanup(manager.close)
+        return engine, manager, sdxl, config
+
+    def test_selected_model_defaults_reach_actual_graph_and_output_dimensions(self):
+        engine, manager, _, _ = self.multiple_models()
+        result = self.assert_success(self.run_job({'prompt': 'one character'}, manager))
+        graph = self.client.workflows[-1]
+        self.assertEqual(graph['1']['inputs']['ckpt_name'], 'sd_xl_base_1.0.safetensors')
+        self.assertEqual((graph['4']['inputs']['width'], graph['4']['inputs']['height']), (1024, 1024))
+        self.assertEqual((graph['5']['inputs']['steps'], graph['5']['inputs']['cfg'],
+                          graph['5']['inputs']['sampler_name'], graph['5']['inputs']['scheduler']),
+                         (25, 6, 'dpmpp_2m', 'karras'))
+        with Image.open(result['image_path']) as output:
+            self.assertEqual(output.size, (1024, 1024))
+        recipe = json.loads((Path(result['image_path']).parent / 'recipe.json').read_text(encoding='utf-8'))
+        self.assertEqual(recipe['model_id'], 'sdxl-base')
+        self.assertEqual(recipe['denoise'], .55)
+        self.assertEqual(engine.models_info()['default_model_id'], 'sdxl-base')
+
+    def test_explicit_legacy_settings_survive_named_model_selection(self):
+        _, manager, _, _ = self.multiple_models()
+        request = self.request(model_id='sdxl-base', steps=1, cfg=1, sampler='euler', scheduler='normal', denoise=.75)
+        self.assert_success(self.run_job(request, manager))
+        graph = self.client.workflows[-1]
+        self.assertEqual(graph['1']['inputs']['ckpt_name'], 'sd_xl_base_1.0.safetensors')
+        self.assertEqual(graph['4']['inputs']['width'], 64)
+        self.assertEqual(graph['5']['inputs']['steps'], 1)
+        self.assertEqual(graph['5']['inputs']['cfg'], 1)
+        self.assertEqual(graph['5']['inputs']['scheduler'], 'normal')
+        self.assertEqual(graph['5']['inputs']['sampler_name'], 'euler')
+
+    def test_sdxl_partial_edit_uses_model_denoise_default_and_keeps_exterior_pixels(self):
+        _, manager, _, _ = self.multiple_models()
+        source = Image.new('RGBA', (128, 128), (31, 41, 59, 67))
+        mask = Image.new('L', source.size)
+        mask.paste(255, (32, 40, 72, 80))
+        result = self.assert_success(self.run_job({'mode': 'inpaint', 'model_id': 'sdxl-base',
+            'source': image_data(source), 'mask': image_data(mask)}, manager))
+        self.assertEqual(self.client.workflows[-1]['5']['inputs']['denoise'], .55)
+        self.assertEqual(self.client.workflows[-1]['5']['inputs']['steps'], 25)
+        with Image.open(result['image_path']) as output:
+            actual = np.asarray(output)
+        selected = np.asarray(mask) != 0
+        self.assertTrue(np.array_equal(actual[~selected], np.asarray(source)[~selected]))
+        self.assertTrue(np.array_equal(actual[..., 3], np.asarray(source)[..., 3]))
+
+    def test_model_switch_isolates_exact_cache_and_checks_only_selected_checkpoint(self):
+        _, manager, sdxl, _ = self.multiple_models()
+        request = self.request(cfg=1, sampler='euler', scheduler='normal', denoise=1)
+        turbo = self.assert_success(self.run_job(dict(request, model_id='sd-turbo'), manager))
+        large = self.assert_success(self.run_job(dict(request, model_id='sdxl-base'), manager))
+        self.assertNotEqual(turbo['metrics']['cache_key'], large['metrics']['cache_key'])
+        self.assertEqual(self.client.workflows[0]['1']['inputs']['ckpt_name'], self.model.name)
+        self.assertEqual(self.client.workflows[1]['1']['inputs']['ckpt_name'], sdxl.name)
+        old = sdxl.stat()
+        sdxl.write_bytes(b'x' * old.st_size)
+        os.utime(sdxl, ns=(old.st_atime_ns, old.st_mtime_ns))
+        turbo_again = self.assert_success(self.run_job(dict(request, model_id='sd-turbo'), manager))
+        self.assertEqual(turbo_again['metrics']['cache'], 'hit')
+        for use_cache in [True, False]:
+            failure = self.run_job(dict(request, model_id='sdxl-base', cache=use_cache), manager)
+            self.assertEqual(failure['state'], 'failed')
+            self.assertIn('Model bytes changed', failure['error'])
+        self.assertEqual(len(self.client.workflows), 2)
+
+    def test_unknown_or_missing_model_never_reaches_adapter_and_available_default_falls_back(self):
+        engine, manager, _, _ = self.multiple_models(missing_sdxl=True)
+        self.assertEqual(engine.models_info()['default_model_id'], 'sd-turbo')
+        info = {row['id']: row for row in engine.models_info()['models']}
+        self.assertFalse(info['sdxl-base']['available'])
+        self.assertTrue(info['sd-turbo']['available'])
+        for model_id in ['unknown', 'sdxl-base', None, 42]:
+            with self.subTest(model_id=model_id):
+                failure = self.run_job(self.request(model_id=model_id), manager)
+                self.assertEqual(failure['state'], 'failed')
+        self.assertEqual(self.client.workflows, [])
+
+    def test_model_manifest_loader_identity_mismatch_fails_closed(self):
+        engine, manager, _, config = self.multiple_models()
+        manager.close()
+        engine.close()
+        config['models']['sdxl-base']['manifest']['model_name'] = 'wrong-checkpoint.safetensors'
+        with self.assertRaisesRegex(ValueError, 'model_name|identity|manifest'):
+            Engine(self.root, config=config, client=self.client)
+
+    def test_checkpoint_cannot_be_mislabeled_as_a_different_model_preset(self):
+        engine, manager, _, config = self.multiple_models()
+        manager.close()
+        engine.close()
+        config['models']['sdxl-base'] = copy.deepcopy(config['models']['sd-turbo'])
+        with self.assertRaisesRegex(ValueError, 'checkpoint|preset|identity'):
+            Engine(self.root, config=config, client=self.client)
+
+    @unittest.skipUnless(os.name == 'nt', 'Windows per-model lease integration')
+    def test_both_named_model_leases_block_changes_and_close_releases_both(self):
+        engine, manager, sdxl, _ = self.multiple_models(policy='windows_read_lock')
+        for model_id, path in [('sd-turbo', self.model), ('sdxl-base', sdxl)]:
+            result = self.assert_success(self.run_job(self.request(model_id=model_id), manager))
+            self.assertEqual(result['metrics']['fingerprint_policy'], 'windows_read_lock')
+            with self.assertRaises(OSError):
+                path.write_bytes(b'blocked during lease')
+        manager.close()
+        engine.close()
+        for path in [self.model, sdxl]:
+            path.write_bytes(b'released after close')
+
+    @unittest.skipUnless(os.name == 'nt', 'Windows partial acquisition cleanup')
+    def test_later_model_digest_failure_releases_already_acquired_lease(self):
+        engine, manager, _, config = self.multiple_models()
+        manager.close()
+        engine.close()
+        config['fingerprint_policy'] = 'windows_read_lock'
+        config['models']['sdxl-base']['manifest']['model_sha256'] = '0' * 64
+        with self.assertRaisesRegex(ValueError, 'SHA256 mismatch'):
+            Engine(self.root, config=config, client=self.client)
+        # Turbo was acquired first. A failed later acquisition must release it.
+        self.model.write_bytes(b'constructor released earlier lease')
+
+    @unittest.skipUnless(os.name == 'nt', 'Windows per-model fallback cleanup')
+    def test_one_unavailable_lease_closes_other_lease_and_falls_back_to_selected_byte_checks(self):
+        engine, manager, _, config = self.multiple_models()
+        manager.close()
+        engine.close()
+        config['fingerprint_policy'] = 'windows_read_lock'
+        from pankeki.model_lease import ReadOnlyModelLease
+        def open_one(path, digest):
+            if Path(path) == self.model:
+                return ReadOnlyModelLease(path, digest)
+            raise OSError('second file has incompatible writer')
+        with patch('pankeki.engine.ReadOnlyModelLease', side_effect=open_one):
+            fallback = Engine(self.root, config=config, client=self.client)
+        fallback_manager = JobManager(fallback)
+        self.addCleanup(fallback.close)
+        self.addCleanup(fallback_manager.close)
+        self.assert_success(self.run_job(self.request(model_id='sd-turbo'), fallback_manager))
+        self.model.write_bytes(b'allowed after whole-registry fallback')
+        failure = self.run_job(self.request(model_id='sd-turbo'), fallback_manager)
+        self.assertEqual(failure['state'], 'failed')
+        self.assertIn('Model bytes changed', failure['error'])
+
 
 if __name__ == "__main__":
     unittest.main()
