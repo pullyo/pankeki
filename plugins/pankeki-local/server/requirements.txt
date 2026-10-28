@@ -1,0 +1,3 @@
+# Installed by Mac/runtime owner, not in the shared app venv by server owner.
+mcp==2.3.0
+Pillow>=12.0,<13

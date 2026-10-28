@@ -1,0 +1,19 @@
+{
+  "purpose": "Design intent for warm Pankeki screen revisions; generated image colors are approximate; not production CSS",
+  "page": "#F8F1E8",
+  "surface": "#FFFCF8",
+  "canvas": "#F3EBE2",
+  "selected": "#FFF0DB",
+  "border": "#E8D9CA",
+  "text": "#4A2B1A",
+  "secondary": "#786353",
+  "primary": "#B95416",
+  "highlight": "#E9A251",
+  "primaryText": "#FFFFFF",
+  "rules": [
+    "Use primary accent for active UI, not a filter over character artworks",
+    "Keep semantic masks and asset hue/color controls meaningful",
+    "Keep readiness and planned-feature labels",
+    "No subscription or unimplemented capabilities copied from the style reference"
+  ]
+}

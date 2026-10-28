@@ -1,0 +1,13 @@
+{
+  "generator": "built-in image_gen",
+  "intent": "generate using user screenshot SD category thumbnail as visual reference",
+  "reference": "/var/folders/mr/p6nxppgs1nld79dtrhl4_zjw0000gn/T/codex-clipboard-572abd9b-f450-4d1c-85b7-3ebe56cd577c.png",
+  "source": "~/.codex/generated_images/01a16368-65f5-76d3-8a8c-76c19428db46/exec-c836f9dd-ceff-4c52-8984-6ef52a7d586d.png",
+  "output": "web/assets/redesign/category-chibi.png",
+  "dimensions": [
+    1619,
+    971
+  ],
+  "prompt": "Use case: illustration-story.\nAsset type: a single image category thumbnail, intended to display at 165x100 pixels inside the existing Pankeki image-generation app.\nInput image 1 is a visual style and subject reference. Recreate ONLY the adorable pink-haired chibi anime girl artwork inside the small category card labeled SD near the bottom right of the reference screenshot; do not recreate any UI.\nSubject: close-up adorable pink-haired chibi anime girl character, two fluffy curled twin tails, rosy cheeks, large sparkling pink eyes, cute little pink bows, cheerful little smile, fully clothed pastel pink-and-cream outfit. Head and shoulders centered.\nStyle: detailed polished 2D anime/chibi illustration, soft painterly highlights and lovely delicate linework, rosy peach-pink palette and warm glow, match the reference SD card direction closely.\nComposition: full-bleed landscape 3:2 illustration, prominent face filling most of the frame, both twin tails visible in the sides, soft warm peach-pink backdrop. Keep the face crisp and recognizable at very small size.\nConstraints: single continuous illustration only. No text, lettering, logos, watermarks, interface, UI, panels, buttons, cards, frames or borders. No other characters. Fully clothed, wholesome and sweet.",
+  "date": "2026-10-22"
+}

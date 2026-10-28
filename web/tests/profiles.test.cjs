@@ -7,6 +7,20 @@ const PNG = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCA
 const brief = () => sanitizeBrief({ profile: 'original', ...profiles.original.example });
 const version = () => ({ id: 'a127f3d8-2026', createdAt: '2026-10-19T12:34:56.000Z', label: '후보 1', image: PNG, brief: brief(), request: { mode: 'txt2img', prompt: 'A desert alchemist', seed: 42 }, parentId: null, metrics: { total_s: 1.2, cache: 'miss', outside_mask_max_error: null } });
 
+test('Animagine prompt format omits automatic profile style/palette and keeps quality tags last only for that model',()=>{
+  const input={profile:'avatar',prompt:'1girl, red scarf, masterpiece, cat ears',brief:'blue eyes',appearance:'short hair',detail:'standing',useBrief:true};
+  const output=buildPrompt(input,'txt2img','animagine-xl-4.0-opt');
+  assert.equal(output,'1girl, red scarf, cat ears, blue eyes, short hair, standing, masterpiece, high score, great score, absurdres');
+  assert.doesNotMatch(output,/Suggested palette|Avatar concept|PRIVATE/);
+  assert.match(buildPrompt(input,'txt2img','sdxl-base'),/Avatar concept/);
+  const candidate=version();candidate.request={mode:'txt2img',model_id:'animagine-xl-4.0-opt',prompt:output,steps:28,cfg:5,sampler:'euler_ancestral',scheduler:'normal',negative:'custom'};
+  assert.equal(parseProject(JSON.stringify(createProject(brief(),[candidate],[]))).versions[0].request.model_id,'animagine-xl-4.0-opt');
+  for(const operation of ['regenerate','recolor']){
+    candidate.request={...candidate.request,mode:'inpaint',edit_operation:operation};
+    assert.throws(()=>createProject(brief(),[candidate],[]),/model|Recolor|field/i);
+  }
+});
+
 test('profiles give distinct visual guidance and English generation examples', () => {
   assert.deepEqual(Object.keys(profiles), ['original', 'comic', 'avatar', 'mascot', 'game']);
   assert.deepEqual(Object.values(profiles).map(profile => profile.label), ['자유 창작', '웹툰·웹소설', '버튜버', '마스코트', '게임']);
@@ -40,14 +54,25 @@ test('sanitization bounds text, validates colors, and safely defaults unknown pr
   assert.equal(sanitizeBrief(null).profile, 'original');
 });
 
-test('compiled prompt fits backend limit and omits private name and notes', () => {
+test('compiled txt2img prompt fits backend limit and omits private name and notes', () => {
   const value = { profile: 'comic', name: 'PRIVATE_NAME', notes: 'PRIVATE_NOTES', prompt: 'p'.repeat(4000), brief: 'b'.repeat(1200), appearance: 'a'.repeat(1200), detail: 'd'.repeat(800) };
-  const output = buildPrompt(value, 'inpaint');
+  const output = buildPrompt(value, 'txt2img');
   assert.ok(output.length <= 10000);
   assert.ok(output.includes('b'.repeat(1200)));
   assert.ok(output.includes('a'.repeat(1200)));
   assert.doesNotMatch(output, /PRIVATE_NAME|PRIVATE_NOTES/);
   assert.throws(() => buildPrompt(value, 'other'), /mode/);
+});
+
+test('inpaint builds only the edit prompt for every profile without mutating the brief', () => {
+  for (const profile of Object.keys(profiles)) {
+    for (const useBrief of [true, false]) {
+      const value = { ...profiles[profile].example, profile, useBrief, prompt: 'Change only the scarf to red. Keep its shape.' };
+      const before = JSON.stringify(value);
+      assert.equal(buildPrompt(value, 'inpaint'), 'Change only the scarf to red. Keep its shape.');
+      assert.equal(JSON.stringify(value), before);
+    }
+  }
 });
 
 test('candidate requests preserve mask, source, and settings without mutating or sharing objects', () => {

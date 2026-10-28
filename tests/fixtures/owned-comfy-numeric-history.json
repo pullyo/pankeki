@@ -1,0 +1,442 @@
+{
+  "schema": 1,
+  "kind": "recorded-real-Comfy-numeric-normalization",
+  "cases": [
+    {
+      "job_id": "5eaf056479c54ca3bfd427035c08159d",
+      "prompt_id": "70ac1f23-f002-43b7-b92c-4c97e04f3bcf",
+      "client_id": "7fc6150b8ef6470482958769508ec594",
+      "submitted_workflow": {
+        "1": {
+          "class_type": "CheckpointLoaderSimple",
+          "inputs": {
+            "ckpt_name": "sd_xl_base_1.0.safetensors"
+          }
+        },
+        "2": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "A simple blue circle and yellow square on a plain white background, flat colored geometric shapes",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "3": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "4": {
+          "class_type": "EmptyLatentImage",
+          "inputs": {
+            "width": 512,
+            "height": 512,
+            "batch_size": 1
+          }
+        },
+        "5": {
+          "class_type": "KSampler",
+          "inputs": {
+            "seed": 2026102801,
+            "steps": 2,
+            "cfg": 5,
+            "sampler_name": "euler",
+            "scheduler": "normal",
+            "denoise": 1.0,
+            "model": [
+              "1",
+              0
+            ],
+            "positive": [
+              "2",
+              0
+            ],
+            "negative": [
+              "3",
+              0
+            ],
+            "latent_image": [
+              "4",
+              0
+            ]
+          }
+        },
+        "6": {
+          "class_type": "VAEDecode",
+          "inputs": {
+            "samples": [
+              "5",
+              0
+            ],
+            "vae": [
+              "1",
+              2
+            ]
+          }
+        },
+        "7": {
+          "class_type": "SaveImage",
+          "inputs": {
+            "images": [
+              "6",
+              0
+            ],
+            "filename_prefix": "Pankeki"
+          }
+        }
+      },
+      "history_prompt": [
+        3,
+        "70ac1f23-f002-43b7-b92c-4c97e04f3bcf",
+        {
+          "1": {
+            "class_type": "CheckpointLoaderSimple",
+            "inputs": {
+              "ckpt_name": "sd_xl_base_1.0.safetensors"
+            }
+          },
+          "2": {
+            "class_type": "CLIPTextEncode",
+            "inputs": {
+              "text": "A simple blue circle and yellow square on a plain white background, flat colored geometric shapes",
+              "clip": [
+                "1",
+                1
+              ]
+            }
+          },
+          "3": {
+            "class_type": "CLIPTextEncode",
+            "inputs": {
+              "text": "",
+              "clip": [
+                "1",
+                1
+              ]
+            }
+          },
+          "4": {
+            "class_type": "EmptyLatentImage",
+            "inputs": {
+              "width": 512,
+              "height": 512,
+              "batch_size": 1
+            }
+          },
+          "5": {
+            "class_type": "KSampler",
+            "inputs": {
+              "seed": 2026102801,
+              "steps": 2,
+              "cfg": 5.0,
+              "sampler_name": "euler",
+              "scheduler": "normal",
+              "denoise": 1.0,
+              "model": [
+                "1",
+                0
+              ],
+              "positive": [
+                "2",
+                0
+              ],
+              "negative": [
+                "3",
+                0
+              ],
+              "latent_image": [
+                "4",
+                0
+              ]
+            }
+          },
+          "6": {
+            "class_type": "VAEDecode",
+            "inputs": {
+              "samples": [
+                "5",
+                0
+              ],
+              "vae": [
+                "1",
+                2
+              ]
+            }
+          },
+          "7": {
+            "class_type": "SaveImage",
+            "inputs": {
+              "images": [
+                "6",
+                0
+              ],
+              "filename_prefix": "Pankeki"
+            }
+          }
+        },
+        {
+          "client_id": "7fc6150b8ef6470482958769508ec594",
+          "create_time": 1793131733224
+        },
+        [
+          "7"
+        ]
+      ],
+      "legacy_raw_workflow_sha256": "9e7b442dc14697ba2196e157fadb3cb079e2d21dcd6dd50b3b0ff578328856de",
+      "legacy_raw_history_sha256": "cdbe309abbc8dd4ec864dcbe735f35d6a12b79dd9e2b3734fe6c920eb93e4d25",
+      "evidence_sha256": {
+        "workflow.json": "8fbb9d928864fc32904c46d3a515a0e46a3df8d8ac00b23798e90c84c814c373",
+        "history.json": "cf696b041bdbd6274f1c8c5c0e8b90a7ee11ae461115e59283633e5b0c8e24b0"
+      }
+    },
+    {
+      "job_id": "1329177f152a44f599eb44c397e3d56d",
+      "prompt_id": "62e33cd0-0bde-412c-ad51-3712849d751d",
+      "client_id": "4516cc1130994678ac2c2c4a676b9766",
+      "submitted_workflow": {
+        "1": {
+          "class_type": "CheckpointLoaderSimple",
+          "inputs": {
+            "ckpt_name": "sd_xl_base_1.0.safetensors"
+          }
+        },
+        "2": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "A vivid red square, flat colored geometric shape on a plain white background",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "3": {
+          "class_type": "CLIPTextEncode",
+          "inputs": {
+            "text": "",
+            "clip": [
+              "1",
+              1
+            ]
+          }
+        },
+        "4": {
+          "class_type": "LoadImage",
+          "inputs": {
+            "image": "3a2728acc19e5ef842c283fadf69d87cd282b787e521a8e3bd291d082dbfbcba.png"
+          }
+        },
+        "5": {
+          "class_type": "KSampler",
+          "inputs": {
+            "seed": 2026102802,
+            "steps": 2,
+            "cfg": 5,
+            "sampler_name": "euler",
+            "scheduler": "normal",
+            "denoise": 1,
+            "model": [
+              "1",
+              0
+            ],
+            "positive": [
+              "2",
+              0
+            ],
+            "negative": [
+              "3",
+              0
+            ],
+            "latent_image": [
+              "9",
+              0
+            ]
+          }
+        },
+        "6": {
+          "class_type": "VAEDecode",
+          "inputs": {
+            "samples": [
+              "5",
+              0
+            ],
+            "vae": [
+              "1",
+              2
+            ]
+          }
+        },
+        "7": {
+          "class_type": "SaveImage",
+          "inputs": {
+            "images": [
+              "6",
+              0
+            ],
+            "filename_prefix": "Pankeki"
+          }
+        },
+        "8": {
+          "class_type": "VAEEncode",
+          "inputs": {
+            "pixels": [
+              "4",
+              0
+            ],
+            "vae": [
+              "1",
+              2
+            ]
+          }
+        },
+        "9": {
+          "class_type": "SetLatentNoiseMask",
+          "inputs": {
+            "samples": [
+              "8",
+              0
+            ],
+            "mask": [
+              "4",
+              1
+            ]
+          }
+        }
+      },
+      "history_prompt": [
+        4,
+        "62e33cd0-0bde-412c-ad51-3712849d751d",
+        {
+          "1": {
+            "class_type": "CheckpointLoaderSimple",
+            "inputs": {
+              "ckpt_name": "sd_xl_base_1.0.safetensors"
+            }
+          },
+          "2": {
+            "class_type": "CLIPTextEncode",
+            "inputs": {
+              "text": "A vivid red square, flat colored geometric shape on a plain white background",
+              "clip": [
+                "1",
+                1
+              ]
+            }
+          },
+          "3": {
+            "class_type": "CLIPTextEncode",
+            "inputs": {
+              "text": "",
+              "clip": [
+                "1",
+                1
+              ]
+            }
+          },
+          "4": {
+            "class_type": "LoadImage",
+            "inputs": {
+              "image": "3a2728acc19e5ef842c283fadf69d87cd282b787e521a8e3bd291d082dbfbcba.png"
+            }
+          },
+          "5": {
+            "class_type": "KSampler",
+            "inputs": {
+              "seed": 2026102802,
+              "steps": 2,
+              "cfg": 5.0,
+              "sampler_name": "euler",
+              "scheduler": "normal",
+              "denoise": 1.0,
+              "model": [
+                "1",
+                0
+              ],
+              "positive": [
+                "2",
+                0
+              ],
+              "negative": [
+                "3",
+                0
+              ],
+              "latent_image": [
+                "9",
+                0
+              ]
+            }
+          },
+          "6": {
+            "class_type": "VAEDecode",
+            "inputs": {
+              "samples": [
+                "5",
+                0
+              ],
+              "vae": [
+                "1",
+                2
+              ]
+            }
+          },
+          "7": {
+            "class_type": "SaveImage",
+            "inputs": {
+              "images": [
+                "6",
+                0
+              ],
+              "filename_prefix": "Pankeki"
+            }
+          },
+          "8": {
+            "class_type": "VAEEncode",
+            "inputs": {
+              "pixels": [
+                "4",
+                0
+              ],
+              "vae": [
+                "1",
+                2
+              ]
+            }
+          },
+          "9": {
+            "class_type": "SetLatentNoiseMask",
+            "inputs": {
+              "samples": [
+                "8",
+                0
+              ],
+              "mask": [
+                "4",
+                1
+              ]
+            }
+          }
+        },
+        {
+          "client_id": "4516cc1130994678ac2c2c4a676b9766",
+          "create_time": 1793132123651
+        },
+        [
+          "7"
+        ]
+      ],
+      "legacy_raw_workflow_sha256": "ce4358aa86436ff67f13f43ce6ee8bda9ab41e402089b9fe980dd1400b1a3f0a",
+      "legacy_raw_history_sha256": "67cac3d3b5fb548e668e092bc1d68fe4d1f429e619e5b1b85f4fa0c7dc9d3038",
+      "evidence_sha256": {
+        "workflow.json": "f546dbddd0d0392257724f359c2b586221c1b075590710f076faf6303fd860f2",
+        "history.json": "a40f18c456f8cfb001ba364a9e29a8407bb4bcbc1aa9e5d9ed68968cea4ac67e"
+      }
+    }
+  ]
+}

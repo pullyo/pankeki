@@ -1,0 +1,177 @@
+{
+  "status": "passed",
+  "kind": "actual pinned plugin CPU crop/stitch calls; synthetic generated crop",
+  "torch": "2.14.1+cu130",
+  "cases": [
+    {
+      "case": "empty",
+      "input_size": [
+        512,
+        512
+      ],
+      "mask_pixels": 0,
+      "crop_size": [
+        512,
+        512
+      ],
+      "model_pixels": 262144,
+      "crop_cpu_s": 0.006077099999856728,
+      "stitch_cpu_s": 0.011163399999531975,
+      "outside_mask_max_error": 0,
+      "policy": "skip: empty mask",
+      "original_sha256": "fe4f6261d24f34c2ed57eee5499e9641cfad0741945a044bae0624ba89382ae2",
+      "mask_sha256": "65795a5b91030a2a433dae510d1edf494082a9cfa1153cd94f3797759f68f257",
+      "resize_requested": false,
+      "diffusion_executed": false
+    },
+    {
+      "case": "single_pixel",
+      "input_size": [
+        512,
+        512
+      ],
+      "mask_pixels": 1,
+      "crop_size": [
+        32,
+        32
+      ],
+      "model_pixels": 1024,
+      "crop_cpu_s": 0.0011585000002014567,
+      "stitch_cpu_s": 0.0005678999996234779,
+      "outside_mask_max_error": 0,
+      "policy": "fallback: below conservative model minimum",
+      "original_sha256": "fe4f6261d24f34c2ed57eee5499e9641cfad0741945a044bae0624ba89382ae2",
+      "mask_sha256": "9be0d42a9345b6ff18b08291c155fbb68ca39938b5bce89c59ca821e57bd3455",
+      "resize_requested": false,
+      "diffusion_executed": false
+    },
+    {
+      "case": "edge_one_pixel",
+      "input_size": [
+        513,
+        385
+      ],
+      "mask_pixels": 1,
+      "crop_size": [
+        32,
+        32
+      ],
+      "model_pixels": 1024,
+      "crop_cpu_s": 0.0012299999998504063,
+      "stitch_cpu_s": 0.0007150000001274748,
+      "outside_mask_max_error": 0,
+      "policy": "fallback: below conservative model minimum",
+      "original_sha256": "e87c3d54c2123b90f00dc834bad8ac6da685801655dbf449aed3e76eaa1b1b01",
+      "mask_sha256": "d92c48673b8fb2ac101e6e52f6480e79aa82b47059bcc825f765cc1c42263056",
+      "resize_requested": false,
+      "diffusion_executed": false
+    },
+    {
+      "case": "center",
+      "input_size": [
+        768,
+        512
+      ],
+      "mask_pixels": 50176,
+      "crop_size": [
+        288,
+        288
+      ],
+      "model_pixels": 82944,
+      "crop_cpu_s": 0.0020298999997976352,
+      "stitch_cpu_s": 0.0015650999994250014,
+      "outside_mask_max_error": 0,
+      "policy": "eligible",
+      "original_sha256": "b9c44005f6f78e1be2a9e0be51837e472ca4dee1784625c52bff50ae6d1fc202",
+      "mask_sha256": "f59ab9418d6bf146c7714afc40548bb26f9a02435b08bf832f29e5dd29b87965",
+      "resize_requested": false,
+      "diffusion_executed": false
+    },
+    {
+      "case": "edge",
+      "input_size": [
+        768,
+        512
+      ],
+      "mask_pixels": 50176,
+      "crop_size": [
+        256,
+        256
+      ],
+      "model_pixels": 65536,
+      "crop_cpu_s": 0.0023641000007046387,
+      "stitch_cpu_s": 0.003170699999827775,
+      "outside_mask_max_error": 0,
+      "policy": "eligible",
+      "original_sha256": "b9c44005f6f78e1be2a9e0be51837e472ca4dee1784625c52bff50ae6d1fc202",
+      "mask_sha256": "dc90c6d009e77989590442b3e680c175262027474534fde8fe3031642610efd8",
+      "resize_requested": false,
+      "diffusion_executed": false
+    },
+    {
+      "case": "disjoint",
+      "input_size": [
+        768,
+        512
+      ],
+      "mask_pixels": 512,
+      "crop_size": [
+        768,
+        512
+      ],
+      "model_pixels": 393216,
+      "crop_cpu_s": 0.0019263000003775232,
+      "stitch_cpu_s": 0.010875099999793747,
+      "outside_mask_max_error": 0,
+      "policy": "eligible",
+      "original_sha256": "b9c44005f6f78e1be2a9e0be51837e472ca4dee1784625c52bff50ae6d1fc202",
+      "mask_sha256": "cf5e62a04f4b5e06457ff2090b739edb1921aa0fc7ac03782e93fbdbaabed932",
+      "resize_requested": false,
+      "diffusion_executed": false
+    },
+    {
+      "case": "full",
+      "input_size": [
+        512,
+        512
+      ],
+      "mask_pixels": 262144,
+      "crop_size": [
+        512,
+        512
+      ],
+      "model_pixels": 262144,
+      "crop_cpu_s": 0.0019190000002708985,
+      "stitch_cpu_s": 0.00535929999932705,
+      "outside_mask_max_error": 0,
+      "policy": "eligible",
+      "original_sha256": "fe4f6261d24f34c2ed57eee5499e9641cfad0741945a044bae0624ba89382ae2",
+      "mask_sha256": "d8acccafa1fdcf03f3bb9112f5f2f30ad1558e446d5c12ec5644fc0d53c1e58b",
+      "resize_requested": false,
+      "diffusion_executed": false
+    },
+    {
+      "case": "above_maximum",
+      "input_size": [
+        2049,
+        256
+      ],
+      "mask_pixels": 524544,
+      "crop_size": [
+        2080,
+        256
+      ],
+      "model_pixels": 532480,
+      "crop_cpu_s": 0.0032080999999379856,
+      "stitch_cpu_s": 0.01362059999974008,
+      "outside_mask_max_error": 0,
+      "policy": "fallback: above configured model maximum",
+      "original_sha256": "445bf29811366c3b31af99afa87277a88994271d9e6be7b8289821804ec86124",
+      "mask_sha256": "40eda33649f689e6523773230a6e68adc4a1ac08c88d6e7c6bb091566607a274",
+      "resize_requested": false,
+      "diffusion_executed": false
+    }
+  ],
+  "model_minimum": 256,
+  "model_maximum": 2048
+}

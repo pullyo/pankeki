@@ -1,0 +1,9 @@
+{
+  "tool": "built-in image_gen",
+  "use_case": "illustration-story",
+  "reference_image": "/var/folders/mr/p6nxppgs1nld79dtrhl4_zjw0000gn/T/codex-clipboard-572abd9b-f450-4d1c-85b7-3ebe56cd577c.png",
+  "source_file": "~/.codex/generated_images/01a16368-3bd2-7ae2-afe2-c383bc991548/exec-47fd1497-58dc-4692-858c-e0fc47ab88bb.png",
+  "transparent_background": false,
+  "prompt": "Use case: illustration-story.\nAsset type: category tile illustration for an image generation app, intended to display at 165 by 100 pixels.\nInput image 1: full UI screenshot used ONLY as visual and style reference. Focus on the third category thumbnail, a sunlit bedroom labelled 배경. Recreate that type of background as one standalone image filling the canvas.\nPrimary request: a cozy sunlit bedroom interior, cream bed linen with soft pillowy folds in foreground, warm honey wood bedside table and shelves, a large mullioned window toward the left, leafy houseplants near the window, small potted plants and ceramics on shelves. Warm peach afternoon sunlight pours through window, creating luminous orange highlights and long gentle shadows.\nStyle: richly detailed painterly anime background, soft hand painted textures, tranquil inviting atmosphere, cream and apricot and honey palette, composition easy to read at thumbnail size. Scenic interior, no characters.\nComposition: landscape 3:2 format, full bleed, clean organized perspective, show bed/window/plants in one cohesive cozy room. No people, UI, text, letters, labels, borders, frames or watermark. Opaque image.",
+  "asset": "category-background.png"
+}

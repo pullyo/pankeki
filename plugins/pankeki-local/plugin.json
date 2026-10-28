@@ -1,0 +1,31 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "pankeki-local",
+  "version": "0.1.3",
+  "description": "Pankeki local SDXL and masked editing through its existing HTTP queue.",
+  "author": {
+    "name": "Pankeki"
+  },
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "displayName": "Pankeki Local",
+        "shortDescription": "로컬 SDXL 생성·부분수정",
+        "longDescription": "현재 Mac Pankeki의 HTTP 작업 큐로 SDXL 생성·부분수정·상태 및 실제 결과를 확인합니다.",
+        "developerName": "Pankeki",
+        "category": "Productivity",
+        "capabilities": [
+          "Interactive",
+          "Write"
+        ],
+        "defaultPrompt": [
+          "Pankeki 연결과 사용 가능한 모델을 확인해줘.",
+          "Pankeki에서 캐릭터 이미지를 생성해줘.",
+          "원본과 마스크로 Pankeki 부분수정을 실행해줘."
+        ],
+        "logo": "./assets/pankeki.png",
+        "composerIcon": "./assets/pankeki.png"
+      }
+    }
+  }
+}

@@ -122,6 +122,49 @@ class EngineTests(unittest.TestCase):
         self.assertTrue(Path(job["result"]["image_path"]).is_file())
         return job["result"]
 
+    def test_img2img_encodes_the_actual_source_without_a_mask_or_empty_latent(self):
+        source = Image.new('RGB', (64, 64), (17, 34, 51))
+        job = self.run_job(self.request(mode='img2img', source=image_data(source), denoise=.55, cache=False))
+        result = self.assert_success(job)
+        graph = self.client.workflows[-1]
+        self.assertEqual(graph['8']['class_type'], 'VAEEncode')
+        self.assertEqual(graph['5']['inputs']['latent_image'], ['8', 0])
+        self.assertEqual(graph['5']['inputs']['denoise'], .55)
+        self.assertNotIn('SetLatentNoiseMask', [node['class_type'] for node in graph.values()])
+        self.assertNotIn('EmptyLatentImage', [node['class_type'] for node in graph.values()])
+        uploaded = self.client.uploads[graph['4']['inputs']['image']]
+        self.assertEqual(Image.open(io.BytesIO(uploaded)).convert('RGB').tobytes(), source.tobytes())
+        self.assertEqual(json.loads((Path(result['image_path']).parent / 'recipe.json').read_text())['mode'], 'img2img')
+        self.assertFalse((Path(result['image_path']).parent / 'mask.png').exists())
+
+    def test_animagine_img2img_keeps_checkpoint_and_source_latent_while_masked_mode_stays_rejected(self):
+        from pankeki.engine import validate_request
+        weight = self.root / 'animagine-xl-4.0-opt.safetensors'
+        weight.write_bytes(b'owned Animagine checkpoint fixture')
+        manifest = copy.deepcopy(self.config['manifest'])
+        manifest.update(model_name=weight.name, model_sha256=hashlib.sha256(weight.read_bytes()).hexdigest())
+        engine = Engine(self.root, config={'managed_builtin_only':True, 'models':{
+            'animagine-xl-4.0-opt':{'model_name':weight.name, 'model_path':str(weight), 'manifest':manifest}}}, client=self.client)
+        manager = JobManager(engine); self.addCleanup(manager.close); self.addCleanup(engine.close)
+        source = image_data(Image.new('RGBA', (64,64), (9,18,27,128)))
+        job = self.run_job(self.request(mode='img2img', source=source, denoise=.55,
+            model_id='animagine-xl-4.0-opt', cache=False), manager)
+        self.assert_success(job)
+        graph = self.client.workflows[-1]
+        self.assertEqual(graph['1']['inputs']['ckpt_name'], 'animagine-xl-4.0-opt.safetensors')
+        self.assertEqual(graph['5']['inputs']['latent_image'], ['8',0])
+        with self.assertRaisesRegex(ValueError, 'generation-only'):
+            validate_request(self.request(mode='inpaint', model_id='animagine-xl-4.0-opt', source=source, mask=source))
+
+    def test_img2img_rejects_missing_source_mask_and_total_noise(self):
+        from pankeki.engine import validate_request
+        source = image_data(Image.new('RGB', (64, 64)))
+        for changes in ({}, {'source':source, 'denoise':1}, {'source':source, 'denoise':0},
+                        {'source':source, 'denoise':.5, 'mask':source},
+                        {'source':source, 'denoise':.5, 'model_id':'sdxl-inpaint-v01'}):
+            with self.subTest(changes=changes), self.assertRaises(ValueError):
+                validate_request(self.request(mode='img2img', **changes))
+
     def test_completed_then_exact_hit_skips_submission_and_preserves_output(self):
         first = self.assert_success(self.run_job(self.request()))
         second = self.assert_success(self.run_job(self.request()))

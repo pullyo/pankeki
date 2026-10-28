@@ -1,0 +1,339 @@
+{
+  "kind": "derived analysis of saved actual ComfyUI runs",
+  "raw_records": 36,
+  "measured_records": 27,
+  "summaries": [
+    {
+      "case": "center",
+      "mode": "baseline",
+      "n_total": 3,
+      "sampler_cached_samples": 0,
+      "n_not_cached": 3,
+      "p50_adapter_s_all": 0.7695705999994971,
+      "p50_adapter_s_sampler_not_cached": 0.7695705999994971,
+      "model_size": [
+        768,
+        512
+      ],
+      "outside_mask_max_error": 0
+    },
+    {
+      "case": "center",
+      "mode": "app_roi",
+      "n_total": 3,
+      "sampler_cached_samples": 0,
+      "n_not_cached": 3,
+      "p50_adapter_s_all": 0.515821899999537,
+      "p50_adapter_s_sampler_not_cached": 0.515821899999537,
+      "model_size": [
+        288,
+        288
+      ],
+      "outside_mask_max_error": 0
+    },
+    {
+      "case": "center",
+      "mode": "crop_and_stitch",
+      "n_total": 3,
+      "sampler_cached_samples": 0,
+      "n_not_cached": 3,
+      "p50_adapter_s_all": 0.5149701000000277,
+      "p50_adapter_s_sampler_not_cached": 0.5149701000000277,
+      "model_size": [
+        288,
+        288
+      ],
+      "outside_mask_max_error": 0
+    },
+    {
+      "case": "edge",
+      "mode": "baseline",
+      "n_total": 3,
+      "sampler_cached_samples": 0,
+      "n_not_cached": 3,
+      "p50_adapter_s_all": 0.785442399999738,
+      "p50_adapter_s_sampler_not_cached": 0.785442399999738,
+      "model_size": [
+        768,
+        512
+      ],
+      "outside_mask_max_error": 0
+    },
+    {
+      "case": "edge",
+      "mode": "app_roi",
+      "n_total": 3,
+      "sampler_cached_samples": 0,
+      "n_not_cached": 3,
+      "p50_adapter_s_all": 0.5931927000001451,
+      "p50_adapter_s_sampler_not_cached": 0.5931927000001451,
+      "model_size": [
+        256,
+        256
+      ],
+      "outside_mask_max_error": 0
+    },
+    {
+      "case": "edge",
+      "mode": "crop_and_stitch",
+      "n_total": 3,
+      "sampler_cached_samples": 0,
+      "n_not_cached": 3,
+      "p50_adapter_s_all": 0.5630521000002773,
+      "p50_adapter_s_sampler_not_cached": 0.5630521000002773,
+      "model_size": [
+        256,
+        256
+      ],
+      "outside_mask_max_error": 0
+    },
+    {
+      "case": "full",
+      "mode": "baseline",
+      "n_total": 3,
+      "sampler_cached_samples": 1,
+      "n_not_cached": 2,
+      "p50_adapter_s_all": 0.6616566000002422,
+      "p50_adapter_s_sampler_not_cached": 0.7367917999999918,
+      "model_size": [
+        512,
+        512
+      ],
+      "outside_mask_max_error": 0
+    },
+    {
+      "case": "full",
+      "mode": "app_roi",
+      "n_total": 3,
+      "sampler_cached_samples": 0,
+      "n_not_cached": 3,
+      "p50_adapter_s_all": 0.8230567999999039,
+      "p50_adapter_s_sampler_not_cached": 0.8230567999999039,
+      "model_size": [
+        512,
+        512
+      ],
+      "outside_mask_max_error": 0
+    },
+    {
+      "case": "full",
+      "mode": "crop_and_stitch",
+      "n_total": 3,
+      "sampler_cached_samples": 0,
+      "n_not_cached": 3,
+      "p50_adapter_s_all": 0.8523505000002842,
+      "p50_adapter_s_sampler_not_cached": 0.8523505000002842,
+      "model_size": [
+        512,
+        512
+      ],
+      "outside_mask_max_error": 0
+    }
+  ],
+  "pairwise_pixels": [
+    {
+      "case": "center",
+      "iteration": 0,
+      "pair": [
+        "app_roi",
+        "baseline"
+      ],
+      "pixel_identical": false,
+      "max_channel_difference": 253,
+      "mean_absolute_channel_difference": 6.8065685696072045
+    },
+    {
+      "case": "center",
+      "iteration": 0,
+      "pair": [
+        "app_roi",
+        "crop_and_stitch"
+      ],
+      "pixel_identical": true,
+      "max_channel_difference": 0,
+      "mean_absolute_channel_difference": 0.0
+    },
+    {
+      "case": "center",
+      "iteration": 1,
+      "pair": [
+        "app_roi",
+        "baseline"
+      ],
+      "pixel_identical": false,
+      "max_channel_difference": 255,
+      "mean_absolute_channel_difference": 9.849761115180122
+    },
+    {
+      "case": "center",
+      "iteration": 1,
+      "pair": [
+        "app_roi",
+        "crop_and_stitch"
+      ],
+      "pixel_identical": true,
+      "max_channel_difference": 0,
+      "mean_absolute_channel_difference": 0.0
+    },
+    {
+      "case": "center",
+      "iteration": 2,
+      "pair": [
+        "app_roi",
+        "baseline"
+      ],
+      "pixel_identical": false,
+      "max_channel_difference": 255,
+      "mean_absolute_channel_difference": 11.361571417914497
+    },
+    {
+      "case": "center",
+      "iteration": 2,
+      "pair": [
+        "app_roi",
+        "crop_and_stitch"
+      ],
+      "pixel_identical": true,
+      "max_channel_difference": 0,
+      "mean_absolute_channel_difference": 0.0
+    },
+    {
+      "case": "edge",
+      "iteration": 0,
+      "pair": [
+        "app_roi",
+        "baseline"
+      ],
+      "pixel_identical": false,
+      "max_channel_difference": 245,
+      "mean_absolute_channel_difference": 6.685922410753038
+    },
+    {
+      "case": "edge",
+      "iteration": 0,
+      "pair": [
+        "app_roi",
+        "crop_and_stitch"
+      ],
+      "pixel_identical": true,
+      "max_channel_difference": 0,
+      "mean_absolute_channel_difference": 0.0
+    },
+    {
+      "case": "edge",
+      "iteration": 1,
+      "pair": [
+        "app_roi",
+        "baseline"
+      ],
+      "pixel_identical": false,
+      "max_channel_difference": 197,
+      "mean_absolute_channel_difference": 5.072656419542101
+    },
+    {
+      "case": "edge",
+      "iteration": 1,
+      "pair": [
+        "app_roi",
+        "crop_and_stitch"
+      ],
+      "pixel_identical": true,
+      "max_channel_difference": 0,
+      "mean_absolute_channel_difference": 0.0
+    },
+    {
+      "case": "edge",
+      "iteration": 2,
+      "pair": [
+        "app_roi",
+        "baseline"
+      ],
+      "pixel_identical": false,
+      "max_channel_difference": 218,
+      "mean_absolute_channel_difference": 5.978024800618489
+    },
+    {
+      "case": "edge",
+      "iteration": 2,
+      "pair": [
+        "app_roi",
+        "crop_and_stitch"
+      ],
+      "pixel_identical": true,
+      "max_channel_difference": 0,
+      "mean_absolute_channel_difference": 0.0
+    },
+    {
+      "case": "full",
+      "iteration": 0,
+      "pair": [
+        "app_roi",
+        "baseline"
+      ],
+      "pixel_identical": true,
+      "max_channel_difference": 0,
+      "mean_absolute_channel_difference": 0.0
+    },
+    {
+      "case": "full",
+      "iteration": 0,
+      "pair": [
+        "app_roi",
+        "crop_and_stitch"
+      ],
+      "pixel_identical": true,
+      "max_channel_difference": 0,
+      "mean_absolute_channel_difference": 0.0
+    },
+    {
+      "case": "full",
+      "iteration": 1,
+      "pair": [
+        "app_roi",
+        "baseline"
+      ],
+      "pixel_identical": true,
+      "max_channel_difference": 0,
+      "mean_absolute_channel_difference": 0.0
+    },
+    {
+      "case": "full",
+      "iteration": 1,
+      "pair": [
+        "app_roi",
+        "crop_and_stitch"
+      ],
+      "pixel_identical": true,
+      "max_channel_difference": 0,
+      "mean_absolute_channel_difference": 0.0
+    },
+    {
+      "case": "full",
+      "iteration": 2,
+      "pair": [
+        "app_roi",
+        "baseline"
+      ],
+      "pixel_identical": true,
+      "max_channel_difference": 0,
+      "mean_absolute_channel_difference": 0.0
+    },
+    {
+      "case": "full",
+      "iteration": 2,
+      "pair": [
+        "app_roi",
+        "crop_and_stitch"
+      ],
+      "pixel_identical": true,
+      "max_channel_difference": 0,
+      "mean_absolute_channel_difference": 0.0
+    }
+  ],
+  "limitations": [
+    "n=3 per mode is a smoke comparison, not a stable performance estimate",
+    "No event marking sampler cached does not prove a CUDA stage duration",
+    "Pixel differences are not a semantic/perceptual quality score",
+    "Crop contexts differ and synthetic gradient inputs are not a real editing quality suite"
+  ]
+}

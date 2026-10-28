@@ -1,0 +1,14 @@
+{
+  "generator": "built-in image_gen",
+  "intent": "generate using user screenshot fourth recommended template thumbnail as visual reference",
+  "reference": "/var/folders/mr/p6nxppgs1nld79dtrhl4_zjw0000gn/T/codex-clipboard-93862e93-a636-4d45-8bff-ecd32cc13142.png",
+  "source": "~/.codex/generated_images/01a16368-65f5-76d3-8a8c-76c19428db46/exec-a550a619-5944-45e1-8634-f721d876343c.png",
+  "output": "web/assets/redesign/template-maid.png",
+  "dimensions": [
+    1536,
+    1024
+  ],
+  "prompt": "Use case: illustration-story.\nAsset type: one home-screen template thumbnail for the existing Pankeki character design application.\nInput image 1 is a visual reference. Recreate ONLY the gray-haired woman portrait visible in the fourth recommended-template thumbnail on the right side of the screenshot; do not render any app interface.\nSubject: adult anime woman with ash-gray shoulder-length bob haircut, soft straight bangs, dark brown eyes, modest black-and-cream Victorian maid outfit with high collar and ivory ruffles, small simple bow headband. Gentle friendly smile, head and shoulders portrait, centered.\nStyle: detailed polished painterly anime illustration, delicate linework, soft watercolor/gouache texture, nuanced gray hair strands and warm skin. Match the same warm cream-peach soft rendering and natural charm as the reference character cards.\nBackground: simple softly lit warm cream-peach background, airy pale light, minimal detail so the portrait reads at very small size.\nComposition: landscape 3:2 full-bleed illustration; face centered and prominent, include headband and modest shoulders without awkward crop.\nConstraints: single character, fully clothed, tasteful modest Victorian outfit. No text, lettering, logos, UI, buttons, panels, cards, borders, frames or watermark.",
+  "inspection": "Viewed full output; gray-haired anime woman in modest black-cream Victorian maid outfit, warm painterly rendering, no UI or text, legible centered portrait.",
+  "date": "2026-10-22"
+}

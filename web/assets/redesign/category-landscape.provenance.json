@@ -1,0 +1,13 @@
+{
+  "asset": "category-landscape.png",
+  "generator": "built-in image_gen",
+  "intent": "generate",
+  "reference_image": "/var/folders/mr/p6nxppgs1nld79dtrhl4_zjw0000gn/T/codex-clipboard-572abd9b-f450-4d1c-85b7-3ebe56cd577c.png",
+  "reference_role": "Style and composition reference: illustration category artwork",
+  "source_output": "~/.codex/generated_images/01a16368-8c2b-7e00-a9bb-59ecd80b7991/exec-19c3e089-07fa-4b0b-a94e-942b4a3b55ca.png",
+  "width": 1536,
+  "height": 1024,
+  "prompt": "Use case: illustration-story.\nAsset type: one standalone landscape category thumbnail for a desktop character illustration app, landscape aspect ratio 3:2.\nInput image: supplied screenshot is ONLY a visual style and composition reference. Recreate ONLY the artwork seen inside the second small category card marked '일러스트' near the bottom. Do not reproduce the screenshot or the interface.\nPrimary request: a vivid blue sky with billowing cream-white clouds above a lush green fantasy valley, a distant tiny village, rolling hills, and framing leafy trees. Painterly, detailed fantasy anime landscape with serene afternoon sunlight. Focal valley in center; strong clear blue and green colors and a readable composition when displayed at 165 by 100 pixels. Soft warm sunlight on fields and buildings.\nComposition: wide view into the valley from a grassy foreground, sky occupying upper half, little village in the middle distance. The entire image is artwork.\nConstraints: no UI, no lettering, no text, no labels, no card border, no frame, no watermark, no people. Opaque background.",
+  "inspection": "Verified: standalone opaque fantasy anime landscape; vivid blue sky, cream clouds, green valley, village; no interface, letters, borders or watermark.",
+  "generated_date": "2026-10-22"
+}

@@ -1,0 +1,250 @@
+{
+  "schema": 1,
+  "build": null,
+  "models": [
+    {
+      "id": "sdxl-base",
+      "label": "SDXL 1.0 Base",
+      "installed": true,
+      "operations": [
+        "generate",
+        "regenerate",
+        "recompose",
+        "erase"
+      ],
+      "defaults": {
+        "width": 1024,
+        "height": 1024,
+        "steps": 25,
+        "cfg": 6,
+        "sampler": "dpmpp_2m",
+        "scheduler": "karras",
+        "denoise": 0.55
+      },
+      "description": "1024px 캐릭터 콘셉트 탐색용 일반 이미지 모델. 부분 수정의 재질·형태 정확성은 보장되지 않습니다.",
+      "reason": null,
+      "execution_verified": false,
+      "quality": "unknown"
+    },
+    {
+      "id": "sd-turbo",
+      "label": "SD Turbo",
+      "installed": false,
+      "operations": [
+        "generate",
+        "regenerate",
+        "erase"
+      ],
+      "defaults": {
+        "width": 512,
+        "height": 512,
+        "steps": 1,
+        "cfg": 1,
+        "sampler": "euler",
+        "scheduler": "normal",
+        "denoise": 1
+      },
+      "description": "512px 빠른 시안용 일반 이미지 모델. 인물·소품의 정확성과 부분 수정 품질에 한계가 있습니다.",
+      "reason": "Required model or conditioning checkpoint is not installed/configured",
+      "execution_verified": false,
+      "quality": "unknown"
+    },
+    {
+      "id": "animagine-xl-4.0-opt",
+      "label": "Animagine XL 4.0 Opt",
+      "installed": true,
+      "operations": [
+        "generate",
+        "recompose"
+      ],
+      "defaults": {
+        "width": 1024,
+        "height": 1024,
+        "steps": 28,
+        "cfg": 5,
+        "sampler": "euler_ancestral",
+        "scheduler": "normal",
+        "denoise": 1
+      },
+      "description": "태그 기반 애니메 생성 및 참조 이미지 전체 변형. 영어 comma-tag와 끝의 품질 태그를 권장하며 정밀 부분 수정 모델이 아닙니다.",
+      "recommended_negative": "lowres, bad anatomy, bad hands, text, extra digits, missing fingers, worst quality, low quality, watermark, blurry",
+      "reason": null,
+      "execution_verified": false,
+      "quality": "unknown"
+    },
+    {
+      "id": "sdxl-inpaint-v01",
+      "label": "SDXL Inpaint v0.1",
+      "installed": true,
+      "operations": [
+        "regenerate",
+        "erase"
+      ],
+      "defaults": {
+        "width": 1024,
+        "height": 1024,
+        "steps": 25,
+        "cfg": 6,
+        "sampler": "dpmpp_2m",
+        "scheduler": "karras",
+        "denoise": 0.55
+      },
+      "description": "전용 UNet과 SDXL Base CLIP/VAE를 사용하는 부분 재생성 모델. 시각 품질은 별도 검수가 필요합니다.",
+      "reason": null,
+      "execution_verified": false,
+      "quality": "unknown"
+    }
+  ],
+  "operations": [
+    {
+      "id": "generate",
+      "lane": "gpu",
+      "ready": true,
+      "reason": null,
+      "model_ids": [
+        "sdxl-base",
+        "sd-turbo",
+        "animagine-xl-4.0-opt"
+      ],
+      "experimental": false,
+      "execution_verified": false,
+      "quality": "unknown"
+    },
+    {
+      "id": "regenerate",
+      "lane": "gpu",
+      "ready": true,
+      "reason": null,
+      "model_ids": [
+        "sdxl-base",
+        "sd-turbo",
+        "sdxl-inpaint-v01"
+      ],
+      "experimental": false,
+      "execution_verified": false,
+      "quality": "unknown"
+    },
+    {
+      "id": "recolor",
+      "lane": "cpu",
+      "ready": true,
+      "reason": "Local integer recolor; no model dependency",
+      "model_ids": [],
+      "experimental": false,
+      "execution_verified": false,
+      "quality": "unknown"
+    },
+    {
+      "id": "recompose",
+      "lane": "gpu",
+      "ready": true,
+      "reason": null,
+      "model_ids": [
+        "sdxl-base",
+        "animagine-xl-4.0-opt"
+      ],
+      "experimental": false,
+      "execution_verified": false,
+      "quality": "unknown"
+    },
+    {
+      "id": "markup",
+      "lane": "cpu",
+      "ready": true,
+      "reason": "Local bounded PNG markup",
+      "model_ids": [],
+      "experimental": false,
+      "execution_verified": false,
+      "quality": "unknown"
+    },
+    {
+      "id": "comments",
+      "lane": "cpu",
+      "ready": true,
+      "reason": "Local positioned comments; no inference",
+      "model_ids": [],
+      "experimental": false,
+      "execution_verified": false,
+      "quality": "unknown"
+    },
+    {
+      "id": "background-remove",
+      "lane": "cpu",
+      "ready": false,
+      "reason": "Local foreground helper is not installed",
+      "model_ids": [],
+      "experimental": false,
+      "execution_verified": false,
+      "quality": "unknown"
+    },
+    {
+      "id": "erase",
+      "lane": "gpu",
+      "ready": true,
+      "reason": null,
+      "model_ids": [
+        "sdxl-base",
+        "sd-turbo",
+        "sdxl-inpaint-v01"
+      ],
+      "experimental": false,
+      "execution_verified": false,
+      "quality": "unknown"
+    },
+    {
+      "id": "resize",
+      "lane": "cpu",
+      "ready": true,
+      "reason": "Local bounded Pillow resize",
+      "model_ids": [],
+      "experimental": false,
+      "execution_verified": false,
+      "quality": "unknown"
+    }
+  ],
+  "default_model_id": "sdxl-base",
+  "cache": {
+    "policy": "strict-direct-bypass",
+    "enabled": false,
+    "reason": "Unmanaged direct server: exact cache bypass; strict model fingerprint policy retained"
+  },
+  "preflight": [
+    {
+      "id": "comfy",
+      "state": "unknown",
+      "reason": "Not contacted by the pure capability snapshot"
+    },
+    {
+      "id": "vision",
+      "state": "unavailable",
+      "reason": "Local foreground helper is not installed"
+    },
+    {
+      "id": "sdk",
+      "state": "unknown",
+      "reason": "Optional dedicated SDK runtime has not been probed"
+    },
+    {
+      "id": "cli-login",
+      "state": "unknown",
+      "reason": "Optional CLI sign-in is not required for local readiness"
+    },
+    {
+      "id": "image-review",
+      "state": "unavailable",
+      "reason": "Optional remote image review is not enabled"
+    },
+    {
+      "id": "visual-quality",
+      "state": "unknown",
+      "reason": "No visual quality acceptance is inferred from installation or metrics"
+    }
+  ],
+  "targeted_cancel": {
+    "state": "unknown",
+    "atomic_source_verified": false,
+    "route_verified": false,
+    "reason": "Transport does not publish a verified atomic cancellation capability"
+  },
+  "revision": "9b55e6ff72fabd14b078e6d7ce98a9980e593cc15d3e8ea5d72c61d8964d8930"
+}
