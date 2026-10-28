@@ -489,6 +489,41 @@ class EngineTests(unittest.TestCase):
             self.assertEqual(int(np.count_nonzero(alpha == 0)), 400)
             self.assertTrue(np.all(np.isin(alpha, [0, 255])))
 
+    def test_roi_crop_is_sampled_at_model_area_and_composited_back_exactly(self):
+        _, manager, _, _ = self.multiple_models()
+        ramp = np.tile(np.arange(768, dtype=np.uint8)[None, :, None] // 3, (512, 1, 3))
+        original = Image.fromarray(ramp)
+        mask = Image.new("L", original.size, 0)
+        mask.paste(255, (300, 200, 320, 220))
+        result = self.assert_success(self.run_job({"prompt": "patch", "mode": "inpaint", "roi": True, "halo": 16,
+            "feather": 0, "model_id": "sdxl-base", "source": image_data(original), "mask": image_data(mask)}, manager))
+        upload = Image.open(io.BytesIO(next(iter(self.client.uploads.values()))))
+        self.assertEqual(upload.size, (1024, 1024))
+        alpha = np.asarray(upload.getchannel("A"))
+        self.assertTrue(np.all(np.isin(alpha, [0, 255])))
+        self.assertGreaterEqual(int(np.count_nonzero(alpha == 0)), 400 * 16)
+        self.assertEqual(result["metrics"]["model_size"], [1024, 1024])
+        self.assertEqual(result["metrics"]["roi_scale"], 4.0)
+        with Image.open(result["image_path"]) as output:
+            self.assertEqual(output.size, original.size)
+            pixels = np.array(output.convert("RGB"))
+        selected = np.asarray(mask) > 0
+        self.assertTrue(np.array_equal(pixels[~selected], ramp[~selected]))
+        self.assertTrue(np.all(pixels[selected] == [250, 130, 10]))
+        recipe = json.loads((Path(result["image_path"]).parent / "recipe.json").read_text(encoding="utf-8"))
+        self.assertEqual(recipe["model_size"], [1024, 1024])
+
+    def test_full_frame_edit_is_not_rescaled(self):
+        _, manager, _, _ = self.multiple_models()
+        original = Image.new("RGB", (1024, 1024), (12, 34, 56))
+        mask = Image.new("L", original.size, 0)
+        mask.paste(255, (300, 200, 320, 220))
+        result = self.assert_success(self.run_job({"prompt": "patch", "mode": "inpaint", "roi": False,
+            "model_id": "sdxl-base", "source": image_data(original), "mask": image_data(mask)}, manager))
+        upload = Image.open(io.BytesIO(next(iter(self.client.uploads.values()))))
+        self.assertEqual(upload.size, (1024, 1024))
+        self.assertEqual(result["metrics"]["roi_scale"], 1.0)
+
     def test_original_edit_outside_roi_invalidates_composite_cache(self):
         original = Image.new("RGB", (768, 512), (12, 34, 56))
         mask = Image.new("L", original.size, 0)

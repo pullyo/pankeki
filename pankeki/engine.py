@@ -25,7 +25,7 @@ from .metrics import JsonlMetrics
 from .model_lease import ReadOnlyModelLease
 from .model_presets import (ANIMAGINE_MODEL_ID, INPAINT_MODEL_ID, MODEL_PRESETS, configured_models,
                            is_available, model_components, model_listing)
-from .planning import crop_for_plan, plan_roi, unpad_generated
+from .planning import crop_for_plan, model_scale_size, plan_roi, restore_model_output, scale_for_model, unpad_generated
 from .recolor import recolor, validate_options as validate_recolor_options
 from .run_store import RunStore
 from .workflows import img2img, inpaint, inpaint_sdxl, txt2img
@@ -430,8 +430,20 @@ class Engine:
                     if not names:
                         raise ValueError('No ComfyUI checkpoint installed')
                     common['model_name'] = names[0]
-                crop = crop_for_plan(original, plan).convert('RGBA')
-                crop.putalpha(ImageOps.invert(crop_for_plan(mask, plan, is_mask=True)))
+                crop = crop_for_plan(original, plan)
+                crop_mask = crop_for_plan(mask, plan, is_mask=True)
+                model_size = plan.padded_size
+                if plan.mode == 'roi' and model_id in MODEL_PRESETS:
+                    # A small crop sampled at its own size is far below SDXL's native
+                    # resolution and comes back broken; sample at the model's area.
+                    defaults = MODEL_PRESETS[model_id]['defaults']
+                    model_size = model_scale_size(plan.padded_size, defaults['width'] * defaults['height'])
+                    crop, crop_mask = scale_for_model(crop, model_size), scale_for_model(crop_mask, model_size, is_mask=True)
+                recipe['model_size'] = list(model_size)
+                observations.update(model_size=list(model_size), model_pixels=model_size[0] * model_size[1],
+                                    roi_scale=round(model_size[0] / plan.padded_size[0], 4))
+                crop = crop.convert('RGBA')
+                crop.putalpha(ImageOps.invert(crop_mask))
                 upload_data = png_bytes(crop)
                 image_name = content_hash(upload_data) + '.png'
                 input_hashes[image_name] = content_hash(upload_data)
@@ -496,7 +508,10 @@ class Engine:
                 generated = decode_image(raw).convert('RGB')
                 if plan:
                     (directory / 'generated-crop.png').write_bytes(png_bytes(generated))
-                    output = composite(original, unpad_generated(generated, plan), mask, plan.bbox, feather=r['feather'])
+                    if generated.size != tuple(recipe['model_size']):
+                        raise ValueError('Unexpected generated crop size')
+                    output = composite(original, unpad_generated(restore_model_output(generated, plan), plan), mask,
+                                       plan.bbox, feather=r['feather'])
                     if original_alpha is not None:
                         output.putalpha(original_alpha)
                 else:
