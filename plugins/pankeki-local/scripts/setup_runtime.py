@@ -11,14 +11,19 @@ def main():
     parser.add_argument("--offline-wheelhouse", type=Path)
     args = parser.parse_args()
     plugin = Path(__file__).resolve().parents[1]
-    config = json.loads((plugin / "mcp.json").read_text())["mcpServers"]["pankeki-local"]["env"]
+    config = json.loads((plugin / "mcp.json").read_text(encoding="utf-8"))["mcpServers"]["pankeki-local"]["env"]
     app = Path(config["PANKEKI_APP_ROOT"])
     runtime_python = Path(config["PANKEKI_PYTHON"])
-    expected = app / "runtime/macos/pankeki-mcp-20261023/release/venv/bin/python"
+    if sys.platform == "win32":
+        expected = app / "runtime/windows/pankeki-mcp/venv/Scripts/python.exe"
+        base_python = app / ".venv-windows-editor/Scripts/python.exe"
+    else:
+        expected = app / "runtime/macos/pankeki-mcp-20261023/release/venv/bin/python"
+        base_python = app / ".venv-macos/bin/python"
     if runtime_python != expected or not (app / "pankeki/server.py").is_file():
         raise ValueError("Unexpected dedicated runtime or missing Pankeki app root")
     if not runtime_python.is_file():
-        subprocess.run([str(app / ".venv-macos/bin/python"), "-m", "venv",
+        subprocess.run([str(base_python), "-m", "venv",
                         str(runtime_python.parent.parent)], check=True)
     command = [str(runtime_python), "-m", "pip", "install", "--disable-pip-version-check", "--no-input",
                "-r", str(plugin / "server/requirements.txt")]

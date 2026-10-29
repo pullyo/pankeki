@@ -39,6 +39,8 @@ Ruff 기본 규칙 전체에는 기존 위반 39건이 있다. 자동 수정(`--
 
 가상환경: `.venv-macos`(생성, torch 포함), `.venv-macos-editor`(편집 전용), `.venv`는 Windows용 보존본이라 Mac에서 실행되지 않는다.
 
+Windows(브랜치 `windows-port-20261029`, 실기 미검증): `scripts\setup-windows.ps1 [-Generation] [-Sdxl|-Models] [-Mcp] [-Cpu]`로 `.venv-windows-editor`/`.venv-windows`를 만들고 `Pankeki.cmd [--editor-only] [--cpu]`(→ `scripts/run_windows.py`)로 실행한다. 설정은 `runtime/windows/`. 데스크톱의 플랫폼 차이는 `desktop/platform.cjs`에 모았고 Windows 분기 테스트는 `desktop/tests/windows-platform.test.cjs`, `tests/test_windows_launcher.py`. 실기 QA 절차는 `docs/windows-qa.ko.md`, 사용자 안내는 `README.windows.ko.md`.
+
 ## 아키텍처
 
 **프로세스 구성.** `scripts/run_macos.py`가 `vendor/ComfyUI/main.py`를 MPS 옵션(`--fp16-unet --fp32-vae --disable-all-custom-nodes --offline`)으로 띄운 뒤 `python -m pankeki serve`를 실행한다. 실행 시 `runtime/macos/config.json`(모델 등록·SHA256)과 `model-paths.yaml`을 현재 경로로 다시 생성하므로 이 파일들은 직접 고치지 않는다. 로그는 `runtime/macos/app.log`, `comfy.log`. Windows 경로는 `scripts/*.ps1` + `prepare_manifest.py`(서버 PID·소스·모델 hash manifest)이다.
