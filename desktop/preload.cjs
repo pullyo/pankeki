@@ -10,6 +10,7 @@ contextBridge.exposeInMainWorld('pankekiDesktop',Object.freeze({
   sendMessage:payload=>invoke('sendMessage',payload),
   cancelMessage:payload=>invoke('cancelMessage',payload),
   prepareEditContext:payload=>invoke('prepareEditContext',payload),
+  pickVideoScene:()=>invoke('pickVideoScene'),
   resolveResult:payload=>invoke('resolveResult',payload),
   onCodexEvent:callback=>{
     if(typeof callback!=='function')throw new TypeError('callback must be a function');

@@ -16,6 +16,13 @@ function setup({allowLiveSend=true}={}) {
 }
 const message={text:'안녕하세요',projectId:'project_1',requestId:'req_1',context:{sourceRevision:'snapshot_3'}};
 
+test('video scene selection requires a trusted caller and accepts no renderer paths',async()=>{
+  let picks=0;const controller=createIpcController({isTrusted:event=>event===true,pickVideoScene:async()=>{picks++;return {scene_id:'3f2192d1-0846-4ed0-8ac9-7d875a1c1c72',name:'scene.blend'};}});
+  await assert.rejects(controller.invoke('pickVideoScene',false),/untrusted/);
+  for(const value of [{scene_path:'/tmp/scene.blend'},{},null])await assert.rejects(controller.invoke('pickVideoScene',true,value),/invalid-input/);
+  assert.equal(picks,0);assert.deepEqual(await controller.invoke('pickVideoScene',true),{scene_id:'3f2192d1-0846-4ed0-8ac9-7d875a1c1c72',name:'scene.blend'});assert.equal(picks,1);
+});
+
 test('automatic IPC accepts only bounded snapshots paired with the header and sanitizes resolved intent events',async()=>{
   const {controller,output}=setup(),automatic=require('./automatic-fixture.cjs')();automatic.target.sourceRevision='snapshot_3';
   await controller.invoke('sendMessage',true,{...message,text:'[Pankeki action: auto]\n그려줘',automatic});

@@ -46,10 +46,15 @@ function validateMessage(value) {
   }
   return value;
 }
-function createIpcController({bridge,getAppStatus,isTrusted,sendEvent,contexts,results,mapBridgeMessage=value=>value,allowLiveSend=false,origin='http://127.0.0.1:8190'}) {
+function createIpcController({bridge,getAppStatus,isTrusted,sendEvent,contexts,results,pickVideoScene,mapBridgeMessage=value=>value,allowLiveSend=false,origin='http://127.0.0.1:8190'}) {
   const requests=new Map();let active=null, connecting=null,changingModel=false;
   async function invoke(method,event,value) {
     if(!isTrusted(event))fail('untrusted-sender');
+    if(method==='pickVideoScene'){
+      if(value!==undefined)fail('invalid-input');
+      if(typeof pickVideoScene!=='function')fail('scene-selection-unavailable');
+      return pickVideoScene();
+    }
     if(method==='getStatus')return {codex:safeStatus(bridge.status()),app:await getAppStatus()};
     if(method==='connectCodex') {
       if(changingModel)fail('busy');

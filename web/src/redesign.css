@@ -628,6 +628,9 @@ body.pankeki-reference .pk-navigation .pk-nav-divider{margin:14px 8px}
 body.pankeki-reference .pc-reference-project-actions{display:flex;margin-left:auto;gap:4px}
 body.pankeki-reference .pc-reference-project-actions>button{width:36px;height:36px;display:grid;place-items:center;border-radius:7px;color:var(--pc-muted)}
 body.pankeki-reference .pc-reference-project-actions>button:hover{background:var(--pc-selected);color:var(--pc-ink)}
+body.pankeki-reference .pc-reference-project-actions>.pc-save-as-project{display:flex;width:auto;min-height:36px;padding:6px 10px;gap:6px;border:1px solid var(--pc-line);color:var(--pc-ink);font-size:12px;white-space:nowrap}
+.pc-save-as-project[hidden]{display:none!important}
+.pc-save-as-project:disabled{opacity:.5;cursor:default}
 body.pankeki-reference:is([data-studio-screen=design],[data-studio-screen=inpaint]) .pk-header-generation-actions{display:none}
 body.pankeki-reference:not(:is([data-studio-screen=design],[data-studio-screen=inpaint])) .pc-reference-project-actions{display:none}
 body.pankeki-pc.pankeki-spacious.pankeki-reference:is([data-studio-screen=design],[data-studio-screen=inpaint]) .pk-surface{display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:56px minmax(0,1fr) auto;background:var(--pc-paper)}
@@ -637,7 +640,7 @@ body.pankeki-pc.pankeki-spacious.pankeki-reference:is([data-studio-screen=design
 body.pankeki-reference .pc-header-context{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 body.pankeki-pc.pankeki-spacious.pankeki-reference:is([data-studio-screen=design],[data-studio-screen=inpaint]) :is(.pk-pages,.pc-spacious-workspace){display:contents!important}
 body.pankeki-pc.pankeki-spacious.pankeki-reference:is([data-studio-screen=design],[data-studio-screen=inpaint]) .pc-spacious-workspace>.pc-thread{grid-area:2/1;min-height:0;max-height:none;padding:24px 28px 12px;overflow:auto;overscroll-behavior:contain;scroll-padding-block:20px}
-body.pankeki-reference:is([data-studio-screen=design],[data-studio-screen=inpaint]) .pc-thread-inner{width:100%;max-width:850px;margin-inline:auto;min-height:0;padding-bottom:16px}
+body.pankeki-reference:is([data-studio-screen=design],[data-studio-screen=inpaint]) .pc-thread-inner{width:100%;max-width:none;margin-inline:auto;min-height:0;padding-bottom:16px}
 body.pankeki-reference .pc-request>p{background:var(--pc-background);color:var(--pc-ink);border-radius:14px 14px 4px 14px;box-shadow:none}
 body.pankeki-reference .pc-message-author{color:var(--pc-muted)}
 body.pankeki-reference .pc-image-frame{background:transparent}
@@ -650,16 +653,43 @@ body.pankeki-pc .pc-image-actions.pc-image-overlay>:is(button,a):hover{backgroun
 body.pankeki-pc .pc-image-actions.pc-image-overlay>:is(button,a):focus-visible{outline:2px solid var(--pc-action);outline-offset:2px}
 body.pankeki-pc .pc-image-actions.pc-image-overlay .icon{width:18px;height:18px}
 body.pankeki-pc.pankeki-spacious.pankeki-reference:is([data-studio-screen=design],[data-studio-screen=inpaint]) .pc-spacious-workspace>.pk-composer-dock{grid-area:3/1;display:flex!important;margin:0;padding:10px 16px 8px;gap:6px;background:var(--pc-surface);border-top:1px solid var(--pc-line);max-height:42dvh;overflow-y:auto}
-body.pankeki-pc.pankeki-spacious.pankeki-reference:is([data-studio-screen=design],[data-studio-screen=inpaint]) .pc-spacious-workspace .pk-composer{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:end;padding:10px 12px;border:1px solid var(--pc-line);border-radius:14px;background:var(--pc-paper);box-shadow:0 2px 5px #563b2110}
+body.pankeki-pc.pankeki-spacious.pankeki-reference:is([data-studio-screen=design],[data-studio-screen=inpaint]) .pc-spacious-workspace .pk-composer{display:grid;grid-template-columns:minmax(0,1fr);gap:6px;align-items:end;padding:10px 12px;border:1px solid var(--pc-line);border-radius:14px;background:var(--pc-paper);box-shadow:0 2px 5px #563b2110}
 body.pankeki-pc.pankeki-spacious.pankeki-reference:is([data-studio-screen=design],[data-studio-screen=inpaint]) .pc-spacious-workspace .pk-prompt-slot{grid-area:1/1/2/-1;display:grid;grid-template-columns:minmax(0,1fr);align-items:center;gap:10px}
 body.pankeki-pc.pankeki-spacious.pankeki-reference:is([data-studio-screen=design],[data-studio-screen=inpaint]) .pc-spacious-workspace .pk-prompt-slot:has(.pc-composer-target:not([hidden])){grid-template-columns:48px minmax(0,1fr)}
-body.pankeki-pc.pankeki-spacious.pankeki-reference:is([data-studio-screen=design],[data-studio-screen=inpaint]) .pc-spacious-workspace #pcPrompt{height:42px;min-height:42px;max-height:88px;font-size:15px;line-height:1.6;padding:2px 0 8px}
-body.pankeki-pc.pankeki-spacious.pankeki-reference:is([data-studio-screen=design],[data-studio-screen=inpaint]) .pc-spacious-workspace .pc-ai-controls{grid-area:2/1;align-self:center;min-width:0}
-body.pankeki-pc.pankeki-spacious.pankeki-reference:is([data-studio-screen=design],[data-studio-screen=inpaint]) .pc-spacious-workspace .pc-composer-bar{grid-area:2/2;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+body.pankeki-pc.pankeki-spacious.pankeki-reference:is([data-studio-screen=design],[data-studio-screen=inpaint]) .pc-spacious-workspace #pcPrompt{height:32px;min-height:32px;max-height:96px;font-size:15px;line-height:1.6;padding:2px 0 4px;overflow-y:auto}
+body.pankeki-pc.pankeki-spacious.pankeki-reference:is([data-studio-screen=design],[data-studio-screen=inpaint]) .pc-spacious-workspace .pc-ai-controls{display:contents}
+body.pankeki-reference .pc-ai-controls[hidden]{display:none!important}
+body.pankeki-pc.pankeki-spacious.pankeki-reference:is([data-studio-screen=design],[data-studio-screen=inpaint]) .pc-spacious-workspace .pc-composer-bar{grid-area:2/1;gap:12px;flex-wrap:nowrap;justify-content:space-between;align-items:flex-end;min-width:0}
+body.pankeki-reference .pc-composer-tools{flex:1 1 auto;min-width:0;align-items:center;gap:4px}
+body.pankeki-reference .pc-composer-tools .pc-setting-button{min-width:0;max-width:180px;min-height:32px;padding:5px 8px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.5}
+body.pankeki-reference .pc-composer-tools .pc-setting-button>span{display:block;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+body.pankeki-reference.pc-central-chat #desktopChatSelectedModel{display:block;flex:0 1 auto;max-width:220px;min-width:100px;margin-left:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;overflow-wrap:normal}
+body.pankeki-reference #pcResolution{display:block}
+body.pankeki-reference .pc-send-tools{flex:none;align-self:flex-end}
 body.pankeki-reference .pc-key-hint{display:none}
 body.pankeki-pc.pankeki-spacious.pankeki-reference:is([data-studio-screen=design],[data-studio-screen=inpaint]) .pc-spacious-workspace .pk-send{width:auto;min-width:86px;height:38px;padding:8px 12px;gap:7px;display:flex;align-items:center;justify-content:center;border-radius:9px;font-size:14px;background:var(--pc-action);color:#fff;font-weight:650;box-shadow:0 2px 3px #73481520}
 body.pankeki-reference .pk-send .icon{width:16px;height:16px}
-body.pankeki-pc.pankeki-spacious.pankeki-reference:is([data-studio-screen=design],[data-studio-screen=inpaint]) .pc-spacious-workspace .pk-composer-meta{max-height:48px;min-height:20px;line-height:1.5}
+body.pankeki-pc.pankeki-spacious.pankeki-reference:is([data-studio-screen=design],[data-studio-screen=inpaint]) .pc-spacious-workspace .pk-composer-meta{max-height:none;min-height:20px;line-height:1.5;flex-wrap:wrap;overflow:visible}
+body.pankeki-reference #pkComposerStatus{min-width:0;overflow-wrap:anywhere}
+body.pankeki-reference #pkCancel{flex:none;min-height:28px;white-space:nowrap}
+body.pankeki-reference .pc-history{gap:32px}
+body.pankeki-reference .pc-request{gap:6px;margin-bottom:16px}
+body.pankeki-reference .pc-message-author{gap:8px;flex-wrap:wrap}
+body.pankeki-reference .pc-message-author>strong{min-width:0;overflow-wrap:anywhere}
+body.pankeki-reference .pc-ai-turn .desktop-chat-reply{max-width:72ch;margin-top:8px}
+body.pankeki-reference .pc-ai-results>.pc-turn{margin-top:16px}
+.pc-message-actions{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-top:10px;color:var(--pc-muted);font-size:12px;line-height:1.5}
+.pc-message-actions:not(:has(button:not([hidden]))){display:none}
+.pc-message-actions>button{min-height:32px;padding:5px 9px;border:1px solid var(--pc-line);border-radius:7px;background:var(--pc-paper);color:var(--pc-ink);font:inherit;cursor:pointer}
+.pc-message-actions>button[hidden]{display:none!important}
+.pc-message-actions>button:hover{background:var(--pc-selected)}
+.pc-message-actions>button:disabled{color:var(--pc-muted);cursor:wait}
+.pc-message-actions>button:focus-visible{outline:2px solid var(--pc-action);outline-offset:2px}
+[data-pc-message-feedback]{overflow-wrap:anywhere}
+[data-pc-message-feedback]:empty{display:none}
+[data-pc-message-feedback].error{color:var(--pc-error)}
+.pc-context-boundary{display:flex;align-items:center;gap:12px;margin:0;color:var(--pc-muted);font-size:12px;line-height:1.5}
+.pc-context-boundary::before,.pc-context-boundary::after{content:'';height:1px;flex:1;background:var(--pc-line)}
 body.pankeki-reference .pc-composer-target:not([hidden]){display:grid;place-items:center;width:48px;height:48px;min-width:48px;padding:3px;border:1px solid var(--pc-line);background:var(--pc-paper);border-radius:7px;color:var(--pc-ink)}
 .pc-composer-target img{width:40px;height:40px;object-fit:contain;border-radius:4px;background:var(--pc-background)}
 .pc-composer-target span{position:absolute;width:1px;height:1px;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap}
@@ -705,7 +735,7 @@ body.pankeki-reference .pc-candidate-strip>button[aria-pressed=true]{border-colo
 body.pankeki-reference :is(.pc-editor-rail button,.pc-editor-rail label,.pc-candidate-strip button,.pc-composer-target,.pc-reference-project-actions button):focus-visible{outline:2px solid var(--pc-action);outline-offset:2px}
 @media(max-width:1300px){
  body.pankeki-reference .pc-composer-bar{max-width:100%}
- body.pankeki-reference .pc-composer-tools{max-width:205px;flex-wrap:wrap!important}
+ body.pankeki-reference .pc-composer-tools{max-width:none;flex-wrap:wrap!important}
  body.pankeki-reference .pc-canvas-heading p{display:none}
  body.pankeki-reference .pc-canvas-controls output{display:none}
 }
@@ -723,7 +753,7 @@ body.pankeki-reference :is(.pc-editor-rail button,.pc-editor-rail label,.pc-cand
  body.pankeki-pc.pankeki-spacious.pankeki-reference .pk-layout{grid-template-columns:64px minmax(0,1fr)}
  body.pankeki-pc.pankeki-spacious.pankeki-reference .pk-brand{padding:0;margin-bottom:20px}
  body.pankeki-pc.pankeki-spacious.pankeki-reference .pk-navigation>button{padding:9px;min-height:42px}
- body.pankeki-pc.pankeki-spacious.pankeki-reference:is([data-studio-screen=design],[data-studio-screen=inpaint]) .pc-spacious-workspace .pc-composer-bar{grid-area:3/1/4/-1;justify-content:space-between}
+ body.pankeki-pc.pankeki-spacious.pankeki-reference:is([data-studio-screen=design],[data-studio-screen=inpaint]) .pc-spacious-workspace .pc-composer-bar{grid-area:2/1;justify-content:space-between}
  body.pankeki-pc.pankeki-spacious.pankeki-reference:is([data-studio-screen=design],[data-studio-screen=inpaint]) .pc-spacious-workspace .pc-ai-controls{grid-area:2/1/3/-1}
  body.pankeki-reference .pc-composer-tools{max-width:none}
  body.pankeki-reference .pc-header-context{display:none}
@@ -746,7 +776,7 @@ body.pankeki-photo-tools .pc-photo-tools-host .ppe-tabs{box-shadow:0 3px 8px #30
 body.pankeki-photo-tools .pc-canvas-heading{min-width:96px}
 body.pankeki-pc.pankeki-spacious.pankeki-reference.pankeki-photo-tools:is([data-studio-screen=design],[data-studio-screen=inpaint]) .pc-spacious-workspace .pk-composer{grid-template-columns:minmax(0,1fr)}
 body.pankeki-pc.pankeki-spacious.pankeki-reference.pankeki-photo-tools:is([data-studio-screen=design],[data-studio-screen=inpaint]) .pc-spacious-workspace .pc-ai-controls{grid-area:2/1;max-width:100%}
-body.pankeki-pc.pankeki-spacious.pankeki-reference.pankeki-photo-tools:is([data-studio-screen=design],[data-studio-screen=inpaint]) .pc-spacious-workspace .pc-composer-bar{grid-area:3/1;justify-content:space-between;flex-wrap:wrap}
+body.pankeki-pc.pankeki-spacious.pankeki-reference.pankeki-photo-tools:is([data-studio-screen=design],[data-studio-screen=inpaint]) .pc-spacious-workspace .pc-composer-bar{grid-area:2/1;justify-content:space-between;flex-wrap:nowrap}
 body.pankeki-pc.pankeki-spacious.pankeki-reference.pankeki-photo-tools:is([data-studio-screen=design],[data-studio-screen=inpaint]) .pc-spacious-workspace .pc-composer-tools{max-width:none;flex-wrap:wrap}
 body.pankeki-pc.pankeki-spacious.pankeki-reference.pankeki-photo-tools.pc-legacy-mask:is([data-studio-screen=design],[data-studio-screen=inpaint]) .pc-spacious-workspace .canvas-card{grid-template-rows:minmax(0,1fr) auto auto}
 body.pankeki-pc.pankeki-spacious.pankeki-reference.pankeki-photo-tools.pc-legacy-mask .pc-editor-rail:not([hidden]){display:flex!important;grid-area:2/1;flex-direction:row;align-items:center;padding:8px 12px;border:0;border-top:1px solid var(--pc-line);overflow-x:auto}
@@ -959,12 +989,35 @@ body.pankeki-pc .pc-home-shortcuts>button:not(:disabled):active,body.pankeki-pc 
 .pc-project-actions{display:flex;align-items:center;gap:4px;margin-top:8px}
 .pc-project-actions>button,.pc-project-paging>button,.pc-project-retry{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-width:44px;min-height:44px;padding:8px;border:1px solid var(--pc-line);border-radius:8px;background:var(--pc-paper);color:var(--pc-ink);font-size:12px;line-height:1.5}
 .pc-project-actions>.pc-project-new{flex:1}
+.pc-projects-page[hidden]{display:none!important}
+.pc-projects-page{display:flex;flex-direction:column;align-items:stretch;gap:16px;min-width:0;min-height:0;overflow:auto;padding:24px 32px 32px;scroll-padding:24px;overscroll-behavior:contain;color:var(--pc-ink)}
+.pc-projects-page-header{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:16px}
+.pc-projects-page h1{font-size:20px;line-height:1.5;font-weight:700;margin:0}
+.pc-projects-page .pc-project-actions{margin:0;gap:8px}
+.pc-projects-page .pc-project-actions>.pc-project-new{flex:none}
+.pc-projects-page .pc-project-status{margin:0}
+.pc-projects-page .pc-project-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,320px));align-content:start;gap:24px;margin:0}
+.pc-project-grid .pc-project-item{display:block;position:relative;border-radius:12px;overflow:visible}
+.pc-project-grid .pc-project-open{flex-direction:column;align-items:stretch;width:100%;padding:0;gap:0;border-radius:12px}
+.pc-project-grid .pc-project-preview{width:100%;height:220px;border-radius:11px 11px 0 0;object-fit:contain;background:var(--pc-background)}
+.pc-project-grid span.pc-project-preview{display:grid;place-items:center}
+.pc-project-grid .pc-project-preview>.icon{width:48px;height:48px}
+.pc-project-grid .pc-project-open>span:not(.pc-project-preview){display:block;padding:16px 56px 16px 16px;min-width:0}
+.pc-project-grid .pc-project-open strong{font-size:14px;line-height:1.5}
+.pc-project-grid .pc-project-open small{font-size:12px;line-height:1.5;margin-top:8px;font-variant-numeric:tabular-nums}
+.pc-project-grid .pc-project-remove{position:absolute;right:8px;bottom:12px}
+.pc-projects-page :is(button,input,h1):focus-visible{outline:2px solid var(--pc-action);outline-offset:3px}
+.pc-projects-page .pc-project-paging{justify-content:flex-start;gap:16px;margin:0}
+.pc-projects-page .pc-project-retry{max-width:320px;margin:0}
+body.pankeki-pc .pk-layout[data-screen=projects] .pk-home-search{display:flex;max-width:480px;flex:1}
+body.pankeki-pc .pk-layout[data-screen=projects] :is(#pkScreenTitle,#pcProjectName,.pk-header-generation-actions,.pc-reference-project-actions,.app-shell,.pk-home){display:none!important}
+@media(max-width:700px){.pc-projects-page{padding:20px 16px;gap:16px}.pc-projects-page .pc-project-grid{grid-template-columns:minmax(0,1fr);max-width:360px;width:100%}.pc-projects-page-header{align-items:flex-start;flex-direction:column}.pc-projects-page .pc-project-actions{flex-wrap:wrap}}
 .pc-project-actions>button{padding-inline:4px;gap:4px;white-space:nowrap}
 .pc-project-actions .icon,.pc-project-paging .icon{width:18px;height:18px}
 .pc-project-paging{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:8px}
 .pc-project-paging[hidden],.pc-project-retry[hidden]{display:none}
 .pc-project-paging>span{font-size:12px;line-height:1.5;color:var(--pc-muted)}
-.pc-project-paging #pcProjectPrevious>.icon{transform:rotate(180deg)}
+.pc-project-paging #pcProjectPrevious>.icon,.pc-projects-page [data-pk-project-page=previous]>.icon{transform:rotate(180deg)}
 
 /* The same composer is quiet on home; real context and recovery remain in flow. */
 body.pankeki-pc .pc-home-composer,body.pankeki-pc .pc-home-composer>.pk-composer-dock{min-height:0;height:auto}

@@ -75,7 +75,8 @@ function structuralDOM(ui) {
   Object.defineProperty(proto,'nextSibling',{configurable:true,get(){return this.parentNode?.children[this.parentNode.children.indexOf(this)+1]||null;}});
   proto.querySelectorAll = function(selector) { return descendants(this).filter(node => selector.split(',').some(part=>matches(node,part))); };
   proto.querySelector = function(selector) { return this.querySelectorAll(selector)[0] || null; };
-  proto.closest = function(selector) { return matches(this,selector) ? this : this.parentNode?.closest(selector) || null; };
+  proto.closest = function(selector) { return selector.split(',').some(part=>matches(this,part.trim())) ? this : this.parentNode?.closest(selector) || null; };
+  proto.hasAttribute = function(name) { return this.getAttribute(name)!==null; };
   proto.setSelectionRange = function(start,end) { this.selectionStart=start; this.selectionEnd=end; };
   proto.requestSubmit = function() { return this.dispatchEvent(new ui.sandbox.Event('submit',{bubbles:true})); };
   // Capture precedes native onclick mutations; the event path stays fixed.
@@ -107,13 +108,28 @@ function structuralDOM(ui) {
   return doc;
 }
 
-async function mounted({twoCandidates=false,storageEstimate}={}) {
+async function mounted({twoCandidates=false,storageEstimate,projectStore,initialProject=true,waitProjectReady=true}={}) {
   const ui=page({autoJobs:true}); await until(()=>ui.studio().getSummary().modelsReady,'model catalog');
+  const projectCalls={persistCurrent:0,load:0,newProject:0};
   if(storageEstimate)ui.sandbox.navigator={storage:{estimate:storageEstimate}};
   const doc=structuralDOM(ui);
+  if(projectStore){
+    await ui.studio().ready;
+    if(initialProject)await ui.studio().importProject(ui.project('Library A'));
+    else assert.equal(ui.studio().resetProject(),true,'empty-catalog fixture starts with the production empty brief');
+    if(initialProject&&!projectStore.state.records.length){
+      projectStore.state.activeId='fixture-legacy-a';projectStore.state.records=[{id:'fixture-legacy-a',raw:ui.studio().exportProject(),createdAt:'2026-10-27T00:00:00.000Z',updatedAt:'2026-10-27T00:00:00.000Z',favorite:false,recovered:false}];
+    }
+    const library=require('../web/src/project-library.js');
+    ui.sandbox.PankekiProjectLibrary={create:options=>library.create({...options,store:projectStore,
+      persistCurrent:raw=>{projectCalls.persistCurrent++;return options.persistCurrent(raw);},
+      load:raw=>{projectCalls.load++;return options.load(raw);},
+      newProject:()=>{projectCalls.newProject++;return options.newProject();}})};
+  }
   for (const name of ['redesign.js','studio.js']) vm.runInContext(readFileSync(path.join(__dirname,'../web/src',name),'utf8'),ui.sandbox,{filename:name});
   const assets=doc.createElement('script');assets.id='redesignAssets';assets.textContent=JSON.stringify({images:{'catgirl-hero':'/template.png'},icons:{}});doc.body.append(assets);
   const controller=ui.sandbox.PankekiRedesign.mount(doc,ui.studio(),ui.sandbox.PankekiWorkflowController);
+  if(projectStore){if(waitProjectReady){await until(()=>controller.projects.getState().initialized,'project catalog');await controller.projects.flush();}return {...ui,doc,controller,projectCalls};}
   const project=ui.project('Actual project');
   if(twoCandidates)project.versions.push({...project.versions[0],id:'second',label:'Second candidate'});
   await ui.studio().importProject(project);
@@ -122,6 +138,21 @@ async function mounted({twoCandidates=false,storageEstimate}={}) {
   ui.element('paint').snapshot=WHITE;
   await settle();
   return {...ui,doc,controller};
+}
+
+// Only the external persistence boundary is replaced; production project rows,
+// navigation, host capture/load and revision checks run unchanged.
+class CatalogStore {
+  constructor(){this.state={revision:0,activeId:null,records:[]};}
+  async read(){return structuredClone(this.state);}
+  async commit(change){
+    assert.equal(change.expectedRevision,this.state.revision);
+    const rows=new Map(this.state.records.map(row=>[row.id,structuredClone(row)]));
+    for(const id of change.remove||[])rows.delete(id);
+    for(const row of change.put||[])rows.set(row.id,structuredClone(row));
+    this.state={revision:this.state.revision+1,activeId:Object.hasOwn(change,'activeId')?change.activeId:this.state.activeId,records:[...rows.values()]};
+    return {revision:this.state.revision,activeId:this.state.activeId};
+  }
 }
 
 test('settings opened from recolor/export offers completion instead of a second execution footer',async()=>{
@@ -200,7 +231,7 @@ test('compare hides composers and edit tools, blocks submissions, and restores e
 test('all routes retain eleven sidebar items and compare activates the Design parent',async()=>{
   const ui=await mounted(),nav=ui.doc.querySelector('.pk-navigation');
   const expected=['홈','프로젝트','이미지 생성','디자인','부위 편집','표정 · 동작','출력','갤러리','템플릿','모델 관리','설정'];
-  for(const screen of ['home','design','inpaint','compare','parts','motion','export']){
+  for(const screen of ['home','projects','design','inpaint','compare','parts','motion','export']){
     ui.controller.go(screen);
     assert.deepEqual(nav.querySelectorAll('button').map(node=>node.getAttribute('aria-label')),expected);
     assert.equal(nav.querySelector('.pk-gallery-nav').hidden,false);
@@ -216,7 +247,7 @@ test('home keeps its brand hero and six recommendations while existing candidate
   ui.controller.go('home');
   assert(hero,'brand composition instead of giant project card');assert.notEqual(hero.querySelector('img').src,RED);assert.match(hero.querySelector('h1').textContent,/상상하는 캐릭터/);
   assert.equal(ui.doc.querySelector('.pk-home-templates').querySelectorAll('[data-pk-template]').length,6);
-  assert.match(ui.doc.getElementById('pcHomeProjectSummary').textContent,/Actual project/);assert.match(ui.doc.getElementById('pcProjectLibraryHeading').textContent,/프로젝트 목록/);
+  assert.match(ui.doc.getElementById('pcHomeProjectSummary').textContent,/일반 생성 기록/);assert.match(ui.doc.getElementById('pcHomeCandidateSummary').textContent,/현재 후보 2개/);assert.match(ui.doc.getElementById('pcProjectLibraryHeading').textContent,/프로젝트 목록/);
   assert.equal(ui.doc.getElementById('pkSearch').placeholder,'프로젝트·현재 후보 검색…');assert.match(ui.doc.querySelector('label[for=pkSearch]').textContent,/프로젝트 이름과 현재 후보/);assert.match(ui.doc.querySelector('.pc-home-projects [data-pk-action=gallery]').textContent,/현재 후보 보기/);
   ui.doc.getElementById('pkSearch').value='Second candidate';await ui.doc.getElementById('pkSearch').dispatchEvent(new ui.sandbox.Event('input'));await ui.doc.querySelector('[data-pk-action="gallery"]').click();assert.equal(ui.doc.querySelector('.pk-gallery-dialog').open,true);assert.equal(ui.doc.activeElement.dataset.candidateId,undefined);await ui.doc.getElementById('gallery').querySelector('[data-candidate-id="second"] [data-action=view]').click();assert.equal(ui.doc.getElementById('workspace').dataset.candidateId,'second');
   ui.studio().resetProject();ui.controller.go('home');
@@ -257,4 +288,119 @@ test('project library host routes original file new and v1 save through one opti
   ui.element('loadProject').files=[{size:raw.length,text:async()=>raw}];await ui.element('loadProject').onchange();assert.deepEqual(calls,[['import',raw]]);await ui.element('newProject').onclick();assert.deepEqual(calls[1],['new']);
   await ui.element('saveProject').onclick();assert.equal(calls.filter(value=>value[0]==='save').length,1);assert.equal(ui.downloads.length,1);assert.equal(ui.studio().getSummary().candidateCount,0);
   unbind();assert.equal(await ui.studio().requestImportProject(raw),true);assert.equal(ui.studio().getSummary().candidateCount,1);assert.equal(await ui.studio().requestNewProject(),true);assert.equal(ui.studio().getSummary().candidateCount,0);
+});
+
+test('sidebar projects navigates to the dedicated page without saving or replacing the current work',async()=>{
+  const store=new CatalogStore(),ui=await mounted({projectStore:store});
+  ui.controller.go('inpaint');
+  const input=ui.doc.getElementById('pcPrompt');input.value='보존할 미전송 초안';input.setSelectionRange(2,6);
+  await input.dispatchEvent(new ui.sandbox.Event('input',{bubbles:true}));
+  assert.equal(await ui.controller.projects.saveCurrent(),true);await ui.controller.projects.flush();
+  const raw=ui.studio().exportProject(),saved=JSON.stringify(store.state),calls={...ui.projectCalls},activeId=ui.controller.projects.getState().activeId,mode=ui.studio().getSummary().mode;
+  const nav=ui.doc.querySelector('.pk-navigation'),projects=nav.querySelector('[data-pk-route=projects]');projects.focus();await projects.click();
+  assert.equal(ui.doc.body.dataset.studioScreen,'projects');assert.equal(ui.doc.querySelector('.pk-layout').dataset.screen,'projects');
+  const page=ui.doc.querySelector('[data-studio-page=projects]');assert(page,'workflow owns a real projects page');assert.equal(page.hidden,false);
+  const heading=page.querySelector('[data-studio-heading=projects]');assert.equal(heading?.textContent,'프로젝트');
+  assert.equal(ui.doc.querySelectorAll('dialog').some(node=>node.open),false,'projects entry has no popup');
+  assert.equal(page.querySelectorAll('.pc-project-open').length,1);
+  const row=page.querySelector('.pc-project-open');assert.match(row.textContent,/Library A/);assert.match(row.textContent,/후보 1개/);assert.match(row.textContent,/\d{2}\D+\d{2}/,'actual modified time is presented');
+  assert.equal(row.querySelector('img')?.src,RED);assert.match(row.textContent,/사용 중/);
+  assert.equal(projects.getAttribute('aria-current'),'page');
+  assert.equal(nav.querySelectorAll('[aria-current=page]').length,1);
+  assert.equal(ui.doc.activeElement,heading,'focus enters the real project page heading');
+  await nav.querySelector('[data-pk-route=home]').click();assert.equal(ui.doc.body.dataset.studioScreen,'home');assert.equal(page.hidden,true);
+  assert.equal(nav.querySelector('[aria-current=page]').dataset.pkRoute,'home');assert.equal(ui.doc.getElementById('pkRecentGrid').querySelectorAll('.pc-project-open').length,1,'home rail remains available');
+  assert.equal(ui.studio().exportProject(),raw);assert.equal(JSON.stringify(store.state),saved);assert.equal(ui.controller.projects.getState().activeId,activeId);
+  assert.deepEqual(ui.projectCalls,calls,'pure navigation does not invoke persistence, load or reset');assert.equal(ui.studio().getSummary().mode,mode);
+  assert.equal(input.value,'보존할 미전송 초안');assert.equal(input.selectionStart,2);assert.equal(input.selectionEnd,6);
+  assert.equal(ui.downloads.length,0);assert.equal(ui.requests.length,0);
+});
+
+test('sidebar projects isolates its search and opens actual stored projects with their drafts',async()=>{
+  const store=new CatalogStore(),ui=await mounted({projectStore:store}),library=ui.controller.projects;
+  const first=library.getState().activeId,input=ui.doc.getElementById('pcPrompt');input.value='A 미전송 초안';input.setSelectionRange(2,4);
+  await input.dispatchEvent(new ui.sandbox.Event('input',{bubbles:true}));
+  assert.equal(await ui.studio().requestImportProject(JSON.stringify(ui.project('Library B'))),true);
+  input.value='B 미전송 초안';input.setSelectionRange(1,3);await input.dispatchEvent(new ui.sandbox.Event('input',{bubbles:true}));
+  // This legacy composer mirrors its text into the current document. Commit B
+  // before the baseline so normal save-before-switch is not mistaken for loss.
+  assert.equal(await library.saveCurrent(),true);await library.flush();assert.equal(library.getState().items.length,2);
+  ui.controller.go('home');
+  const search=ui.doc.getElementById('pkSearch');search.value='NO MATCH FOR STORED PROJECT';await search.dispatchEvent(new ui.sandbox.Event('input',{bubbles:true}));
+  assert.equal(ui.doc.getElementById('pkRecentGrid').querySelectorAll('.pc-project-open').length,0,'home search can filter its own rows');
+  assert.match(ui.doc.getElementById('pkRecentGrid').querySelector('.pc-home-recent-empty').textContent,/검색/,'filtered results must not be described as an empty saved catalog');
+  const raw=ui.studio().exportProject(),saved=JSON.stringify(store.state);ui.controller.go('design');
+  await ui.doc.querySelector('.pk-navigation [data-pk-route=projects]').click();
+  assert.equal(ui.doc.body.dataset.studioScreen,'projects');const page=ui.doc.querySelector('[data-studio-page=projects]');assert.equal(page.hidden,false);
+  assert.equal(page.querySelectorAll('.pc-project-open').length,2,'stored projects are not hidden by an unrelated home query');
+  assert.equal(search.value,'','the initial project-page query is independent of home');assert.equal(ui.doc.querySelectorAll('#pkSearch').length,1);
+  assert.equal(ui.studio().exportProject(),raw);assert.equal(JSON.stringify(store.state),saved);assert.equal(ui.requests.length,0);
+  search.value='Library A';await search.dispatchEvent(new ui.sandbox.Event('input',{bubbles:true}));assert.equal(page.querySelectorAll('.pc-project-open').length,1);
+  await ui.doc.querySelector('.pk-navigation [data-pk-route=home]').click();assert.equal(search.value,'NO MATCH FOR STORED PROJECT');assert.equal(ui.doc.getElementById('pkRecentGrid').querySelectorAll('.pc-project-open').length,0);
+  await ui.doc.querySelector('.pk-navigation [data-pk-route=projects]').click();assert.equal(search.value,'Library A');
+  const target=page.querySelectorAll('.pc-project-open').find(node=>node.dataset.pkProjectId===first);assert(target,'page exposes the actual stored local ID');await target.click();await library.flush();await settle();
+  assert.equal(page.hidden,true);assert.equal(library.getState().activeId,first);assert.equal(ui.studio().getSummary().name,'Library A');assert.equal(ui.doc.body.dataset.studioScreen,'design');
+  assert.equal(input.value,'A 미전송 초안');assert.equal(input.selectionStart,2);assert.equal(input.selectionEnd,4);
+  assert.equal(ui.doc.activeElement,input);assert.equal(JSON.stringify(store.state.records),JSON.stringify(JSON.parse(saved).records));assert.equal(ui.downloads.length,0);assert.equal(ui.requests.length,0);
+
+  // The catalog has no20-project cap. Only external storage is seeded; no
+  // user database or21real imports/generations are involved.
+  const many=new CatalogStore(),Design=require('../web/src/profiles.js');
+  many.state.records=Array.from({length:21},(_,i)=>({id:'stored-'+String(i+1).padStart(2,'0'),raw:JSON.stringify(Design.createProject({name:'Stored '+String(i+1).padStart(2,'0')},[],[])),createdAt:new Date(Date.UTC(2026,9,29,0,0,i)).toISOString(),updatedAt:'2026-10-29T00:01:00.000Z',favorite:false,recovered:false}));
+  const large=await mounted({projectStore:many,initialProject:false});large.controller.go('home');
+  assert.equal(large.controller.projects.getState().items.length,21);assert.equal(large.doc.getElementById('pkRecentGrid').querySelectorAll('.pc-project-open').length,2);
+  await large.doc.getElementById('pcProjectNext').click();assert.equal(large.doc.getElementById('pcProjectPage').textContent,'2 / 11');assert.equal(large.doc.getElementById('pkRecentGrid').querySelectorAll('.pc-project-open').length,2,'home retains its2-per-page list');
+  await large.doc.querySelector('.pk-navigation [data-pk-route=projects]').click();const libraryPage=large.doc.querySelector('[data-studio-page=projects]');
+  assert.equal(libraryPage.querySelectorAll('.pc-project-open').length,20);const next=libraryPage.querySelector('[aria-label="다음 프로젝트 페이지"]');assert(next&&!next.disabled,'21st project has an accessible next page');await next.click();
+  const oldest=libraryPage.querySelectorAll('.pc-project-open');assert.equal(oldest.length,1);assert.equal(oldest[0].dataset.pkProjectId,'stored-01');await oldest[0].click();await large.controller.projects.flush();await settle();
+  assert.equal(large.controller.projects.getState().activeId,'stored-01');assert.equal(large.studio().getSummary().name,'Stored 01');assert.equal(many.state.records.length,21);assert.equal(large.requests.length,0);
+});
+
+test('sidebar projects distinguishes catalog loading, genuine empty storage and read failure',async()=>{
+  let release;const gate=new Promise(resolve=>release=resolve),store=new CatalogStore();store.read=async()=>{await gate;return structuredClone(store.state);};
+  const ui=await mounted({projectStore:store,initialProject:false,waitProjectReady:false});await ui.doc.querySelector('.pk-navigation [data-pk-route=projects]').click();
+  assert.equal(ui.doc.body.dataset.studioScreen,'projects');const page=ui.doc.querySelector('[data-studio-page=projects]');assert.equal(page.hidden,false);
+  assert.match(page.querySelector('[role=status]').textContent,/확인|불러|준비/);assert.equal(page.querySelectorAll('.pc-project-open').length,0);
+  assert.doesNotMatch(ui.doc.getElementById('pcProjectName').textContent+' '+ui.doc.getElementById('pcHomeCandidateSummary').textContent,/자동\s*(보관|저장)/,'pending storage must not claim automatic preservation');
+  release();await until(()=>ui.controller.projects.getState().initialized,'empty catalog initialized');
+  assert.equal(ui.controller.projects.getState().ready,true);assert.match(page.textContent,/저장된 프로젝트가 없/);assert.equal(store.state.records.length,0);
+  const failed=new CatalogStore();failed.read=async()=>{throw Error('Controlled catalog unavailable');};
+  const broken=await mounted({projectStore:failed,initialProject:false});await broken.doc.querySelector('.pk-navigation [data-pk-route=projects]').click();
+  const errorPage=broken.doc.querySelector('[data-studio-page=projects]');assert.equal(errorPage.hidden,false);assert.match(errorPage.querySelector('[role=alert]').textContent,/Controlled catalog unavailable/);
+  assert.doesNotMatch(broken.doc.getElementById('pcProjectName').textContent+' '+broken.doc.getElementById('pcHomeCandidateSummary').textContent,/자동\s*(보관|저장)/,'unavailable storage must not claim automatic preservation');
+  assert.equal(broken.controller.projects.getState().ready,false);assert.equal(failed.state.records.length,0);assert.equal(broken.requests.length,0);assert.equal(ui.requests.length,0);
+});
+
+test('generation sidebar entry opens ordinary work without editing a stored project',async()=>{
+ const store=new CatalogStore(),ui=await mounted({projectStore:store});const original=structuredClone(store.state.records[0]);
+ await ui.doc.querySelector('.pk-navigation [data-pk-route=design]').click();
+ assert.equal(ui.controller.projects.getState().activeKind,'generation','sidebar image generation must leave the stored-project context');
+ assert.equal(ui.doc.body.dataset.studioScreen,'design');assert.deepEqual(store.state.records.find(v=>v.id===original.id),original);
+ assert.equal(ui.controller.projects.getState().items.length,1);assert.equal(ui.requests.length,0);
+ const library=ui.controller.projects,input=ui.doc.getElementById('pcPrompt');await library.switchTo(original.id);await settle();ui.controller.go('home');input.value='취소하면 남길 입력';input.setSelectionRange(1,4);await input.dispatchEvent(new ui.sandbox.Event('input',{bubbles:true}));await library.saveCurrent();const saved=structuredClone(store.state.records.find(v=>v.id===original.id)),raw=ui.studio().exportProject();
+ ui.sandbox.confirm=()=>false;const template=ui.doc.querySelector('.pk-home-templates [data-pk-template]');await template.click();assert.equal(library.getState().activeId,original.id);assert.equal(input.value,'취소하면 남길 입력');assert.equal(input.selectionStart,1);assert.equal(input.selectionEnd,4);assert.equal(ui.studio().exportProject(),raw);
+ ui.sandbox.confirm=()=>true;await template.click();assert.equal(library.getState().activeKind,'generation');assert(input.value.trim());assert.notEqual(input.value,'취소하면 남길 입력');assert.deepEqual(store.state.records.find(v=>v.id===original.id),saved);assert.equal(library.getState().items.length,1);assert.equal(ui.requests.length,0);
+});
+
+test('generation file export keeps ordinary records while explicit project save copies them',async()=>{
+ const store=new CatalogStore(),ui=await mounted({projectStore:store,initialProject:false}),library=ui.controller.projects;
+ const save=()=>ui.doc.querySelectorAll('button').find(node=>node.getAttribute('aria-label')==='프로젝트로 저장'||node.textContent.trim()==='프로젝트로 저장');
+ assert(save(),'ordinary work exposes an explicit project-save control');
+ ui.element('prompt').value='A synthetic ordinary image';ui.element('candidateCount').value='1';ui.element('useBrief').checked=false;
+ assert.equal(await ui.studio().generate(),true);assert.equal(await library.saveCurrent(),true);const general=library.getState().activeId,raw=ui.studio().exportProject();
+ assert.equal(library.getState().activeKind,'generation');assert.equal(library.getState().items.length,0);
+ await ui.element('saveProject').click();await library.flush();assert.equal(ui.downloads.length,1);assert.equal(library.getState().items.length,0);assert.equal(library.getState().activeKind,'generation');
+ assert.equal(JSON.stringify(JSON.parse(await ui.downloads[0].blob.text())),JSON.stringify(JSON.parse(raw)));
+ await save().click();await library.flush();assert.equal(library.getState().activeKind,'project');assert.equal(library.getState().items.length,1);assert.notEqual(library.getState().activeId,general);
+ assert.equal(store.state.records.find(v=>v.id===general).raw,raw);assert.equal(store.state.records.find(v=>v.id===general).kind,'generation');assert.equal(ui.requests.length,1,'project registration never submits another image job');
+});
+
+test('generation project save failure is visible beside the preserved ordinary work',async()=>{
+ const store=new CatalogStore(),ui=await mounted({projectStore:store,initialProject:false}),library=ui.controller.projects;
+ await ui.doc.querySelector('.pk-navigation [data-pk-route=design]').click();ui.element('prompt').value='A synthetic ordinary image';ui.element('candidateCount').value='1';ui.element('useBrief').checked=false;
+ assert.equal(await ui.studio().generate(),true);await library.saveCurrent();const raw=ui.studio().exportProject(),id=library.getState().activeId,commit=store.commit.bind(store);
+ store.commit=change=>change.put?.some(row=>row.kind==='project')?Promise.reject(Error('Controlled project save failure')):commit(change);
+ const save=ui.doc.querySelectorAll('button').find(node=>node.getAttribute('aria-label')==='프로젝트로 저장'||node.textContent.trim()==='프로젝트로 저장');assert(save);await save.click();await library.flush();
+ assert.equal(library.getState().activeKind,'generation');assert.equal(library.getState().activeId,id);assert.equal(library.getState().items.length,0);assert.equal(ui.studio().exportProject(),raw);
+ const feedback=ui.doc.getElementById('pkComposerStatus');assert.match(feedback.textContent,/Controlled project save failure/);assert.equal(feedback.hidden,false);
 });

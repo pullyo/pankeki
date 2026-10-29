@@ -68,6 +68,8 @@ def source_content_id(root):
         if not all((root / name).is_file() for name in _REQUIRED):
             return None
         code = {root / 'web/build.py', root / 'desktop/package.json'}
+        code.update(root / name for name in ('scripts/blender_video_runner.py','scripts/pankeki_video_runner.py')
+                    if (root / name).exists())
         for folder, suffixes in [('pankeki', {'.py'}), ('web/src', {'.js', '.css', '.html'}),
                                  ('plugins/pankeki-local/server', {'.py'})]:
             code.update(path for path in (root / folder).rglob('*') if path.suffix in suffixes and path.is_file())

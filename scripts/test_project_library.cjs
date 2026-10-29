@@ -25,7 +25,9 @@ function host(initial=A){return {raw:initial,identity:'runtime-1',busy:false,dra
  load(value){this.loads.push(value);if(this.decline)return false;this.raw=value;this.identity+='x';return true;},
  reset(){this.resets++;if(this.decline)return false;this.raw=EMPTY;this.identity+='n';return true;}};}
 let sequence=0;
-function make(store=new MemoryStore(),h=host(),ready={ok:true,restored:true,reason:'restored',legacyRead:true,legacyRaw:h.raw},extra={}){
+function catalogRecord(id,value,kind,updatedAt='2026-10-27T00:00:00.000Z'){return {id,raw:value,createdAt:'2026-10-27T00:00:00.000Z',updatedAt,favorite:false,recovered:false,...(kind===undefined?{}:{kind})};}
+function legacyStore(){const store=new MemoryStore();store.state.records=[catalogRecord('legacy-a',A)];store.state.activeId='legacy-a';return store;}
+function make(store=legacyStore(),h=host(),ready={ok:true,restored:true,reason:'restored',legacyRead:true,legacyRaw:h.raw},extra={}){
  const library=API.create({store,ready:Promise.resolve(ready),capture:()=>h.raw,validateRaw:Design.parseProject,
   load:value=>h.load(value),newProject:()=>h.reset(),isBusy:()=>h.busy,getIdentity:()=>h.identity,
   getDraft:()=>clone(h.draft),setDraft:value=>h.draft=clone(value),now:()=> '2026-10-27T00:00:00.000Z',makeId:()=> 'local-'+(++sequence),...extra});
@@ -33,7 +35,7 @@ function make(store=new MemoryStore(),h=host(),ready={ok:true,restored:true,reas
 }
 test('ready delay cannot seed a temporary default; a genuinely empty startup creates no row',async()=>{
  const gate=deferred(),x=make(new MemoryStore(),host(EMPTY),gate.promise);const pending=x.library.init();await Promise.resolve();assert.equal(x.store.state.records.length,0);
- x.h.raw=A;gate.resolve({ok:true,restored:true,reason:'restored',legacyRead:true,legacyRaw:A});assert.equal(await pending,true);assert.equal(x.library.getState().items[0].name,'Project A');
+ x.h.raw=A;gate.resolve({ok:true,restored:true,reason:'restored',legacyRead:true,legacyRaw:A});assert.equal(await pending,true);assert.equal(x.library.getState().items.length,0);assert.equal(x.store.state.records[0].raw,A);assert.equal(x.store.state.records[0].kind,'generation');
  const empty=make(new MemoryStore(),host(EMPTY),{ok:true,restored:false,reason:'empty',legacyRead:true,legacyRaw:null});assert.equal(await empty.library.init(),true);assert.equal(empty.library.getState().items.length,0);
 });
 test('two real documents retain exact raw bytes, stable local IDs and favorite after reopening',async()=>{
@@ -70,6 +72,7 @@ test('stored active autoload requires confirmed empty legacy storage and no type
 test('superseded startup preserves legacy raw and current user work without automatic loading',async()=>{
  const x=make(new MemoryStore(),host(B),{ok:false,restored:false,reason:'superseded',legacyRead:true,legacyRaw:A});assert.equal(await x.library.init(),true);
  assert.deepEqual(new Set(x.store.state.records.map(v=>v.raw)),new Set([A,B]));assert.equal(x.h.loads.length,0);assert.equal(x.h.raw,B);
+ assert.equal(x.library.getState().items.length,0);assert(x.store.state.records.every(v=>v.kind==='generation'));
 });
 test('failed legacy read or decode never seeds the default or mutates an existing catalog',async()=>{
  const x=make();await x.library.init();const before=clone(x.store.state);
@@ -108,8 +111,8 @@ test('runtime identity bypass fails closed, and foreign-format rebind only accep
  const x=make();await x.library.init();const a=x.library.getState().activeId;x.h.identity='foreign-runtime';assert.equal(await x.library.rebindCurrent(),true);assert.equal(x.library.getState().activeId,a);
  const before=clone(x.store.state);x.h.raw=B;x.h.identity='external-import';assert.equal(await x.library.saveCurrent(),false);assert.deepEqual(x.store.state,before);assert.equal(await x.library.rebindCurrent(),false);assert.equal(x.library.getState().activeId,null);
 });
-test('an identity change during initial seed never binds the old record to new visible work',async()=>{
- const x=make(),entered=deferred(),release=deferred();x.store.hold={when:()=>true,entered,release};const initializing=x.library.init();await entered.promise;x.h.raw=B;x.h.identity='new-user-work';release.resolve();await initializing;
+test('an identity change during initial generation seed never binds the old record to new visible work',async()=>{
+ const x=make(new MemoryStore()),entered=deferred(),release=deferred();x.store.hold={when:()=>true,entered,release};const initializing=x.library.init();await entered.promise;x.h.raw=B;x.h.identity='new-user-work';release.resolve();await initializing;
  assert.equal(x.library.getState().activeId,null);assert(x.library.getState().recovery);assert.equal(x.store.state.records[0].raw,A);assert.equal(x.h.raw,B);
 });
 test('a replacement during pre-switch save cancels the stale load instead of overwriting new work',async()=>{
@@ -144,4 +147,107 @@ test('startup-current transaction failure cannot report catalog save success or 
 
 test('unbound foreign runtime cannot write startup current before a project transition refuses it',async()=>{
  let writes=0;const x=make(undefined,undefined,undefined,{persistCurrent:async()=>{writes++;}});await x.library.init();const before=clone(x.store.state);x.h.raw=B;x.h.identity='foreign-runtime';assert.equal(await x.library.newProject(),false);assert.equal(writes,0);assert.deepEqual(x.store.state,before);assert.equal(x.h.raw,B);
+});
+
+test('generation autosave and restored typed work never become project items',async()=>{
+ const x=make(new MemoryStore(),host(raw('Ordinary typed brief')));assert.equal(await x.library.init(),true);
+ assert.equal(x.library.getState().items.length,0,'restoring ordinary work must not create a project card');
+ assert.equal(x.library.getState().activeKind,'generation');const id=x.library.getState().activeId;assert(id);
+ assert.equal(x.store.state.records.find(v=>v.id===id).kind,'generation');
+ x.h.raw=B;assert.equal(await x.library.saveCurrent(),true);assert.equal(x.library.getState().items.length,0);
+ assert.equal(x.store.state.records.find(v=>v.id===id).raw,B);
+ const reopened=make(x.store,host(B));assert.equal(await reopened.library.init(),true);assert.equal(reopened.library.getState().activeId,id);
+ assert.equal(reopened.library.getState().activeKind,'generation');assert.equal(reopened.library.getState().items.length,0);assert.equal(reopened.h.raw,B);
+});
+
+test('generation project copy preserves its source and does not duplicate an already selected project',async()=>{
+ const x=make(new MemoryStore(),host(A));await x.library.init();const general=x.library.getState().activeId;
+ assert.equal(await x.library.saveAsProject(),true);const project=x.library.getState().activeId;
+ assert.notEqual(project,general);assert.equal(x.library.getState().activeKind,'project');assert.equal(x.library.getState().items.length,1);
+ assert.equal(x.store.state.records.find(v=>v.id===general).raw,A);assert.equal(x.store.state.records.find(v=>v.id===general).kind,'generation');
+ assert.equal(x.store.state.records.find(v=>v.id===project).raw,A);const before=clone(x.store.state);
+ await x.library.saveAsProject();assert.deepEqual(x.store.state,before,'an existing project is not copied again');
+ const blank=make(new MemoryStore(),host(EMPTY),{ok:true,restored:false,reason:'empty',legacyRead:true,legacyRaw:null});await blank.library.init();
+ assert.equal(await blank.library.saveAsProject(),false);assert.equal(blank.store.state.records.length,0);assert.equal(blank.library.getState().activeKind,'generation');
+ const uiEmpty=JSON.stringify(Design.createProject({palette:['#78845b','#f1d6a8','#b76d50']},[],[]));
+ const actualEmpty=make(new MemoryStore(),host(uiEmpty));await actualEmpty.library.init();const rows=clone(actualEmpty.store.state.records);
+ assert.equal(await actualEmpty.library.saveAsProject(),false,'untouched template palette alone is not a project to copy');assert.equal(actualEmpty.library.getState().items.length,0);assert.deepEqual(actualEmpty.store.state.records,rows);
+});
+
+test('generation and project round trips retain separate raw documents and drafts',async()=>{
+ const x=make(new MemoryStore(),host(A));await x.library.init();const general=x.library.getState().activeId;
+ x.h.draft={text:'일반 초안',start:1,end:3};const generalDraft=clone(x.h.draft),loads=x.h.loads.length,resets=x.h.resets;
+ assert.equal(await x.library.openGeneration(),true);assert.equal(x.h.loads.length,loads);assert.equal(x.h.resets,resets);assert.deepEqual(x.h.draft,generalDraft);
+ assert.equal(await x.library.saveAsProject(),true);const project=x.library.getState().activeId;
+ x.h.raw=B;x.h.draft={text:'프로젝트 초안',start:2,end:5};const projectDraft=clone(x.h.draft);
+ assert.equal(await x.library.openGeneration(),true);assert.equal(x.library.getState().activeId,general);assert.equal(x.h.raw,A);assert.deepEqual(x.h.draft,generalDraft);
+ assert.equal(x.store.state.records.find(v=>v.id===project).raw,B);assert.equal(x.library.getState().items.length,1);
+ assert.equal(await x.library.switchTo(project),true);assert.equal(x.h.raw,B);assert.deepEqual(x.h.draft,projectDraft);
+ assert.equal(await x.library.openGeneration(),true);const reopened=make(x.store,host(A));await reopened.library.init();
+ assert.equal(reopened.library.getState().activeId,general);assert.equal(reopened.library.getState().activeKind,'generation');assert.equal(reopened.h.raw,A);assert.equal(reopened.library.getState().items.length,1);
+});
+
+test('generation same raw respects persisted kind while missing-kind legacy projects remain byte exact',async()=>{
+ for(const active of ['legacy-nine','ordinary-same']){
+  const store=new MemoryStore();store.state.records=[{...catalogRecord('legacy-nine',A),favorite:true},catalogRecord('legacy-fourteen',B),catalogRecord('ordinary-same',A,'generation')];store.state.activeId=active;
+  const before=clone(store.state),x=make(store,host(A));assert.equal(await x.library.init(),true);
+  assert.equal(x.library.getState().activeId,active);assert.equal(x.library.getState().activeKind,active==='ordinary-same'?'generation':'project');
+  assert.deepEqual(x.library.getState().items.map(v=>v.id),['legacy-nine','legacy-fourteen']);assert.deepEqual(store.state,before,'legacy IDs/raw/timestamps/favorites are not migrated or merged');
+ }
+ for(const kind of ['unknown',null]){const store=legacyStore();store.state.records[0].kind=kind;const before=clone(store.state),x=make(store);assert.equal(await x.library.init(),false);assert.deepEqual(store.state,before);assert.equal(x.h.loads.length,0);}
+});
+
+test('generation resume prefers the prior ordinary row and never a newer same-raw project copy',async()=>{
+ const store=new MemoryStore();store.state.records=[catalogRecord('ordinary-old',A,'generation'),catalogRecord('ordinary-new',B,'generation','2026-10-28T00:00:00.000Z'),catalogRecord('project-copy',A,'project','2026-10-30T00:00:00.000Z')];store.state.activeId='ordinary-old';
+ const x=make(store,host(A));await x.library.init();assert.equal(await x.library.switchTo('project-copy'),true);assert.equal(await x.library.openGeneration(),true);assert.equal(x.library.getState().activeId,'ordinary-old');
+ assert.equal(await x.library.switchTo('project-copy'),true);const fresh=make(store,host(A));await fresh.library.init();assert.equal(await fresh.library.openGeneration(),true);
+ assert.equal(fresh.library.getState().activeId,'ordinary-new');assert.equal(fresh.library.getState().activeKind,'generation');assert.equal(fresh.h.raw,B);assert.equal(fresh.library.getState().items.length,1);
+});
+
+test('generation project copy failure keeps ordinary data and retry creates one project',async()=>{
+ const x=make(new MemoryStore(),host(A));await x.library.init();const general=x.library.getState().activeId;
+ x.store.fail=c=>c.put?.some(v=>v.kind==='project');assert.equal(await x.library.saveAsProject(),false);
+ assert.equal(x.h.raw,A);assert.equal(x.library.getState().activeKind,'generation');assert.equal(x.library.getState().items.length,0);assert.equal(x.store.state.records.find(v=>v.id===general).raw,A);
+ assert.equal(await x.library.saveAsProject(),true);assert.equal(x.library.getState().items.length,1);assert.equal(x.store.state.records.filter(v=>v.kind==='generation').length,1);
+ assert.equal(await x.library.openGeneration(),true);assert.equal(x.library.getState().activeId,general);assert.equal(x.h.raw,A);
+});
+
+test('generation copy refuses a new edit or replacement while startup persistence is pending',async()=>{
+ for(const replacement of [false,true]){
+  const entered=deferred(),release=deferred();let hold=false;
+  const x=make(new MemoryStore(),host(A),undefined,{persistCurrent:async()=>{if(hold){entered.resolve();await release.promise;}}});await x.library.init();const before=clone(x.store.state);
+  hold=true;const pending=x.library.saveAsProject();await entered.promise;x.h.raw=B;x.h.draft={text:'새 입력 보존',start:1,end:4};if(replacement)x.h.identity='replacement';release.resolve();
+  assert.equal(await pending,false);assert.equal(x.h.raw,B);assert.equal(x.h.draft.text,'새 입력 보존');assert.equal(x.library.getState().items.length,0);assert.deepEqual(x.store.state.records,before.records);
+  if(replacement)assert.equal(x.library.getState().activeId,null,'different source identity cannot remain bound to the old ordinary row');
+ }
+});
+
+test('generation shortcut refuses a foreign runtime identity without load or reset',async()=>{
+ const x=make(new MemoryStore(),host(A));await x.library.init();const before=clone(x.store.state);x.h.raw=B;x.h.identity='foreign-generation';
+ assert.equal(await x.library.openGeneration(),false);assert.equal(x.h.raw,B);assert.equal(x.h.loads.length,0);assert.equal(x.h.resets,0);assert.deepEqual(x.store.state,before);
+});
+
+test('generation retry after target activation failure retains its kind and the previous project',async()=>{
+ const x=make(new MemoryStore(),host(A));await x.library.init();const general=x.library.getState().activeId;await x.library.saveAsProject();const project=x.library.getState().activeId;x.h.raw=B;await x.library.saveCurrent();const storedProject=clone(x.store.state.records.find(v=>v.id===project));
+ x.store.fail=c=>Object.hasOwn(c,'activeId');assert.equal(await x.library.openGeneration(),false);assert.equal(x.h.raw,A);assert.equal(x.library.getState().activeKind,'generation');assert(x.library.getState().recovery);
+ assert.equal(await x.library.saveCurrent(),true);assert.equal(x.library.getState().activeId,general);assert.equal(x.library.getState().activeKind,'generation');assert.equal(x.library.getState().items.length,1);
+ assert.deepEqual(x.store.state.records.find(v=>v.id===project),storedProject);assert.equal(x.store.state.records.find(v=>v.id===general).kind,'generation');assert.equal(x.store.state.records.filter(v=>v.kind==='project').length,1);
+});
+
+test('generation retry after a late replacement preserves target bytes and the new document separately',async()=>{
+ for(const targetKind of ['generation','project'])for(const failurePhase of ['during-target-persist','after-activation-failure']){
+  const entered=deferred(),release=deferred();let hold=false,targetRaw;
+  const x=make(new MemoryStore(),host(A),undefined,{persistCurrent:async value=>{if(hold&&value===targetRaw){entered.resolve();await release.promise;}}});
+  await x.library.init();const general=x.library.getState().activeId;await x.library.saveAsProject();const project=x.library.getState().activeId;x.h.raw=B;await x.library.saveCurrent();
+  if(targetKind==='project')await x.library.openGeneration();
+  targetRaw=targetKind==='generation'?A:B;hold=failurePhase==='during-target-persist';if(!hold)x.store.fail=c=>Object.hasOwn(c,'activeId');
+  const pending=targetKind==='generation'?x.library.openGeneration():x.library.switchTo(project);
+  if(hold)await entered.promise;else{assert.equal(await pending,false);assert.equal(x.library.getState().recovery.id,targetKind==='generation'?general:project,'same-identity commit failure keeps its original target');}
+  const C=raw('External replacement C');x.h.raw=C;x.h.identity='external-C';x.h.draft={text:'C 새 초안',start:1,end:3};release.resolve();
+  if(hold){assert.equal(await pending,false);assert.equal(x.library.getState().activeKind,'generation');assert.equal(x.library.getState().recovery.id,null);assert.equal(x.library.getState().recovery.kind,'unlinked');}
+  assert.equal(x.h.raw,C);assert.equal(await x.library.saveCurrent(),true);assert.equal(x.library.getState().activeKind,'generation');
+  assert.equal(x.store.state.records.find(v=>v.id===general).raw,A,'retry must not overwrite the stored ordinary target with external C');
+  assert.equal(x.store.state.records.find(v=>v.id===project).raw,B,'retry must not overwrite the stored project target with external C');
+  const replacement=x.store.state.records.find(v=>v.raw===C);assert(replacement);assert.equal(replacement.kind,'generation');assert.notEqual(replacement.id,general);assert.notEqual(replacement.id,project);assert.equal(x.library.getState().activeId,replacement.id);assert.equal(x.h.draft.text,'C 새 초안');
+ }
 });

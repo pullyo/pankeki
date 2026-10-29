@@ -806,7 +806,7 @@ async function importProject(raw,{restore = false} = {}) {
       return loaded;
     }
     const next = Design.parseProject(raw);
-    if (!restore && hasWork() && !confirm('현재 프로젝트를 불러온 파일로 교체할까요? 저장하지 않은 작업은 사라집니다. 필요하면 취소하고 프로젝트 파일을 먼저 저장해주세요.')) return false;
+    if (!restore && hasWork() && !confirm('현재 작업을 불러온 작업으로 교체할까요? 저장하지 않은 작업은 사라집니다. 필요하면 취소하고 프로젝트 파일을 먼저 저장해주세요.')) return false;
     if (!restore) { touch(); generationSettingsTouched = true; }
     // The legacy confirmation also authorizes replacing the active motion scene.
     if (!restore) { ++motionPersistenceEpoch; motionController?.suspend(); }
@@ -815,7 +815,7 @@ async function importProject(raw,{restore = false} = {}) {
     // Keep committed images and masks untouched until every imported image passes.
     void stopBatch(); ++sourceRevision; ++maskRevision; maskLoading = false; drawing = false;
     sourceLoaded = sourceDataURL !== null; renderView();
-    projectStatus('프로젝트의 이미지 파일을 확인하고 있어요…');
+    projectStatus('불러온 작업의 이미지 파일을 확인하고 있어요…');
     const active = () => token === importRevision && epoch === editEpoch;
     const chosenId = next.selectionHistory.at(-1)?.candidateId;
     const item = next.versions.find(v => v.id === chosenId) || next.versions.at(-1);
@@ -839,7 +839,7 @@ async function importProject(raw,{restore = false} = {}) {
     if (item) { commitSource(chosenImage,item.image,item.id); showCandidate(item); }
     else { clearMask(); $('result').removeAttribute('src'); badge('준비'); }
     setMode('txt2img'); renderGallery(); ++editEpoch;
-    projectStatus(restore ? '이전 프로젝트를 자동 복원했어요. 편집 마스크는 다시 칠해주세요.' : '프로젝트를 불러왔어요. 편집 마스크는 다시 칠해주세요.');
+    projectStatus(restore ? '이전 작업을 자동 복원했어요. 편집 마스크는 다시 칠해주세요.' : '작업을 불러왔어요. 편집 마스크는 다시 칠해주세요.');
     if (!restore) { await persistCurrentProject(exportProject()); void replaceMotionWithLegacy(); }
     notifyStudio(restore ? 'restore' : 'import'); return true;
   } catch (error) { if (token === undefined || token === importRevision) projectStatus('불러오기 실패: ' + error.message,true); return false; }
@@ -855,7 +855,7 @@ $('loadProject').onchange = async () => {
   finally { $('loadProject').value = ''; }
 };
 function resetProject() {
-  if (hasWork() && !confirm('새 프로젝트를 시작할까요? 저장하지 않은 작업은 사라집니다. 필요하면 취소하고 프로젝트 파일을 먼저 저장해주세요.')) return false;
+  if (hasWork() && !confirm('새 작업을 시작할까요? 저장하지 않은 작업은 사라집니다. 필요하면 취소하고 프로젝트 파일을 먼저 저장해주세요.')) return false;
   ++motionPersistenceEpoch; motionController?.suspend();
   touch(); void stopBatch(); ++sourceRevision; clearMask(); drawing = false;
   project = Design.createProject(Design.sanitizeBrief({}),[],[]);
@@ -863,7 +863,7 @@ function resetProject() {
   emptyBriefSnapshot = JSON.stringify(project.brief);
   sourceLoaded = false; sourceDataURL = null; sourceId = null; latestUrl = null; latestId = null; selectedIds = [];
   $('result').removeAttribute('src'); $('preview').removeAttribute('src'); $('download').hidden = true; $('comparePanel').hidden = true;
-  applyBrief(project.brief); setMode('txt2img'); renderGallery(); badge('준비'); scheduleSave(); void replaceMotionWithLegacy(); status('새 캐릭터 프로젝트를 시작했어요.'); notifyStudio('reset'); return true;
+  applyBrief(project.brief); setMode('txt2img'); renderGallery(); badge('준비'); scheduleSave(); void replaceMotionWithLegacy(); status('새 작업을 시작했어요.'); notifyStudio('reset'); return true;
 }
 function setProjectActions(actions) {
   if(!actions || !['importProject','newProject','saveCurrent'].every(name=>typeof actions[name]==='function'))throw TypeError('Project action handlers are required.');

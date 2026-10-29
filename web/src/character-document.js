@@ -122,11 +122,20 @@
     if(d.version!==2)fail('Unsupported document version');id(d.id);keys(d.canvas,['width','height','colorSpace','alpha']);
     integer(d.canvas.width,1,16777216,'canvas width');integer(d.canvas.height,1,16777216,'canvas height');if(d.canvas.width*d.canvas.height>16777216||d.canvas.colorSpace!=='srgb'||d.canvas.alpha!=='straight')fail('Invalid canvas');
     d.brief=Design.parseProject({version:1,brief:d.brief,versions:[]}).brief;const assets=await validateAssets(d.assets,options);
-    list(d.candidates,20,'Candidates');const candidates=mapUnique(d.candidates,'candidate');
-    for(let n=0;n<d.candidates.length;n++){
-      const c=d.candidates[n];keys(c,['id','createdAt','label','assetId','brief','request','parentId','metrics','kind'],['id','createdAt','label','assetId','brief','request']);ref(assets,c.assetId,'candidate asset');
-      const {assetId,...legacy}=c;const normalized=Design.parseProject({version:1,brief:d.brief,versions:[{...legacy,parentId:null,image:assets.get(assetId).data}]}).versions[0];
-      const {image,...rest}=normalized;d.candidates[n]={...rest,parentId:c.parentId==null?null:id(c.parentId),assetId};
+    list(d.candidates,20,'Candidates');
+    for(const c of d.candidates){
+      keys(c,['id','createdAt','label','assetId','brief','request','parentId','metrics','kind','derivation','annotations','execution'],['id','createdAt','label','assetId','brief','request']);ref(assets,c.assetId,'candidate asset');if(c.parentId!=null)id(c.parentId);
+    }
+    // Derived candidates must be checked with their real parents, not isolated
+    // with a temporary null parent. Reuse the image project's strict metadata contract.
+    const candidateAssetIds=d.candidates.map(c=>c.assetId),legacyCandidates=d.candidates.map(({assetId,...c})=>({...c,image:assets.get(assetId).data}));
+    const normalized=Design.parseProject({version:1,brief:d.brief,versions:legacyCandidates,selectionHistory:d.selectionHistory});
+    d.candidates=normalized.versions.map(({image,...c},n)=>({...c,assetId:candidateAssetIds[n]}));
+    const candidates=mapUnique(d.candidates,'candidate');
+    for(const c of d.candidates){
+      if(c.kind!=='derived')continue;
+      const provenance=c.derivation,parent=candidates.get(c.parentId),source=assets.get(parent.assetId),output=assets.get(c.assetId);
+      if(provenance.sourceSha256!==parent.assetId.slice(7)||provenance.inputWidth!==source.width||provenance.inputHeight!==source.height||provenance.outputWidth!==output.width||provenance.outputHeight!==output.height)fail('Derived source hash or dimensions mismatch');
     }
     for(const c of d.candidates){const seen=new Set();let next=c;while(next){if(seen.has(next.id))fail('Candidate parent cycle');seen.add(next.id);if(next.parentId!=null)ref(candidates,next.parentId,'candidate parent');next=next.parentId==null?null:candidates.get(next.parentId);}}
     list(d.selectionHistory,1000,'Selection history');for(const h of d.selectionHistory){keys(h,['candidateId','action','at']);ref(candidates,h.candidateId,'history candidate');if(!['view','edit','compare'].includes(h.action)||typeof h.at!=='string'||!/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(?:\.\d{1,3})?Z$/.test(h.at)||!Number.isFinite(Date.parse(h.at))||new Date(h.at).toISOString().slice(0,19)!==h.at.slice(0,19))fail('Invalid selection history');}

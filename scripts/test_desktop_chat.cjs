@@ -500,3 +500,30 @@ test('reference capture tokens are unique across source-only and masked snapshot
  assert.equal(one.mask,undefined);assert.equal(two.mask.dataUrl,WHITE);
  assert.notEqual(one.sourceRevision,two.sourceRevision,'native snapshot keys cannot alias a different asset bundle');assert.deepEqual(plain(adapter(ui).getState()),before);
 });
+
+
+test('chat cleanup model reset keeps transcript and advances only validated runtime contexts',async()=>{
+ const ui=await app(),ipc=transport();let revision=0,reset=true,fail=false;
+ ipc.getStatus=async()=>({codex:{state:'ready',toolsReady:true,provider:'codex',modelId:'default',modelRevision:0}});
+ ipc.getChatModelOptions=async()=>({provider:'codex',selectedModelId:'default',modelRevision:revision,options:[{id:'default',displayName:'기본 모델'},{id:'other',displayName:'새 모델'}]});
+ ipc.setChatModel=async input=>{if(fail)throw Error('Controlled model write failure');return {provider:input.provider,selectedModelId:input.modelId,modelRevision:++revision,conversationReset:reset};};
+ const {instance}=await controller(ui,ipc);try{const before=ui.studio().exportProject();
+  assert.equal(instance.getState().contextEpoch,0);await instance.send({text:'모델 전 원문',intent:'chat'});const first=ipc.calls.send[0];await ipc.emit({...first,type:'message',payload:{text:'보존할 답변'}});await ipc.emit({...first,type:'turn-completed',payload:{status:'completed'}});
+  const transcript=instance.getState().messages;assert(transcript.every(message=>message.contextEpoch===0));
+  assert.equal(await instance.setChatModel('other'),true);assert.equal(instance.getState().contextEpoch,1);assert.deepEqual(instance.getState().messages,transcript);
+  reset=false;assert.equal(await instance.setChatModel('default'),true);assert.equal(instance.getState().contextEpoch,1,'a save without actual conversation reset is not a new context');
+  fail=true;assert.equal(await instance.setChatModel('other'),false);assert.equal(instance.getState().contextEpoch,1);assert.deepEqual(instance.getState().messages,transcript);assert.equal(ui.studio().exportProject(),before);
+  await instance.send({text:'새 문맥 원문',intent:'chat'});assert(instance.getState().messages.slice(-2).every(message=>message.contextEpoch===1));
+  const next=ipc.calls.send.at(-1);await ipc.emit({...next,type:'turn-completed',payload:{status:'completed'}});let complete;ipc.setChatModel=input=>new Promise(resolve=>complete=()=>resolve({provider:input.provider,selectedModelId:input.modelId,modelRevision:++revision,conversationReset:true}));const pending=instance.setChatModel('other');
+  await ui.studio().importProject(ui.project('새 문맥 소유자'));await settle();const owner=adapter(ui).getState().projectId;assert.equal(instance.getState().contextEpoch,0);complete();assert.equal(await pending,true);assert.equal(instance.getState().codex.modelId,'other','the validated global model update still applies');assert.equal(instance.getState().projectId,owner);assert.equal(instance.getState().messages.length,0);assert.equal(instance.getState().contextEpoch,0,'a reset begun by an old owner cannot mark the newly loaded project');
+ }finally{instance.destroy();}
+});
+
+
+test('chat cleanup reinput metadata belongs only to actual failed terminal requests',async()=>{
+ for(const failure of ['send','turn']){const ui=await automaticController();try{if(failure==='send')ui.ipc.sendMessage=async input=>{ui.ipc.calls.send.push(input);throw Object.assign(Error('Controlled failed send'),{code:'send-failed'});};
+  const accepted=await ui.instance.send({text:'실패해도 보존할 요청',intent:'auto'});const ref=ui.ipc.calls.send[0];if(failure==='turn'){assert.equal(accepted,true);await ui.ipc.emit({...ref,type:'turn-completed',payload:{status:'failed'}});}else assert.equal(accepted,false);
+  const state=ui.instance.getState();assert.equal(state.phase,'error');assert.equal(state.lastFailure?.requestId,ref.requestId);assert.equal(state.lastFailure?.text,'실패해도 보존할 요청');
+ }finally{ui.instance.destroy();}}
+ for(const outcome of ['cancel','needs-input']){const ui=await automaticController();try{await ui.instance.send({text:'실패로 꾸미지 않을 요청',intent:'auto'});const ref=ui.ipc.calls.send[0];if(outcome==='cancel')await ui.instance.cancel();else await ui.ipc.emit({...ref,type:'needs-input',payload:{reason:'source'}});assert.equal(ui.instance.getState().lastFailure,null);}finally{ui.instance.destroy();}}
+});

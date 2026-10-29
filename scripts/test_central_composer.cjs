@@ -15,7 +15,7 @@ function transport(){let listener;const calls={send:[],cancel:[],models:[],set:[
  prepareEditContext:async input=>{calls.prepare.push(input);return {...input,sourceId:'source-local',maskId:'mask-local'};}};}
 async function mounted(ipc=transport(),{projectStore,initialProject}={}){
  const ui=page({catalog:{default_model_id:'sdxl-base',models:[{id:'sdxl-base',label:'SDXL Base 1.0',available:true,defaults:{width:1024,height:1024,steps:25,cfg:6,denoise:.55,sampler:'dpmpp_2m',scheduler:'karras'}},{id:'sd-turbo',label:'SD Turbo',available:false}],edit_models:[{id:'sdxl-inpaint-v01',label:'SDXL Inpaint v0.1',available:true}]}});await until(()=>ui.studio().getSummary().modelsReady,'models');const doc=structuralDOM(ui);ui.sandbox.pankekiDesktop=ipc;
- if(projectStore){await ui.studio().ready;if(initialProject!==false)await ui.studio().importProject(ui.project(initialProject||'Library A'));const library=require('../web/src/project-library.js');ui.sandbox.PankekiProjectLibrary={create:options=>library.create({...options,store:projectStore})};}
+ if(projectStore){await ui.studio().ready;if(initialProject!==false){await ui.studio().importProject(ui.project(initialProject||'Library A'));if(!projectStore.failRead&&!projectStore.state.records.length){projectStore.state.activeId='fixture-legacy-a';projectStore.state.records=[{id:'fixture-legacy-a',raw:ui.studio().exportProject(),createdAt:'2026-10-27T00:00:00.000Z',updatedAt:'2026-10-27T00:00:00.000Z',favorite:false,recovered:false}];}}const library=require('../web/src/project-library.js');ui.sandbox.PankekiProjectLibrary={create:options=>library.create({...options,store:projectStore})};}
  ui.sandbox.addEventListener||=()=>{};ui.sandbox.removeEventListener||=()=>{};for(const name of ['ResizeObserver','MutationObserver'])if(ui.sandbox[name]?.prototype)ui.sandbox[name].prototype.disconnect||=()=>{};
  for(const name of ['photo-editor.js','redesign.js','studio.js'])vm.runInContext(fs.readFileSync(path.join(__dirname,'../web/src',name),'utf8'),ui.sandbox,{filename:name});
  const icons={};for(const name of ['folder','chevron-right']){const svg=fs.readFileSync(path.join(__dirname,'../web/vendor/lucide',name+'.svg'),'utf8'),body=svg.match(/<svg\b[^>]*>([\s\S]*?)<\/svg>/)[1];icons[name]='<svg class="icon" viewBox="0 0 24 24" aria-hidden="true">'+body+'</svg>';}
@@ -181,7 +181,7 @@ test('model catalogs ignore late provider responses and setting changes serializ
  const c=api.createController({ipc,adapter:ui.studio().desktopChat,subscribe:ui.studio().subscribe});await c.start();assert.equal(typeof c.loadChatModels,'function');await c.selectProvider('claude');await settle();finishOld({provider:'codex',selectedModelId:'default',modelRevision:0,options:[{id:'old',displayName:'Old'}]});await settle();
  assert.equal(c.getState().modelOptions.provider,'claude');assert.equal(c.getState().modelOptions.options[0].id,'sonnet');
  let save;ipc.setChatModel=input=>{ipc.calls.set.push(input);return new Promise(resolve=>save=resolve);};const pending=c.setChatModel('sonnet');assert.equal(await c.send({text:'must wait'}),false);assert.equal(await c.setChatModel('sonnet'),false);assert.equal(ipc.calls.set.length,1);
- save({provider:'claude',selectedModelId:'sonnet',modelRevision:2,conversationReset:true});await pending;assert.match(c.getState().notice,/새 대화/);c.destroy();
+ save({provider:'claude',selectedModelId:'sonnet',modelRevision:2,conversationReset:true});await pending;assert.match(c.getState().notice,/새 AI 문맥/);c.destroy();
 });
 test('failed catalog and model save preserve the current model and unsent draft',async()=>{
  const ui=await mounted();await type(ui,'남겨둘 입력');const input=ui.doc.getElementById('pcPrompt');ui.ipc.setChatModel=async()=>{throw Object.assign(Error('저장소 쓰기 실패'),{code:'settings-write-failed'});};
@@ -191,7 +191,7 @@ test('failed catalog and model save preserve the current model and unsent draft'
 
 test('cancel acknowledgement keeps model settings locked until native cancellation returns',async()=>{
  const ui=await mounted();await type(ui,'cancel me');await ui.doc.getElementById('pkPromptForm').requestSubmit();let acknowledge;ui.ipc.cancelMessage=()=>new Promise(resolve=>acknowledge=resolve);
- const pending=ui.view.controller.cancel();assert.equal(ui.doc.getElementById('desktopChatModel').disabled,true);assert.equal(await ui.view.controller.setChatModel('test-model'),false);assert.equal(ui.ipc.calls.set.length,0);acknowledge({canceled:true});await pending;assert.equal(ui.doc.getElementById('desktopChatModel').disabled,false);ui.view.destroy();
+ const pending=ui.view.controller.cancel();assert.equal(ui.doc.getElementById('desktopChatModel').disabled,true);assert.equal(ui.doc.getElementById('pkCancel').hidden,false,'cancel remains visible until acknowledgement');assert.equal(ui.doc.getElementById('pkCancel').disabled,true);assert.match(ui.doc.getElementById('pkComposerStatus').textContent,/취소/);assert.equal(await ui.view.controller.setChatModel('test-model'),false);assert.equal(ui.ipc.calls.set.length,0);acknowledge({canceled:true});await pending;assert.equal(ui.doc.getElementById('desktopChatModel').disabled,false);assert.match(ui.doc.getElementById('pkComposerStatus').textContent,/취소/);ui.view.destroy();
 });
 test('AI style choices stay in settings and capture generation metadata without rewriting a normal message',async()=>{
  const ui=await mounted();const selected=ui.doc.querySelectorAll('.pk-categories [aria-pressed="true"]');assert.equal(selected.length,1);assert.equal(selected[0].id,'pcNoAIStyle');
@@ -199,7 +199,7 @@ test('AI style choices stay in settings and capture generation metadata without 
  assert.equal(ui.ipc.calls.send[0].text,'[Pankeki action: auto]\n이미지 생성 기능 설명해줘');assert.match(ui.ipc.calls.send[0].automatic.generationStyle.prompt,/environment background/);assert.equal(ui.ipc.calls.send[0].automatic.generationStyle.id,'background');assert.equal(ui.studio().exportProject(),before);ui.view.destroy();
 });
 test('successful AI model and provider changes keep unsent text and the project intact',async()=>{
- const ui=await mounted();await type(ui,'모델만 바꿔도 남는 초안');const before=ui.studio().exportProject();await choose(ui,'desktopChatModel','test-model');assert.match(ui.doc.getElementById('pkComposerStatus').textContent,/새 대화/);assert.equal(ui.doc.getElementById('pcPrompt').value,'모델만 바꿔도 남는 초안');
+ const ui=await mounted();await type(ui,'모델만 바꿔도 남는 초안');const before=ui.studio().exportProject();await choose(ui,'desktopChatModel','test-model');assert.match(ui.doc.getElementById('pkComposerStatus').textContent,/새 AI 문맥/);assert.equal(ui.doc.getElementById('pcPrompt').value,'모델만 바꿔도 남는 초안');
  await choose(ui,'desktopChatProvider','claude');assert.equal(ui.doc.getElementById('pcPrompt').value,'모델만 바꿔도 남는 초안');assert.equal(ui.studio().exportProject(),before);assert.equal(ui.ipc.calls.send.length,0);ui.view.destroy();
 });
 
@@ -329,4 +329,41 @@ catalogTest('project catalog delegates foreign v2 load and file save to the exis
 catalogTest('project catalog displays existing-record mismatch notice without requiring a recovered item',async()=>{
  const store=new ProjectStore(),first=await mounted(transport(),{projectStore:store}),id=first.workspace.projects.getState().activeId;try{assert.equal(await first.studio().requestImportProject(JSON.stringify(first.project('Library B'))),true);assert.notEqual(store.state.activeId,id);assert.equal(store.state.records.every(item=>item.recovered===false),true);}finally{first.view.destroy();}
  const reopened=await mounted(transport(),{projectStore:store,initialProject:'Library A'});try{reopened.workspace.go('home');const state=reopened.workspace.projects.getState();assert.equal(state.items.length,2);assert.equal(state.activeId,id);assert.equal(state.items.every(item=>item.recovered===false),true);assert.match(state.notice,/모두 보존/);assert.equal(reopened.doc.getElementById('pcProjectLibraryStatus').textContent,state.notice);assert.equal(reopened.studio().getSummary().name,'Library A');assert.equal(reopened.ipc.calls.send.length,0);}finally{reopened.view.destroy();}
+});
+
+
+test('chat cleanup tools show actual image model and size without changing the work',async()=>{
+ const ui=await mounted();try{const before=ui.studio().exportProject(),input=ui.doc.getElementById('pcPrompt');await type(ui,'도구를 확인해도 남는 초안');input.setSelectionRange(2,6);
+  const model=ui.doc.getElementById('pcModelName'),size=ui.doc.getElementById('pcResolution');
+  assert.match(model.textContent,/SDXL Base 1\.0/);assert.match(size.textContent,/1024\s*×\s*1024/);
+  assert.match(model.closest('button').getAttribute('aria-label'),/SDXL Base 1\.0/);assert.match(size.title,/1024\s*×\s*1024/);
+  await ui.input('width','768');await ui.input('height','512');assert.match(size.textContent,/768\s*×\s*512/);assert.match(size.title,/768\s*×\s*512/);
+  assert.equal(input.value,'도구를 확인해도 남는 초안');assert.equal(input.selectionStart,2);assert.equal(input.selectionEnd,6);assert.equal(ui.studio().exportProject(),before);assert.equal(ui.ipc.calls.send.length,0);
+  await ui.doc.getElementById('pkPromptForm').requestSubmit();const ref=ui.ipc.calls.send[0];await ui.ipc.emit({...ref,type:'message',payload:{text:'모델 변경 뒤에도 남길 원답변'}});await ui.ipc.emit({...ref,type:'turn-completed',payload:{status:'completed'}});await type(ui,'새 문맥에도 남는 초안');input.setSelectionRange(2,6);
+  await choose(ui,'desktopChatModel','test-model');const boundary=ui.doc.querySelector('[data-pc-context-boundary]');assert(boundary,'a confirmed model reset exposes the new runtime context');assert.match(boundary.textContent,/새|문맥/);assert.match(ui.doc.getElementById('pcConversation').textContent,/모델 변경 뒤에도 남길 원답변/);assert.equal(input.value,'새 문맥에도 남는 초안');assert.equal(input.selectionStart,2);assert.equal(input.selectionEnd,6);assert.equal(ui.ipc.calls.send.length,1);assert.equal(ui.studio().exportProject(),before);
+  await ui.studio().importProject(ui.project('문맥 소유자 교체'));await settle();assert.equal(ui.doc.querySelectorAll('[data-pc-context-boundary]').length,0);assert.doesNotMatch(ui.doc.getElementById('pcConversation').textContent,/모델 변경 뒤에도 남길 원답변/);
+ }finally{ui.view.destroy();}
+});
+
+test('chat cleanup failed request reinput restores only its current untouched composer without sending',async()=>{
+ const ui=await mounted();try{const input=ui.doc.getElementById('pcPrompt');await type(ui,'실패한 원문을 다시 검토');await ui.doc.getElementById('pkPromptForm').requestSubmit();const ref=ui.ipc.calls.send[0];
+  await ui.ipc.emit({...ref,type:'error',payload:{code:'temporary-error',message:'Controlled failure'}});
+  const turn=ui.doc.querySelector('.pc-ai-turn'),retry=turn.querySelector('button[data-pc-reinput]');assert(retry,'actual failed current request offers explicit reinput');
+  await type(ui,'');const before=ui.studio().exportProject();await retry.click();assert.equal(input.value,'실패한 원문을 다시 검토');assert.equal(ui.doc.activeElement,input);assert.equal(ui.ipc.calls.send.length,1);assert.equal(ui.studio().exportProject(),before);
+  await type(ui,'새로 쓰는 원문');input.setSelectionRange(1,4);await retry.click();assert.equal(input.value,'새로 쓰는 원문');assert.equal(input.selectionStart,1);assert.equal(input.selectionEnd,4);assert.equal(ui.ipc.calls.send.length,1);
+  await type(ui,'');await input.dispatchEvent(new ui.Event('compositionstart'));await retry.click();assert.equal(input.value,'');assert.equal(ui.ipc.calls.send.length,1);await input.dispatchEvent(new ui.Event('compositionend'));
+  await type(ui,'다음 요청 진행');await ui.doc.getElementById('pkPromptForm').requestSubmit();await type(ui,'진행 중 새 초안');input.setSelectionRange(2,5);await retry.click();assert.equal(input.value,'진행 중 새 초안');assert.equal(input.selectionStart,2);assert.equal(input.selectionEnd,5);assert.equal(ui.ipc.calls.send.length,2);await ui.view.controller.cancel();
+  await choose(ui,'desktopChatModel','test-model');await type(ui,'');await retry.click();assert.equal(input.value,'','old-context reinput cannot restore after a real model reset');assert.equal(ui.ipc.calls.send.length,2);
+  await ui.studio().importProject(ui.project('다른 소유 작업'));await settle();await type(ui,'새 작업 초안');input.setSelectionRange(1,3);const ownerRaw=ui.studio().exportProject();await retry.click();assert.equal(input.value,'새 작업 초안');assert.equal(input.selectionStart,1);assert.equal(input.selectionEnd,3);assert.equal(ui.studio().exportProject(),ownerRaw);assert.equal(ui.ipc.calls.send.length,2);
+ }finally{ui.view.destroy();}
+});
+
+
+test('chat cleanup copies actual reply text and reports pending success or rejection without altering the draft',async()=>{
+ const ui=await mounted(),copied=[];let resolve,reject;ui.sandbox.navigator={clipboard:{writeText:text=>{copied.push(text);return new Promise((yes,no)=>{resolve=yes;reject=no;});}}};
+ try{await type(ui,'답변만 복사할 요청');await ui.doc.getElementById('pkPromptForm').requestSubmit();const ref=ui.ipc.calls.send[0],answer='답변 **강조**\n<img src=x onerror=evil> 그대로';await ui.ipc.emit({...ref,type:'message',payload:{text:answer}});await ui.ipc.emit({...ref,type:'turn-completed',payload:{status:'completed'}});
+  await type(ui,'보존할 현재 초안');const input=ui.doc.getElementById('pcPrompt');input.setSelectionRange(1,4);const raw=ui.studio().exportProject(),turn=ui.doc.querySelector('.pc-ai-turn'),copy=turn.querySelector('button[data-pc-copy-reply]');assert(copy,'completed actual reply offers plaintext copy');
+  const pending=copy.click();assert.deepEqual(copied,[answer]);assert.equal(copy.disabled,true);const feedback=turn.querySelector('[data-pc-message-feedback]');assert(feedback);assert.match(feedback.textContent,/복사/);assert.doesNotMatch(feedback.textContent,/복사했|복사됐|완료/);resolve();await pending;assert.match(feedback.textContent,/복사했|복사됐|완료/);
+  const refused=copy.click();reject(Error('Clipboard denied'));await refused;assert.match(feedback.textContent,/실패|못|권한|허용/);assert.equal(copied.length,2);assert.equal(input.value,'보존할 현재 초안');assert.equal(input.selectionStart,1);assert.equal(input.selectionEnd,4);assert.equal(ui.studio().exportProject(),raw);assert.equal(ui.ipc.calls.send.length,1);
+ }finally{ui.view.destroy();}
 });

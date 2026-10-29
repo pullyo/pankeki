@@ -17,7 +17,7 @@ SCRIPT_MODULES = (
     'character-export-v3.js', 'character-workspace-v3.js',
     'cubism-package.js', 'cubism-session.js', 'cubism-controller.js',
     'cubism-workspace.js', 'project-library.js', 'app.js', 'studio.js',
-    'photo-editor.js', 'redesign.js', 'desktop-chat.js')
+    'photo-editor.js', 'redesign.js', 'desktop-chat.js', 'video-workspace.js')
 SCRIPT_DEPENDENCIES = {
     'profiles.js': (), 'character-document.js': ('profiles.js',), 'character-renderer.js': (),
     'character-export.js': ('character-document.js', 'character-renderer.js'),
@@ -35,6 +35,7 @@ SCRIPT_DEPENDENCIES = {
     'studio.js': ('app.js',), 'photo-editor.js': ('app.js', 'studio.js'),
     'redesign.js': ('app.js', 'studio.js', 'photo-editor.js'),
     'desktop-chat.js': ('app.js', 'studio.js', 'redesign.js'),
+    'video-workspace.js': ('app.js', 'studio.js', 'redesign.js'),
 }
 
 
@@ -95,7 +96,7 @@ def build():
         raise RuntimeError('Source content identity unavailable; refusing an unidentified build')
     font = ROOT.parent/FONT_SOURCE
     font_url = None
-    css = (ROOT/'src'/'style.css').read_text(encoding='utf-8') + '\n' + (ROOT/'src'/'redesign.css').read_text(encoding='utf-8') + '\n' + (ROOT/'src'/'desktop-chat.css').read_text(encoding='utf-8') + '\n' + (ROOT/'src'/'photo-editor.css').read_text(encoding='utf-8')
+    css = (ROOT/'src'/'style.css').read_text(encoding='utf-8') + '\n' + (ROOT/'src'/'redesign.css').read_text(encoding='utf-8') + '\n' + (ROOT/'src'/'desktop-chat.css').read_text(encoding='utf-8') + '\n' + (ROOT/'src'/'photo-editor.css').read_text(encoding='utf-8') + '\n' + (ROOT/'src'/'video-workspace.css').read_text(encoding='utf-8')
     if font.exists():
         # Served by pankeki/server.py from FONT_SOURCE with a long immutable cache.
         # The hashed name changes with the bytes, so the no-store page never pins stale fonts.

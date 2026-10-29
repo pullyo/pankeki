@@ -49,6 +49,18 @@ class BuildIdentityTests(unittest.TestCase):
         (self.root / 'web/assets/pankeki-user-20261025.png').write_bytes(b'new logo')
         self.assertNotEqual(module.source_content_id(self.root), before)
 
+    def test_video_execution_runner_bytes_are_part_of_source_identity(self):
+        module = self.identity()
+        for name in ('blender_video_runner.py','pankeki_video_runner.py'):
+            path=self.root/'scripts'/name
+            path.parent.mkdir(exist_ok=True)
+            before=module.source_content_id(self.root)
+            path.write_text('# owned video executor\n')
+            self.assertNotEqual(module.source_content_id(self.root),before)
+            before=module.source_content_id(self.root)
+            path.write_text('# changed video executor\n')
+            self.assertNotEqual(module.source_content_id(self.root),before)
+
     def test_served_font_bytes_remain_in_source_identity_and_route_name(self):
         module = self.identity()
         font = self.root / module.FONT_SOURCE

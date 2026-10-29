@@ -1,25 +1,28 @@
 'use strict';
 const {app,BrowserWindow,session,ipcMain,dialog,nativeImage}=require('electron');
 const fs=require('node:fs');const path=require('node:path');const {randomUUID}=require('node:crypto');
-const {isTrustedSender,makeCsp,allowRequest}=require('./security.cjs');
+const {isTrustedSender,makeCsp,allowRequest,createPermissionPolicy}=require('./security.cjs');
 const {createIpcController}=require('./ipc.cjs');
 
-async function createEditorWindow({origin,html,contexts,results,resultsFactory,bridgeFactory,getAppStatus,allowLiveSend=false,verifyBackend=async()=>true,mapBridgeMessage,notifyUnconfirmedClose,
+async function createEditorWindow({origin,html,projectRoot,contexts,results,resultsFactory,bridgeFactory,getAppStatus,allowLiveSend=false,verifyBackend=async()=>true,mapBridgeMessage,notifyUnconfirmedClose,
   partition='persist:pankeki-editor'}={}) {
   const isolated=session.fromPartition(partition);
   const win=new BrowserWindow({title:'Pankeki',width:1360,height:920,minWidth:960,minHeight:640,backgroundColor:'#f6f2ec',
     webPreferences:{preload:path.join(__dirname,'preload.cjs'),nodeIntegration:false,contextIsolation:true,sandbox:true,webSecurity:true,session:isolated,spellcheck:false}});
   let closing=false,controller;
+  const pickVideoScene=projectRoot?require('./video-scene-picker.cjs').createVideoScenePicker({projectRoot,
+    chooseFile:()=>dialog.showOpenDialog(win,{title:'Blender 구도 파일 선택',buttonLabel:'이 구도 사용',filters:[{name:'Blender 구도',extensions:['blend']}],properties:['openFile','dontAddToRecent']})}):undefined;
   const bridge=bridgeFactory(event=>controller?.acceptEvent(event));
   const sendEnabled=typeof allowLiveSend==='function'?allowLiveSend(bridge):allowLiveSend;
-  controller=createIpcController({bridge,contexts,results:resultsFactory?resultsFactory(bridge):results,origin,allowLiveSend:sendEnabled,mapBridgeMessage,getAppStatus,
+  controller=createIpcController({bridge,contexts,results:resultsFactory?resultsFactory(bridge):results,pickVideoScene,origin,allowLiveSend:sendEnabled,mapBridgeMessage,getAppStatus,
     isTrusted:event=>isTrustedSender(event,win.webContents,origin),
     sendEvent:event=>{if(!win.isDestroyed()&&isTrustedSender({sender:win.webContents,senderFrame:win.webContents.mainFrame},win.webContents,origin))win.webContents.send('pankeki:codex-event',event);}});
   const csp=makeCsp(html,origin);
   isolated.webRequest.onBeforeRequest((details,callback)=>callback({cancel:!allowRequest(details.url,origin)}));
   isolated.webRequest.onHeadersReceived((details,callback)=>callback({responseHeaders:{...details.responseHeaders,'Content-Security-Policy':[csp]}}));
-  isolated.setPermissionRequestHandler((_contents,_permission,callback)=>callback(false));
-  isolated.setPermissionCheckHandler(()=>false);
+  const permissions=createPermissionPolicy(win.webContents,origin);
+  isolated.setPermissionRequestHandler(permissions.request);
+  isolated.setPermissionCheckHandler(permissions.check);
   win.webContents.setWindowOpenHandler(()=>({action:'deny'}));
   win.webContents.on('will-navigate',(event,url)=>{
     try{const target=new URL(url);if(target.origin!==origin||target.pathname!=='/'||target.search)event.preventDefault();}catch{event.preventDefault();}
@@ -142,7 +145,7 @@ async function boot() {
       return {mimeType:'image/jpeg',data:sized.toJPEG(85).toString('base64')};
     };
     const html=fs.readFileSync(path.join(paths.projectRoot,'web/index.html'),'utf8');
-    editor=await createEditorWindow({origin:'http://127.0.0.1:8190',html,contexts,
+    editor=await createEditorWindow({origin:'http://127.0.0.1:8190',html,projectRoot:paths.projectRoot,contexts,
       allowLiveSend:bridge=>PROTOCOL_VERSION===2&&bridge.protocolVersion===2&&typeof bridge.getSubmittedRequest==='function'&&typeof bridge.getResultDescriptor==='function',
       mapBridgeMessage:value=>({...value,context:contexts.bindRequest(value)}),
       resultsFactory:bridge=>createResultResolver({bridge,origin:'http://127.0.0.1:8190',verifyBackend:()=>backend.verifyIdentity(),decode}),

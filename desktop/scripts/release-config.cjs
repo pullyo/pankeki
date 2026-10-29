@@ -3,7 +3,7 @@
 const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto');
 const root=path.resolve(__dirname,'../..'),desktop=path.join(root,'desktop');
 const releaseDir=process.env.PANKEKI_RELEASE_DIR?path.resolve(process.env.PANKEKI_RELEASE_DIR):path.join(root,'output/desktop-release/mac');
-const files=['main.cjs','preload.cjs','ipc.cjs','security.cjs','runtime-paths.cjs','backend-manager.cjs','edit-context.cjs','result-resolver.cjs','codex-bridge.cjs','pankeki-tools.cjs','claude-bridge.cjs','chat-providers.cjs','chat-model-settings.cjs','build-identity.cjs','profiles.cjs','shell.html'];
+const files=['main.cjs','preload.cjs','ipc.cjs','security.cjs','runtime-paths.cjs','backend-manager.cjs','edit-context.cjs','result-resolver.cjs','video-scene-picker.cjs','codex-bridge.cjs','pankeki-tools.cjs','claude-bridge.cjs','chat-providers.cjs','chat-model-settings.cjs','build-identity.cjs','profiles.cjs','shell.html'];
 const sourceFor=file=>file==='profiles.cjs'?path.join(root,'web/src/profiles.js'):path.join(desktop,file);
 const sha=file=>crypto.createHash('sha256').update(fs.readFileSync(file)).digest('hex');
 function currentInputs(){

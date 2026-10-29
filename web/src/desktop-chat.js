@@ -29,8 +29,11 @@
   }
   function statusTitle(state){
     const name=providerName(state);
+    if(state?.canceling)return name+' 취소 중';
     if(state?.phase==='limited')return name+' 사용 한도';
     if(state?.phase==='error')return name+' 요청 오류';
+    const phaseTitles={connecting:'연결 중',preparing:'요청 준비 중',working:'응답 중','waiting-job':'이미지 결과 대기',done:'응답 완료',canceled:'요청 취소됨','needs-input':'추가 입력 필요'};
+    if(phaseTitles[state?.phase])return name+' '+phaseTitles[state.phase];
     return (TITLES[state?.codex?.state]||TITLES.error).replace('{name}',name);
   }
   // Replies use a small Markdown subset: **bold**, `code`, # headings and -/1. lists.
@@ -81,7 +84,7 @@
   function createController({ipc,adapter,subscribe,onChange=()=>{},makeId=()=>root.crypto.randomUUID(),resolveResult,formatMessage,beforeSend,getAutomaticContext=()=>({visibleCandidateId:null,generationStyle:null}),isWorkspaceBusy=()=>false,waitLimitMs=5*60000}={}){
     let dead=false,active=null,eventQueue=Promise.resolve(),unsubscribeEvents,unsubscribeStudio,catalogEpoch=0;
     let identity=adapter.getState();
-    const state={codex:{state:'idle',provider:'codex',toolsReady:false,lastError:null},phase:'idle',notice:'연결 상태를 확인하고 있어요.',projectId:identity.projectId,messages:[],activeRequestId:null,submittedTargetId:null,resolvedIntent:null,modelSaving:false,canceling:false,modelOptions:{provider:'codex',loading:false,options:[],error:'',availability:'unverified'},lastFailure:null,appBuild:{}};
+    const state={codex:{state:'idle',provider:'codex',toolsReady:false,lastError:null},phase:'idle',notice:'연결 상태를 확인하고 있어요.',projectId:identity.projectId,messages:[],contextEpoch:0,activeRequestId:null,submittedTargetId:null,resolvedIntent:null,modelSaving:false,canceling:false,modelOptions:{provider:'codex',loading:false,options:[],error:'',availability:'unverified'},lastFailure:null,appBuild:{}};
     const snapshot=()=>copy(state);
     function publish(){if(!dead)onChange(snapshot());}
     function matches(request){return !dead&&active===request&&request.projectId===identity.projectId;}
@@ -92,6 +95,7 @@
     function finish(request,phase,notice){
       if(!matches(request))return;
       clearTimeout(request.waitTimer);
+      if(['error','limited'].includes(phase))state.lastFailure={requestId:request.requestId,text:request.text,code:state.lastFailure?.requestId===request.requestId?state.lastFailure.code:phase};
       adapter.endRequest({requestId:request.requestId});active=null;state.activeRequestId=null;state.submittedTargetId=null;state.resolvedIntent=null;state.phase=phase;state.notice=notice;publish();
     }
     function errorState(error){
@@ -117,7 +121,7 @@
       const sourceChanged=next.sourceRevision!==identity.sourceRevision||next.maskRevision!==identity.maskRevision;
       identity=next;
       if(changed){
-        const hadRequest=!!active;void retire('project');state.projectId=next.projectId;state.messages=[];
+        const hadRequest=!!active;void retire('project');state.projectId=next.projectId;state.messages=[];state.contextEpoch=0;
         // A request error belongs to the old project; an account limit does not.
         if(!hadRequest&&state.phase!=='limited'){state.phase='idle';state.notice=readyNotice();}
         publish();
@@ -251,9 +255,9 @@
         if(typeof wireText!=='string'||!wireText.trim()||wireText.length>8000)throw Error('전달할 작업 설명과 설정을 8000자 이내로 줄여주세요.');
         request={requestId:makeId(),projectId:context.projectId,context,presentation:presentation?{referenceCandidateId:presentation.referenceCandidateId,selectionEpoch:presentation.selectionEpoch}:null,resolvedIntent:intent==='auto'?null:intent,text:text.trim(),seq:-1,jobs:new Map(),turnDone:false,expectedImage:false};
         if(!adapter.beginRequest({requestId:request.requestId,context,provider:providerName(state)}).accepted)throw Error('원본이나 작업 상태가 바뀌었어요. 입력을 확인해주세요.');
-        request.reply={role:'assistant',requestId:request.requestId,text:'',provider:providerName(state),modelLabel:state.modelOptions.options.find(item=>item.id===state.codex.modelId)?.displayName||state.codex.modelId};active=request;
+        request.reply={role:'assistant',requestId:request.requestId,text:'',contextEpoch:state.contextEpoch,provider:providerName(state),modelLabel:state.modelOptions.options.find(item=>item.id===state.codex.modelId)?.displayName||state.codex.modelId};active=request;
         state.activeRequestId=request.requestId;state.submittedTargetId=presentation?.referenceCandidateId||presentation?.visibleCandidateId||null;state.resolvedIntent=null;state.phase='preparing';state.notice='메시지를 준비하고 있어요.';
-        state.messages.push({role:'user',requestId:request.requestId,text:text.trim()},request.reply);publish();
+        state.messages.push({role:'user',requestId:request.requestId,text:text.trim(),contextEpoch:state.contextEpoch},request.reply);publish();
         const outbound={sourceRevision:context.sourceRevision};
         if(intent==='edit'||intent==='auto'&&(context.source||context.mask)){
           if(!context.source||intent==='edit'&&!context.mask||context.automatic?.edit.ready&&!context.mask)throw Error('같은 이미지의 원본과 마스크를 함께 준비해주세요.');
@@ -302,19 +306,21 @@
     async function selectProvider(provider){
       if(settingsLocked()||!PROVIDERS[provider]||typeof ipc.selectProvider!=='function')return false;
       ++catalogEpoch;state.modelSaving=true;publish();
-      try{const value=await ipc.selectProvider({provider});if(dead)return false;state.codex=normalizeStatus(value);state.phase='idle';state.notice=providerName(state)+'로 변경해 새 대화를 시작합니다. 입력 중인 초안은 유지했어요.';state.modelOptions={provider,loading:false,options:[],error:'',availability:'unverified'};return true;}
+      try{const value=await ipc.selectProvider({provider});if(dead)return false;state.codex=normalizeStatus(value);state.phase='idle';state.notice=providerName(state)+'로 변경했어요. 입력 중인 초안은 유지했어요.';state.modelOptions={provider,loading:false,options:[],error:'',availability:'unverified'};return true;}
       catch(error){if(!dead){state.modelOptions.error='AI 공급자를 변경하지 못했어요. 기존 선택을 유지합니다.';}return false;}
       finally{if(!dead){state.modelSaving=false;publish();void loadChatModels();}}
     }
     async function setChatModel(modelId){
       if(settingsLocked()||state.modelOptions.loading||typeof ipc.setChatModel!=='function'||!state.modelOptions.options.some(item=>item.id===modelId))return false;
-      const provider=state.codex.provider; ++catalogEpoch;state.modelSaving=true;state.modelOptions.error='';publish();
+      const provider=state.codex.provider,ownerProjectId=state.projectId,ownerContextEpoch=state.contextEpoch; ++catalogEpoch;state.modelSaving=true;state.modelOptions.error='';publish();
       try{
         const value=await ipc.setChatModel({provider,modelId});
         if(dead||provider!==state.codex.provider)return false;
         if(value?.provider!==provider||value.selectedModelId!==modelId||!Number.isSafeInteger(value.modelRevision)||value.modelRevision<state.codex.modelRevision)throw Error('stale-model');
         state.codex.modelId=modelId;state.codex.modelRevision=value.modelRevision;
-        state.notice=value.conversationReset?'AI 모델을 변경해 새 대화를 시작합니다. 입력 중인 초안은 유지했어요.':'현재 AI 모델을 유지합니다.';return true;
+        const contextReset=value.conversationReset===true&&state.projectId===ownerProjectId&&state.contextEpoch===ownerContextEpoch;
+        if(contextReset)state.contextEpoch++;
+        state.notice=contextReset?'AI 모델을 변경해 새 AI 문맥을 시작했어요. 이전 대화와 입력 중인 초안은 유지했어요.':value.conversationReset===true?'AI 모델을 변경했어요. 현재 작업과 입력 중인 초안은 유지했어요.':'현재 AI 모델을 유지합니다.';return true;
       }catch(error){if(!dead)state.modelOptions.error='모델 설정 저장에 실패했어요. 기존 모델과 입력 중인 초안을 유지합니다.';return false;}
       finally{if(!dead){state.modelSaving=false;publish();}}
     }
@@ -378,7 +384,7 @@
       const projectState=workspace.getProjectState?.(),projectError=projectState?.error||projectState?.recovery&&'홈의 프로젝트 목록에서 앱 저장을 다시 시도하거나 파일로 저장해주세요.',feedback=find('pkComposerStatus');feedback.textContent=projectError|| (photoBusy&&!state.activeRequestId?'사진 편집을 마치거나 취소한 뒤 메시지를 보내주세요.':statusTitle(state)+' · '+state.notice);feedback.classList.toggle('error',!!projectError||['error','limited'].includes(state.phase));feedback.setAttribute('role',projectError||['error','limited'].includes(state.phase)?'alert':'status');
       find('pkGenerate').disabled=locked||state.codex.state!=='ready'||state.phase==='limited'||!input.value.trim()||doc.body.dataset.studioScreen==='compare';
       find('pkGenerate').setAttribute('aria-label','메시지 보내기');
-      find('pkCancel').hidden=!state.activeRequestId&&!photoBusy;find('pkCancel').textContent=state.activeRequestId?'요청 취소':photoState?.cancelling?'사진 편집 취소 중…':'사진 편집 취소';find('pkCancel').disabled=!state.activeRequestId&&photoState?.cancelling===true;
+      find('pkCancel').hidden=!state.activeRequestId&&!state.canceling&&!photoBusy;find('pkCancel').textContent=state.canceling?'취소 중…':state.activeRequestId?'요청 취소':photoState?.cancelling?'사진 편집 취소 중…':'사진 편집 취소';find('pkCancel').disabled=state.canceling||!state.activeRequestId&&photoState?.cancelling===true;
       const provider=find('desktopChatProvider');provider.value=state.codex.provider;provider.disabled=locked||typeof ipc.selectProvider!=='function';
       choices(find('desktopChatModel'),catalog.options,state.codex.modelId,catalog.loading?'모델 목록 확인 중':'모델 목록을 확인해주세요');
       find('desktopChatModel').disabled=locked||catalog.loading||!!catalog.error||!catalog.options.length||typeof ipc.setChatModel!=='function';
@@ -390,9 +396,10 @@
         find(id+'Help').textContent=value?.reason||images?.capabilityReason||(!images?.ready?images?.error||'설치된 이미지 모델을 확인하고 있어요.':'설치되어 사용 가능한 모델만 선택할 수 있어요.');
       }
       find('desktopImageSettingsHelp').textContent=imageError||images?.persistenceError||'';
-      find('pcModelName').textContent='이미지 모델';
       const editing=studio.getSummary().mode==='inpaint',imageValue=images?.[editing?'edit':'generation'],imageLabel=imageValue?.models?.find(item=>item.id===imageValue.selectedId)?.label||imageValue?.selectedId||'확인 중',imageButton=find('pcModelName').closest('button');imageButton.hidden=false;imageButton.setAttribute('data-pk-setting-target',editing?'desktopEditModel':'desktopGenerationModel');imageButton.setAttribute('aria-label',`${editing?'부분 수정':'이미지 생성'} 모델 설정: ${imageLabel}`);
-      find('pcResolution').hidden=false;find('pcResolution').textContent='이미지 크기';
+      find('pcModelName').textContent=imageLabel;imageButton.title=`${editing?'부분 수정':'이미지 생성'} 모델 설정: ${imageLabel}`;
+      const width=Number(find('width').value),height=Number(find('height').value),size=Number.isSafeInteger(width)&&width>0&&Number.isSafeInteger(height)&&height>0?`${width} × ${height}`:'크기 확인 필요';
+      const resolution=find('pcResolution');resolution.hidden=false;resolution.textContent=size;resolution.setAttribute('aria-label','이미지 크기 설정: '+size);resolution.title='이미지 크기 설정: '+size;
     }
     const unsubscribeProjects=workspace.subscribeProjectState?.(()=>renderState(controller.getState()));if(unsubscribeProjects)listeners.push(unsubscribeProjects);
     listen(find('desktopChatSelectedModel'),'click',()=>workspace.settings('model','desktopChatProvider'));

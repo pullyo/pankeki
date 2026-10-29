@@ -83,6 +83,7 @@ def main():
         scene.render.image_settings.color_depth = '8'
         bpy.data.images['Render Result'].save_render(str(output / 'rgb' / f'{frame:06d}.png'), scene=scene)
     info = {'blender_version': bpy.app.version_string, 'camera': scene.camera.name,
+            'camera_clip_start': scene.camera.data.clip_start, 'camera_clip_end': scene.camera.data.clip_end,
             'width': request['width'], 'height': request['height'], 'fps': request['fps'],
             'frame_start': request['start'], 'frame_end': request['end'], 'rgb_color_space': 'Standard sRGB',
             'depth': {'format': 'OPEN_EXR_MULTILAYER', 'channel': scene.view_layers[0].name + '.Depth.Z',

@@ -10,9 +10,9 @@
   }
 })(typeof globalThis === 'object' ? globalThis : this,function () {
   'use strict';
-  const labels = Object.freeze({home:'프로젝트 홈',design:'이미지 생성 · 기존 기능 · 실행 환경 확인 필요',
+  const labels = Object.freeze({home:'프로젝트 홈',projects:'프로젝트',design:'이미지 생성 · 기존 기능 · 실행 환경 확인 필요',
     compare:'후보 비교 · 기존 기능',inpaint:'부분 수정 · 기존 기능 · 실행 환경 확인 필요',
-    parts:'부위 편집 · 개발 예정',motion:'표정과 동작 · 개발 예정',export:'저장과 출력 · 기본 저장 사용 가능'});
+    parts:'부위 편집 · 개발 예정',motion:'표정과 동작 · 개발 예정',video:'Blender 영상',export:'저장과 출력 · 기본 저장 사용 가능'});
   const workspace = new Set(['design','compare','inpaint']);
   function mount(doc,studio) {
     const find = id => doc.getElementById(id), nodes = selector => Array.from(doc.querySelectorAll(selector));
@@ -28,7 +28,7 @@
       for (const page of pages) page.hidden = page.dataset.studioPage !== screen;
       for (const shell of shells) shell.hidden = !workspace.has(screen);
       for (const button of nav) {
-        const active = button.dataset.studioGo === screen;
+        const active = button.dataset.studioGo === (screen === 'video' && button.dataset.studioGo === 'motion' ? 'motion' : screen);
         button.classList.toggle('active',active);
         if (active) button.setAttribute('aria-current','step'); else button.removeAttribute('aria-current');
       }

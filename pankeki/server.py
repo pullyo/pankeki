@@ -5,6 +5,7 @@ import inspect
 import base64
 import math
 import re
+import sys
 import threading
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -17,6 +18,7 @@ from .job_store import JobStore
 from .run_store import RunStore
 from .foreground import _image as decode_photo_png, foreground_mask
 
+VIDEO_SUPPORTED = sys.platform == 'darwin'
 
 class ImageOperationError(ValueError):
     def __init__(self, code, message, status=400):
@@ -194,6 +196,7 @@ def make_server(root, port=8190, comfy_url='http://127.0.0.1:8188', config=None)
     process_source_id = source_content_id(root)
     engine = None
     manager = None
+    video_manager = None
     photo_lock = threading.Lock()
 
     class Handler(BaseHTTPRequestHandler):
@@ -223,6 +226,58 @@ def make_server(root, port=8190, comfy_url='http://127.0.0.1:8188', config=None)
             if mutation and self.headers.get_content_type() != 'application/json':
                 raise ValueError('JSON content type required')
 
+        def send_video_asset(self, path, *, head=False):
+            size = path.stat().st_size
+            start, end, status = 0, size-1, 200
+            requested = self.headers.get('Range')
+            if requested:
+                match = re.fullmatch(r'bytes=(\d*)-(\d*)', requested)
+                if match and any(match.groups()):
+                    left, right = match.groups()
+                    if left:
+                        start = int(left)
+                        end = min(size-1,int(right)) if right else size-1
+                    else:
+                        start = max(0,size-int(right))
+                    status = 206
+                if not match or not any(match.groups()) or start >= size or start > end or (not match[1] and int(match[2] or 0)==0):
+                    self.send_response(416)
+                    self.send_header('Content-Range',f'bytes */{size}')
+                    self.send_header('Content-Length','0')
+                    self.end_headers()
+                    return
+            self.send_response(status)
+            self.send_header('Content-Type','video/mp4')
+            self.send_header('Content-Length',str(end-start+1))
+            self.send_header('Accept-Ranges','bytes')
+            self.send_header('Cache-Control','no-store')
+            self.send_header('X-Content-Type-Options','nosniff')
+            if status==206:
+                self.send_header('Content-Range',f'bytes {start}-{end}/{size}')
+            self.end_headers()
+            if not head:
+                with path.open('rb') as stream:
+                    stream.seek(start)
+                    remaining = end-start+1
+                    while remaining:
+                        block = stream.read(min(1024*1024,remaining))
+                        if not block:
+                            break
+                        self.wfile.write(block)
+                        remaining -= len(block)
+
+        def do_HEAD(self):
+            try:
+                self.guard()
+                match = re.fullmatch(r'/api/video/assets/([0-9a-f]{32})/(guide|result)\.mp4',urlsplit(self.path).path)
+                if match and video_manager is not None:
+                    return self.send_video_asset(video_manager.asset(match[1],match[2]+'.mp4'),head=True)
+                return self.send(404,{'error':'Not found'})
+            except KeyError:
+                self.send(404,{'error':'Unknown video job'})
+            except (ValueError,OSError) as exc:
+                self.send(400,{'error':str(exc)})
+
         def do_GET(self):
             try:
                 self.guard()
@@ -237,6 +292,16 @@ def make_server(root, port=8190, comfy_url='http://127.0.0.1:8188', config=None)
                 if path.startswith('/vendor/cubism/'):
                     asset = cubism_asset(root, path)
                     return self.send(200, *asset) if asset else self.send(404, {'error': 'Runtime file unavailable'})
+                if path == '/api/video/status':
+                    return self.send(200,video_manager.runtime.status() if video_manager else {
+                        'ready':False,'reason':'로컬 영상 생성은 Apple Silicon Mac에서 지원합니다.',
+                        'model':None,'defaults':{'width':384,'height':256,'frames':49,'fps':24,'steps':8},'blender_available':False})
+                match = re.fullmatch(r'/api/video/(jobs|results)/([0-9a-f]{32})',path)
+                if match and video_manager is not None:
+                    return self.send(200,video_manager.get(match[2]) if match[1]=='jobs' else video_manager.result(match[2]))
+                match = re.fullmatch(r'/api/video/assets/([0-9a-f]{32})/(guide|result)\.mp4',path)
+                if match and video_manager is not None:
+                    return self.send_video_asset(video_manager.asset(match[1],match[2]+'.mp4'))
                 if path == '/api/models':
                     return self.send(200, engine.models_info())
                 if path == '/api/capabilities':
@@ -300,6 +365,17 @@ def make_server(root, port=8190, comfy_url='http://127.0.0.1:8188', config=None)
                 body = json.loads(raw_body)
                 if not isinstance(body, dict):
                     raise ValueError('Expected JSON object')
+                if self.path == '/api/video/jobs':
+                    if video_manager is None:
+                        return self.send(503,{'error':'로컬 영상 생성은 Apple Silicon Mac에서 지원합니다.'})
+                    status = video_manager.runtime.status()
+                    if not status['ready']:
+                        return self.send(503,{'error':status['reason']})
+                    submitted = video_manager.submit(body)
+                    return self.send(202,{'id':submitted['id'],'status':submitted['status']})
+                match = re.fullmatch(r'/api/video/jobs/([0-9a-f]{32})/cancel',self.path)
+                if match and video_manager is not None:
+                    return self.send(200,video_manager.cancel(match[1]))
                 if self.path == '/api/image-ops':
                     operation, raw, options = validate_image_op(body)
                     if not photo_lock.acquire(blocking=False):
@@ -365,11 +441,33 @@ def make_server(root, port=8190, comfy_url='http://127.0.0.1:8188', config=None)
     job_store = None
     try:
         server = ThreadingHTTPServer(('127.0.0.1', port), Handler)
+        original_server_close = server.server_close
+        def close_with_video():
+            if video_manager is not None:
+                video_manager.close()
+            original_server_close()
+        server.server_close = close_with_video
         # Binding must succeed before any orphan recovery. An OS-lifetime owner
         # lease also prevents a second port from sharing and orphaning this DB.
         engine = Engine(root, comfy_url, config)
         job_store = JobStore(engine.runtime / 'jobs.sqlite')
-        manager = JobManager(engine, store=job_store)
+        if VIDEO_SUPPORTED:
+            from .video_runtime import ResourceGate, VideoCanceled, VideoRuntime
+            from .video_jobs import VideoJobManager
+            from .comfy_adapter import Canceled
+            gpu_gate = ResourceGate(root/'runtime/video/shared-gpu.lock')
+            def image_runner(job,on_preview):
+                if job.lane != 'gpu':
+                    return engine(job,on_preview)
+                try:
+                    with gpu_gate.hold(job.cancel):
+                        return engine(job,on_preview)
+                except VideoCanceled as exc:
+                    raise Canceled(str(exc)) from exc
+            manager = JobManager(image_runner, store=job_store)
+            video_manager = VideoJobManager(VideoRuntime(root,comfy_url=comfy_url,gate=gpu_gate))
+        else:
+            manager = JobManager(engine, store=job_store)
     except BaseException:
         if manager is not None:
             manager.close()
@@ -382,5 +480,6 @@ def make_server(root, port=8190, comfy_url='http://127.0.0.1:8188', config=None)
         raise
     server.manager = manager
     server.engine = engine
+    server.video_manager = video_manager
     server.process_source_id = process_source_id
     return server
