@@ -95,7 +95,22 @@ function findCli(name,{platform=process.platform,env=process.env,fsImpl=fs}={}){
   if(e.APPDATA)candidates.push(w.join(e.APPDATA,'npm',name+'.cmd'));
   for(const candidate of candidates){if(!isExecutable(candidate,{platform,fsImpl}))continue;const spec=resolveWindowsShim(candidate,{env,fsImpl});if(spec)return spec;}
   const onPath=findOnPath([name+'.exe',name+'.cmd'],{env,platform,fsImpl});
-  return onPath?resolveWindowsShim(onPath,{env,fsImpl}):null;
+  if(onPath)return resolveWindowsShim(onPath,{env,fsImpl});
+  // The Codex desktop app keeps its CLI in versioned, non-PATH directories.
+  // Inspect only immediate install directories and preserve standalone/PATH priority.
+  if(name==='codex'&&e.LOCALAPPDATA){
+    const bin=w.join(e.LOCALAPPDATA,'OpenAI','Codex','bin');
+    let entries;try{entries=fsImpl.readdirSync(bin,{withFileTypes:true});}catch{return null;}
+    const installed=[];
+    for(const entry of entries){
+      if(!entry.isDirectory()||/[\\/]/.test(entry.name)||entry.name==='.'||entry.name==='..')continue;
+      const file=w.join(bin,entry.name,'codex.exe');
+      try{const stat=fsImpl.statSync(file);if(stat.isFile())installed.push({file,modified:stat.mtimeMs||0});}catch{}
+    }
+    installed.sort((a,b)=>b.modified-a.modified||a.file.localeCompare(b.file));
+    if(installed.length)return {command:installed[0].file,args:[]};
+  }
+  return null;
 }
 // Bridges historically took a plain path; accept that or a spec.
 function launchSpec(value){

@@ -4,6 +4,19 @@ const fs=require('node:fs');const path=require('node:path');const {randomUUID}=r
 const {isTrustedSender,makeCsp,allowRequest,createPermissionPolicy}=require('./security.cjs');
 const {createIpcController}=require('./ipc.cjs');
 
+function createConnectionLogger(file,io=fs){
+  return message=>{
+    const match=/^connect failed \(([a-z][a-z0-9-]{0,63})\):/.exec(String(message));
+    if(!match)return;
+    const row=JSON.stringify({at:new Date().toISOString(),stage:'connect',code:match[1]})+'\n';
+    try{
+      let size=0;try{size=io.statSync(file).size;}catch(error){if(error.code!=='ENOENT')return;}
+      if(size+Buffer.byteLength(row)>32768)return;
+      io.appendFileSync(file,row,{mode:0o600});
+    }catch{}
+  };
+}
+
 async function createEditorWindow({origin,html,projectRoot,contexts,results,resultsFactory,bridgeFactory,getAppStatus,allowLiveSend=false,verifyBackend=async()=>true,mapBridgeMessage,notifyUnconfirmedClose,
   partition='persist:pankeki-editor'}={}) {
   const isolated=session.fromPartition(partition);
@@ -156,7 +169,8 @@ async function boot() {
       bridgeFactory:onEvent=>{
         const shared={getCapabilities,projectRoot:paths.projectRoot,pankekiBaseUrl:'http://127.0.0.1:8190',dataDir,inputRoot:path.join(dataDir,'inputs'),
           resolveEditContext:context=>contexts.resolveEditContext(context),mcpPython:paths.mcpPython,imageForModel};
-        return createProviderBridge({onEvent,settings:chatModelSettings,factories:{codex:emit=>createCodexBridge({...shared,codexPath:paths.codexPath,onEvent:emit}),
+        const connectionLog=createConnectionLogger(path.join(dataDir,'codex-connection.log'));
+        return createProviderBridge({onEvent,settings:chatModelSettings,factories:{codex:emit=>createCodexBridge({...shared,codexPath:paths.codexPath,log:connectionLog,onEvent:emit}),
           claude:emit=>createClaudeBridge({...shared,onEvent:emit})}});
       }});
     if(stopping){await editor.close();await contexts.close();return;}
@@ -169,4 +183,4 @@ async function boot() {
   }
 }
 if(require.main===module)void boot();
-module.exports={createEditorWindow,boot};
+module.exports={createEditorWindow,boot,createConnectionLogger};

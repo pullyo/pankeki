@@ -204,9 +204,10 @@
     const sourceViews=$('sourceView').closest('.view-tabs'),sourceViewsHome=sourceViews.parentNode;
     const nativeToolPresentation=[$('brushTool'),$('eraserTool'),$('clearMask'),$('editorTools').querySelector('label[for="maskUpload"]')].map(node=>({node,html:node.innerHTML,label:node.getAttribute('aria-label'),title:node.getAttribute('title')}));
     if(empty){const copy=doc.createElement('div');copy.className='pc-workspace-empty-copy';copy.innerHTML='<h2>이미지를 선택하면 크게 볼 수 있어요.</h2><p>왼쪽에서 이미지를 만들거나 기존 후보를 선택하세요.</p>';empty.append(copy);}
-    let workspaceEntries=[],viewerId=null,viewerTrigger=null,editorOpen=false,workEntry=null,workImage=null,workKey='',workUrl='',zoomMode='fit',zoomPercent=100,fitScale=1,canvasLoadError=false,composerComposing=false,queuedRoute=null;
+    let workspaceEntries=[],viewerId=null,viewerTrigger=null,editorOpen=false,homeConversationOnly=false,workEntry=null,workImage=null,workKey='',workUrl='',zoomMode='fit',zoomPercent=100,fitScale=1,canvasLoadError=false,composerComposing=false,queuedRoute=null;
     let photoEditor=null,photoMounting=false,photoState=null,photoStateKey='',photoOwner=null,viewerEpoch=0;
-    function syncPresentation(){const open=editorOpen&&['design','inpaint'].includes(doc.body.dataset.studioScreen);shell.dataset.pcEditor=open?'open':'closed';doc.body.classList.toggle('pc-reference-open',!!desktopBinding&&open);}
+    function syncPresentation(){const open=editorOpen&&!homeConversationOnly&&['design','inpaint'].includes(doc.body.dataset.studioScreen);shell.dataset.pcEditor=open?'open':'closed';doc.body.classList.toggle('pc-reference-open',!!desktopBinding&&open);}
+    function showHomeConversation(){homeConversationOnly=true;followLatest=true;showPane('conversation',false);syncPresentation();revealLatest();}
     function showPane(pane,focus=true){if(pane==='canvas'&&!viewerId&&doc.body.dataset.studioScreen!=='inpaint')return;shell.dataset.pcPane=pane;$('pcShowConversation').setAttribute('aria-pressed',String(pane==='conversation'));$('pcShowCanvas').setAttribute('aria-pressed',String(pane==='canvas'));if(focus)(pane==='canvas'?workspace:editor).focus();}
     function canRestoreFocus(trigger){if(!trigger||!doc.body.contains(trigger)||trigger.disabled)return false;for(let node=trigger;node&&node!==doc;node=node.parentNode){if(node.hidden||node.inert||node.tagName==='DIALOG'&&!node.open)return false;const style=root.getComputedStyle&&node.tagName?root.getComputedStyle(node):null;if(style&&(style.display==='none'||['hidden','collapse'].includes(style.visibility)))return false;}return true;}
     function closeViewer(focus=false){const trigger=viewerTrigger;if(pinModeActive){setPinMode(false);void photoEditor?.cancel();}viewerEpoch++;viewerId=null;viewerTrigger=null;editorOpen=false;shell.dataset.pcViewer='closed';viewerImage.hidden=true;showPane(desktopBinding?'conversation':doc.body.dataset.studioScreen==='inpaint'?'canvas':'conversation',false);updateWorkspace(studio.getSummary());if(focus)(canRestoreFocus(trigger)?trigger:editor).focus();}
@@ -295,15 +296,15 @@
     }
     function editLocked(){return studio.getSummary().busy||!!desktopBinding&&desktopBinding.isLocked?.()!==false;}
     function syncEditLocks(){const locked=editLocked();$('pcCanvasEdit').disabled=!workspace.dataset.candidateId||locked;if(desktopBinding)for(const id of ['sourceView','resultView'])$(id).disabled=locked;for(const node of history?.querySelectorAll('[data-pc-action="edit"]')||[])node.disabled=locked;for(const node of $('gallery').querySelectorAll('[data-action="edit"]'))node.disabled=locked;}
-    function beginCandidateEdit(id){if(editLocked())return;const sameSource=desktopBinding&&studio.desktopChat.getState().sourceCandidateId===id;if(viewerId)closeViewer();editorOpen=true;if(sameSource){$('sourceView').click();go('inpaint');}else candidateControl(id,'edit')?.click();updateWorkspace(studio.getSummary());}
+    function beginCandidateEdit(id){if(editLocked())return;homeConversationOnly=false;const sameSource=desktopBinding&&studio.desktopChat.getState().sourceCandidateId===id;if(viewerId)closeViewer();editorOpen=true;if(sameSource){$('sourceView').click();go('inpaint');}else candidateControl(id,'edit')?.click();updateWorkspace(studio.getSummary());}
     function revealCandidate(id){
       const thumb=Array.from(candidateStrip.querySelectorAll('button')).find(node=>node.dataset.pcCandidate===id);if(!thumb||!candidateStrip.clientWidth)return;
       const bounds=candidateStrip.getBoundingClientRect(),rect=thumb.getBoundingClientRect(),left=bounds.left+(candidateStrip.clientLeft||0),right=left+candidateStrip.clientWidth;
       const delta=rect.left<left?rect.left-left:rect.right>right?rect.right-right:0;
       if(delta)candidateStrip.scrollLeft=Math.max(0,Math.min(candidateStrip.scrollWidth-candidateStrip.clientWidth,(candidateStrip.scrollLeft||0)+delta));
     }
-    function activateCandidate(id,trigger,focus=true){if(!workspaceEntries.some(item=>item.id===id))return;if(pinModeActive&&viewerId!==id){setPinMode(false);void photoEditor?.cancel();}const screen=workflow.getScreen();if(screen!=='design'&&(!desktopBinding||screen!=='inpaint'))go(screen==='home'&&desktopBinding&&studio.getSummary().mode==='inpaint'?'inpaint':'design');viewerEpoch++;viewerId=id;viewerTrigger=trigger;editorOpen=true;shell.dataset.pcViewer='open';showPane('canvas',focus);updateWorkspace(studio.getSummary());revealCandidate(id);}
-    $('pcShowConversation').addEventListener('click',()=>showPane('conversation'));$('pcShowCanvas').addEventListener('click',()=>{editorOpen=true;updateWorkspace(studio.getSummary());showPane('canvas');});
+    function activateCandidate(id,trigger,focus=true){if(!workspaceEntries.some(item=>item.id===id))return;homeConversationOnly=false;if(pinModeActive&&viewerId!==id){setPinMode(false);void photoEditor?.cancel();}const screen=workflow.getScreen();if(screen!=='design'&&(!desktopBinding||screen!=='inpaint'))go(screen==='home'&&desktopBinding&&studio.getSummary().mode==='inpaint'?'inpaint':'design');viewerEpoch++;viewerId=id;viewerTrigger=trigger;editorOpen=true;shell.dataset.pcViewer='open';showPane('canvas',focus);updateWorkspace(studio.getSummary());revealCandidate(id);}
+    $('pcShowConversation').addEventListener('click',()=>showPane('conversation'));$('pcShowCanvas').addEventListener('click',()=>{homeConversationOnly=false;editorOpen=true;updateWorkspace(studio.getSummary());showPane('canvas');});
     composerTarget.addEventListener('click',()=>activateCandidate(composerTarget.dataset.candidateId,composerTarget));
     candidateStrip.addEventListener('click',event=>{const control=event.target.closest('[data-pc-candidate]');if(control)activateCandidate(control.dataset.pcCandidate,control);});
     $('pcCanvasFit').addEventListener('click',()=>setZoom('fit'));$('pcCanvasActual').addEventListener('click',()=>setZoom(100));
@@ -460,7 +461,7 @@
       getProjectState:()=>projectState,
       subscribeProjectState(listener){projectListeners.add(listener);listener(projectState);return()=>projectListeners.delete(listener);},
       registerSettings(node){for(const [index,fieldset] of Array.from(node.querySelectorAll('fieldset')).entries())fieldset.dataset.pkSettingsSection=['chat','model','edit'][index];settingsPanel(drawer.dataset.panel);},
-      enterConversation(){go(studio.getSummary().mode==='inpaint'?'inpaint':'design');},
+      enterConversation(){go(studio.getSummary().mode==='inpaint'?'inpaint':'design');showHomeConversation();},
       settings,
       unbind(){setPinMode(false);if(viewerId&&doc.body.dataset.studioScreen==='inpaint')closeViewer();desktopBinding=null;photoEditor?.destroy();photoEditor=null;photoState=null;photoOwner=null;photoControls.hidden=true;aiState=null;aiTurns.clear();for(const node of contextMarkers.values())node.remove();contextMarkers.clear();doc.body.classList.remove('pc-central-chat','pankeki-reference','pc-reference-open','pc-native-result','pankeki-photo-tools','pc-legacy-mask');negativeLabel.textContent=negativePresentation.label;negativeHint.textContent=negativePresentation.hint;for(const {node,html,label,title} of nativeToolPresentation){node.innerHTML=html;for(const [key,value] of [['aria-label',label],['title',title]])if(value===null)node.removeAttribute(key);else node.setAttribute(key,value);}sourceViewsHome.prepend(sourceViews);sourceViews.classList.remove('pc-source-views');sourceViews.hidden=false;editContext.hidden=false;categoryRow.hidden=false;for(const id of ['sourceView','resultView'])$(id).disabled=false;canvasOverlay.prepend(canvasHeader.querySelector('.pc-canvas-controls'));canvasOverlay.classList.remove('pc-editor-rail');candidateStrip.hidden=true;composerTarget.hidden=true;$('pkGenerate').innerHTML=icon('send-horizontal');$('pcNoAIStyle')?.remove();composer.prepend(editContext);shell.append(categoryRow,composer);const legacy=chatPanel.querySelector('.chat-composer-area');if(legacy){legacy.hidden=false;legacy.inert=false;}refresh(studio.getSummary(),'restore');}
     });
@@ -613,7 +614,7 @@
         const identity=studio.desktopChat.getState().projectId;
         if(wasProject)generationDraftOverlay={identity,draft:composerDraft(),requestId:null,pending:true};
         else if(generationDraftOverlay?.identity===identity){generationDraftOverlay.requestId=null;generationDraftOverlay.pending=true;}
-        applyHomeDraft(payload);go('design');
+        applyHomeDraft(payload);go('design');showHomeConversation();
         return $('pkPromptForm').requestSubmit();
       }catch(error){if(editorDraftEpoch===epoch&&!composerComposing)applyHomeDraft(payload);projectActionFailure(error);return false;}
       finally{homeSubmitPending=false;}
@@ -716,7 +717,7 @@
       threadVisible=visible;
       const skip=doc.querySelector('.skip-link');if(skip)skip.href=screen==='projects'?'#pcProjectsHeading':visible?'#pcConversation':'#workspace';
     }
-    function go(screen){if(composerComposing&&screen!==workflow.getScreen()){queuedRoute=screen;return;}if(screen==='inpaint')editorOpen=true;workflow.go(screen);routes();updateWorkspace(studio.getSummary());}
+    function go(screen){if(composerComposing&&screen!==workflow.getScreen()){queuedRoute=screen;return;}if(screen==='inpaint'){homeConversationOnly=false;editorOpen=true;}workflow.go(screen);routes();updateWorkspace(studio.getSummary());}
     function settingsPanel(panel){
       if(!settingCategories.some(([key])=>key===panel))panel='model';
       drawer.dataset.panel=panel;

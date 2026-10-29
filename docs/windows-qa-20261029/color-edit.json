@@ -1,0 +1,46 @@
+{
+  "job_id": "8e9ccc3a7a9c4f989af19ec83b0ce12f",
+  "state": "succeeded",
+  "request": {
+    "target_color": "#4A77B5",
+    "source_color": null,
+    "color_tolerance": 35.0,
+    "cache": false,
+    "preview": false,
+    "mode": "inpaint",
+    "edit_operation": "recolor",
+    "feather": 4,
+    "source": {
+      "sha256": "10f5c1fe31e7846a64ab4244cfeb0c19c281c4a37cc7ceb621f5314e02308df1",
+      "bytes": 1286400
+    },
+    "mask": {
+      "sha256": "5b4f55267f13ed9b237d6705c3ab37974c88c8522a7928a49df37d426165fc93",
+      "bytes": 44326
+    },
+    "trace_id": "ff0ef2fb-4646-4741-bdd8-6e01cb705492",
+    "prompt": "",
+    "negative": "",
+    "seed": 1,
+    "width": 512,
+    "height": 512,
+    "steps": 1,
+    "cfg": 1.0,
+    "denoise": 1.0,
+    "roi": false,
+    "halo": 32,
+    "preview_interval": 0.2,
+    "sampler": "euler",
+    "scheduler": "normal"
+  },
+  "metrics": {
+    "kind": "local_recolor",
+    "edit_operation": null,
+    "total_s": 1.5560885999984748,
+    "outside_mask_max_error": 0,
+    "alpha_max_error": 0,
+    "model_calls": 0,
+    "image_sha256": "3fcdb5d0607fb04af3889e7e0c4fddd0c34850ab376533b24e4bfeaf34956ac9"
+  },
+  "result_sha256": "3fcdb5d0607fb04af3889e7e0c4fddd0c34850ab376533b24e4bfeaf34956ac9"
+}

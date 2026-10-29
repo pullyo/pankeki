@@ -24,9 +24,6 @@ const DISABLED_FEATURES = ['shell_tool', 'unified_exec', 'unified_exec_tty', 'sh
   'plugin_sharing', 'browser_use', 'browser_use_external', 'in_app_browser', 'computer_use', 'hooks', 'memories', 'chronicle',
   'multi_agent', 'image_generation', 'view_image', 'skill_mcp_dependency_install', 'skill_search', 'tool_suggest', 'goals',
   'workspace_dependencies', 'in_app_local_automation'];
-// Global MCP servers known on this machine; connect() refuses to run if any MCP
-// server is still enabled in the child's effective config.
-const INHERITED_MCP = ['node_repl', 'pankeki-local'];
 const FORBIDDEN_ITEMS = new Set(['commandExecution', 'fileChange', 'webSearch', 'imageGeneration', 'imageView',
   'collabAgentToolCall', 'subAgentActivity', 'mcpToolCall']);
 const ID = /^[A-Za-z0-9_-]{1,80}$/;
@@ -100,11 +97,13 @@ function defaultCodexPath() {
   return null;
 }
 
-function childArgs(disabledSkills = []) {
+function childArgs(disabledSkills = [], disabledMcpCommand) {
   const args = ['app-server'];
   for (const feature of DISABLED_FEATURES) args.push('--disable', feature);
   const config = {web_search: 'disabled', notify: [], approval_policy: 'never', sandbox_mode: 'read-only', 'skills.bundled.enabled': false};
-  for (const name of INHERITED_MCP) config[`mcp_servers.${name}.enabled`] = false;
+  // An enabled-only override can create an invalid transport for an absent server.
+  // A complete disabled definition parses on Windows and cannot launch a tool.
+  for (const name of ['node_repl','pankeki-local']) config[`mcp_servers.${name}`] = {command:disabledMcpCommand,enabled:false};
   // User skills cannot be switched off as a group; connect() lists them and
   // restarts the child once with each one disabled by name.
   if (disabledSkills.length) config['skills.config'] = disabledSkills.map(name => ({name, enabled: false}));
@@ -589,7 +588,9 @@ function createCodexBridge({projectRoot, codexPath, onEvent, resolveEditContext,
   }
 
   async function start(disabledSkills) {
-    const proc = spawnImpl(codexLaunch.command, [...codexLaunch.args, ...childArgs(disabledSkills)], {cwd: paths.work, env: childEnv(process.env), stdio: ['pipe', 'pipe', 'pipe'], ...(process.platform === 'win32' ? {windowsHide: true} : {})});
+    const disabledMcpCommand=path.join(paths.work,'disabled-mcp-command.exe');
+    if(fs.existsSync(disabledMcpCommand))throw new BridgeError('isolation','Disabled MCP placeholder must not exist');
+    const proc = spawnImpl(codexLaunch.command, [...codexLaunch.args, ...childArgs(disabledSkills,disabledMcpCommand)], {cwd: paths.work, env: childEnv(process.env), stdio: ['pipe', 'pipe', 'pipe'], ...(process.platform === 'win32' ? {windowsHide: true} : {})});
     child = proc;
     codexRpc = rpc(proc, {label: 'codex', log, onRequest: onServerRequest, onNotification});
     proc.on('error', error => { log('spawn error: ' + redact(error.message)); if (child === proc) onExit(null, 'spawn-error'); });
@@ -661,6 +662,7 @@ function createCodexBridge({projectRoot, codexPath, onEvent, resolveEditContext,
       state.toolsReady = true;
       setState('ready');
     } catch (error) {
+      log('connect failed ('+String(error.code||'codex')+'): '+redact(error.message));
       await close();
       setState('error', error instanceof BridgeError ? error : new BridgeError('codex', error.message));
     }
@@ -812,7 +814,7 @@ function createCodexBridge({projectRoot, codexPath, onEvent, resolveEditContext,
   }
 
   return {status: snapshot, connect, send, cancel, close, getModels, setModel, getSubmittedRequest, getResultDescriptor, protocolVersion: PROTOCOL_VERSION,
-    _debug: {childArgs, paths, verifyIsolation, get tools(){return toolSchemas;}}};
+    _debug: {childArgs:skills=>childArgs(skills,path.join(paths.work,'disabled-mcp-command.exe')), paths, verifyIsolation, get tools(){return toolSchemas;}}};
 }
 
 module.exports = {createCodexBridge, BridgeError, TOOL_NAMES, DISABLED_FEATURES, PROTOCOL_VERSION};
