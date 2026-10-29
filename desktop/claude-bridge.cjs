@@ -12,6 +12,7 @@
 // Same public contract and events as codex-bridge.cjs. Verified against
 // Claude Code 2.1.310 (output/desktop-codex-20261024/claude-provider).
 const {spawn} = require('node:child_process');
+const platformInfo = require('./platform.cjs');
 const crypto = require('node:crypto');
 const fs = require('node:fs');
 const http = require('node:http');
@@ -25,6 +26,7 @@ const MAX_BODY = 1024 * 1024;
 const JOB_NOTE = 'pankeki_job waits up to 20 seconds for the job to finish. Keep calling it until the state is succeeded, failed or canceled, then call pankeki_result for a succeeded job. Do not end your reply while a job you started is still queued or running.';
 
 function defaultClaudePath() {
+  if (process.platform === 'win32') return platformInfo.findCli('claude');
   const home = process.env.HOME || '';
   for (const candidate of [path.join(home, '.local/bin/claude'), '/opt/homebrew/bin/claude', '/usr/local/bin/claude']) {
     try { fs.accessSync(candidate, fs.constants.X_OK); return candidate; } catch {}
@@ -74,9 +76,13 @@ function createClaudeBridge({projectRoot, claudePath, onEvent, resolveEditContex
     // pankeki_mcp.py only accepts a state dir under <app-root>/runtime, whatever dataDir is.
     state: mcpStateDir || path.join(projectRoot, 'runtime/desktop-codex/mcp-state'),
     launcher: path.join(projectRoot, 'plugins/pankeki-local/scripts/launch.py'),
-    mcpPython: mcpPython || path.join(projectRoot, 'runtime/macos/pankeki-mcp-20261023/release/venv/bin/python')
+    mcpPython: mcpPython || path.join(projectRoot, ...platformInfo.layout(process.platform).mcpPython.split('/'))
   };
   const claude = claudePath === undefined ? defaultClaudePath() : claudePath;
+  // Windows npm installs are .cmd shims; launchSpec turns them into `node cli.js` so the empty
+  // `--tools ''` argument survives (a shell would drop it).
+  const claudeLaunch = platformInfo.launchSpec(claude);
+  const spawnClaude = (args, options) => spawnImpl(claudeLaunch.command, [...claudeLaunch.args, ...args], {...options, ...(process.platform === 'win32' ? {windowsHide: true} : {})});
   const {normalizeModels, validModelId} = require('./chat-model-settings.cjs');
   let modelCatalog = [], modelSource = null, modelChanging = false;
 
@@ -190,7 +196,7 @@ function createClaudeBridge({projectRoot, claudePath, onEvent, resolveEditContex
   }
 
   async function startSession() {
-    const proc = spawnImpl(claude, sessionArgs(configFile, model), {cwd: paths.work, env: childEnv(process.env), stdio: ['pipe', 'pipe', 'pipe']});
+    const proc = spawnClaude(sessionArgs(configFile, model), {cwd: paths.work, env: childEnv(process.env), stdio: ['pipe', 'pipe', 'pipe']});
     const s = {proc, projectId: null, verified: false, pending: new Map(), buffer: ''};
     session = s;
     proc.stdout.setEncoding('utf8');
@@ -226,7 +232,7 @@ function createClaudeBridge({projectRoot, claudePath, onEvent, resolveEditContex
       if (!state.version) throw new BridgeError('model-list-failed', 'Claude version is unknown');
       const help = await new Promise((resolve, reject) => {
         let text = '', proc, tooLarge = false;
-        try { proc = spawnImpl(claude, ['--help'], {cwd: paths.work, env: childEnv(process.env), stdio: ['ignore', 'pipe', 'pipe']}); }
+        try { proc = spawnClaude(['--help'], {cwd: paths.work, env: childEnv(process.env), stdio: ['ignore', 'pipe', 'pipe']}); }
         catch { reject(new BridgeError('model-list-failed', 'Claude help is unavailable')); return; }
         const timer = setTimeout(() => { proc.kill('SIGKILL'); reject(new BridgeError('model-list-failed', 'Claude help timed out')); }, limits.request);
         proc.stdout.setEncoding('utf8'); proc.stdout.on('data', chunk => { if (tooLarge) return; text += chunk; if (text.length > 65536) { tooLarge = true; text = ''; proc.kill('SIGKILL'); } });
@@ -411,7 +417,7 @@ function createClaudeBridge({projectRoot, claudePath, onEvent, resolveEditContex
     return new Promise(resolve => {
       let out = '';
       let proc;
-      try { proc = spawnImpl(claude, ['auth', 'status'], {cwd: paths.work, env: childEnv(process.env), stdio: ['ignore', 'pipe', 'pipe']}); }
+      try { proc = spawnClaude(['auth', 'status'], {cwd: paths.work, env: childEnv(process.env), stdio: ['ignore', 'pipe', 'pipe']}); }
       catch { return resolve(null); }
       const timer = setTimeout(() => { try { proc.kill('SIGKILL'); } catch {} }, limits.request);
       proc.stdout.setEncoding('utf8');
@@ -430,7 +436,7 @@ function createClaudeBridge({projectRoot, claudePath, onEvent, resolveEditContex
     if (modelChanging) throw new BridgeError('busy', 'Claude is changing model');
     if (session && state.toolsReady) return snapshot();
     closing = false;
-    if (!claude) { setState('missing', new BridgeError('missing', 'Claude is not installed')); return snapshot(); }
+    if (!claudeLaunch) { setState('missing', new BridgeError('missing', 'Claude is not installed')); return snapshot(); }
     for (const dir of [paths.work, paths.inputs]) fs.mkdirSync(dir, {recursive: true});
     setState('starting');
     try {

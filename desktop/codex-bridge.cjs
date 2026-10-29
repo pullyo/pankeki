@@ -11,6 +11,7 @@
 // source/mask paths are resolved through the app's resolver and never reach the
 // remote model. Verified against codex-cli 0.164.0 (output/desktop-codex-20261024/claude).
 const {spawn} = require('node:child_process');
+const platformInfo = require('./platform.cjs');
 const fs = require('node:fs');
 const path = require('node:path');
 const {TOOLS,createToolSchemas,authorizeTool,normalizedCapabilities,INSTRUCTIONS,generationSettingsFromMessage,automaticFromMessage,resolveAutomaticChat,reserveAutomaticSubmission,consumeAutomaticSubmission,failAutomaticSubmission,bindAutomaticSettings,automaticOwnsJob,automaticNote,sourceImageBytes,resultImageBytes,imageForModel: defaultImageForModel} = require('./pankeki-tools.cjs');
@@ -91,6 +92,7 @@ function opaque(value, name) {
 }
 
 function defaultCodexPath() {
+  if (process.platform === 'win32') return platformInfo.findCli('codex');
   const home = process.env.HOME || '';
   for (const candidate of [path.join(home, '.local/bin/codex'), '/opt/homebrew/bin/codex', '/usr/local/bin/codex']) {
     try { fs.accessSync(candidate, fs.constants.X_OK); return candidate; } catch {}
@@ -112,6 +114,7 @@ function childArgs(disabledSkills = []) {
 
 // Environment for children: no API keys, so Codex uses its managed ChatGPT login.
 function childEnv(base, extra = {}) {
+  if (process.platform === 'win32') return {...platformInfo.minimalEnv(base, 'win32'), ...extra};
   const env = {};
   for (const key of ['HOME', 'PATH', 'USER', 'LOGNAME', 'LANG', 'LC_ALL', 'TMPDIR', 'SHELL']) if (base[key]) env[key] = base[key];
   return {...env, ...extra};
@@ -162,6 +165,16 @@ function rpc(proc, {onRequest, onNotification, log, label}) {
 
 async function stopProcess(proc, ms) {
   if (!proc || proc.exitCode !== null || proc.signalCode !== null) return;
+  if (process.platform === 'win32') {
+    // Signals are emulated on Windows and would end only the launcher; stop the whole tree.
+    await new Promise(resolve => {
+      const kill = setTimeout(() => { void platformInfo.killTree(proc, {force: true}); }, ms);
+      proc.once('exit', () => { clearTimeout(kill); resolve(); });
+      try { proc.stdin.end(); } catch {}
+      void platformInfo.killTree(proc, {force: false}).then(sent => { if (!sent && proc.exitCode === null) { clearTimeout(kill); void platformInfo.killTree(proc, {force: true}).then(() => resolve()); } });
+    });
+    return;
+  }
   await new Promise(resolve => {
     const kill = setTimeout(() => { try { proc.kill('SIGKILL'); } catch {} }, ms);
     proc.once('exit', () => { clearTimeout(kill); resolve(); });
@@ -183,9 +196,11 @@ function createCodexBridge({projectRoot, codexPath, onEvent, resolveEditContext,
     // pankeki_mcp.py only accepts a state dir under <app-root>/runtime, whatever dataDir is.
     state: mcpStateDir || path.join(projectRoot, 'runtime/desktop-codex/mcp-state'),
     launcher: path.join(projectRoot, 'plugins/pankeki-local/scripts/launch.py'),
-    mcpPython: mcpPython || path.join(projectRoot, 'runtime/macos/pankeki-mcp-20261023/release/venv/bin/python')
+    mcpPython: mcpPython || path.join(projectRoot, ...platformInfo.layout(process.platform).mcpPython.split('/'))
   };
   const codex = codexPath === undefined ? defaultCodexPath() : codexPath;
+  // A plain path (macOS, tests) or a Windows {command,args} launch spec for an npm .cmd shim.
+  const codexLaunch = platformInfo.launchSpec(codex);
   const {normalizeModels, validModelId} = require('./chat-model-settings.cjs');
   let modelCatalog = null, modelChoice = null, capabilitySnapshot=null, toolSchemas=TOOLS;
 
@@ -226,7 +241,7 @@ function createCodexBridge({projectRoot, codexPath, onEvent, resolveEditContext,
     const spec = mcpCommand ? mcpCommand({inputs, state: paths.state}) : {
       command: paths.mcpPython, args: [paths.launcher, '--input-root', inputs, '--state-dir', paths.state],
       env: {PANKEKI_APP_ROOT: projectRoot, PANKEKI_PYTHON: paths.mcpPython, PANKEKI_API_URL: pankekiBaseUrl}};
-    const proc = spawnImpl(spec.command, spec.args, {cwd: paths.work, env: childEnv(process.env, spec.env), stdio: ['pipe', 'pipe', 'pipe']});
+    const proc = spawnImpl(spec.command, spec.args, {cwd: paths.work, env: childEnv(process.env, spec.env), stdio: ['pipe', 'pipe', 'pipe'], ...(process.platform === 'win32' ? {windowsHide: true} : {})});
     const client = rpc(proc, {label: 'mcp', log, onNotification() {}, onRequest: m => client.write({jsonrpc: '2.0', id: m.id, error: {code: -32601, message: 'unsupported'}})});
     const entry = {proc, rpc: client};
     proc.on('error', error => { log('mcp spawn error: ' + redact(error.message)); client.failAll(new BridgeError('mcp', 'Pankeki tools could not start')); });
@@ -570,7 +585,7 @@ function createCodexBridge({projectRoot, codexPath, onEvent, resolveEditContext,
   }
 
   async function start(disabledSkills) {
-    const proc = spawnImpl(codex, childArgs(disabledSkills), {cwd: paths.work, env: childEnv(process.env), stdio: ['pipe', 'pipe', 'pipe']});
+    const proc = spawnImpl(codexLaunch.command, [...codexLaunch.args, ...childArgs(disabledSkills)], {cwd: paths.work, env: childEnv(process.env), stdio: ['pipe', 'pipe', 'pipe'], ...(process.platform === 'win32' ? {windowsHide: true} : {})});
     child = proc;
     codexRpc = rpc(proc, {label: 'codex', log, onRequest: onServerRequest, onNotification});
     proc.on('error', error => { log('spawn error: ' + redact(error.message)); if (child === proc) onExit(null, 'spawn-error'); });
@@ -616,7 +631,7 @@ function createCodexBridge({projectRoot, codexPath, onEvent, resolveEditContext,
   async function connect() {
     if (child) return snapshot();
     closing = false;
-    if (!codex) { setState('missing', new BridgeError('missing', 'Codex is not installed')); return snapshot(); }
+    if (!codexLaunch) { setState('missing', new BridgeError('missing', 'Codex is not installed')); return snapshot(); }
     for (const dir of [paths.work, paths.inputs]) fs.mkdirSync(dir, {recursive: true});
     setState('starting');
     try {
