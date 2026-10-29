@@ -44,13 +44,24 @@ function minimalEnv(base,platform=process.platform){
 function isExecutable(file,{platform=process.platform,fsImpl=fs}={}){
   try{const stat=fsImpl.statSync(file);if(!stat.isFile())return false;if(platform==='win32')return true;fsImpl.accessSync(file,fs.constants.X_OK);return true;}catch{return false;}
 }
+// npm/cmd-shim (https://github.com/npm/cmd-shim, lib/index.js) emits, for a node script:
+//   IF EXIST "%dp0%\node.exe" ( SET "_prog=%dp0%\node.exe" ) ELSE ( SET "_prog=node" )
+//   ... & "%_prog%"  "%dp0%\node_modules\@openai\codex\bin\codex.js" %*
+// and for a native target just:  "%dp0%\node_modules\...\claude.exe"   %*
+// Only the invocation line (the one passing %*) names the target; the interpreter probe above it must
+// not be mistaken for it. Returns {target, viaNode} or null for anything else (no shell fallback).
 function parseNpmShim(text,shimPath){
-  // npm/cmd-shim: "%dp0%\node_modules\@openai\codex\bin\codex.js" or "%~dp0\..."; quoted or not.
-  // Newer packages (e.g. @anthropic-ai/claude-code) point the shim at a bundled native .exe instead.
-  const match=/["']?%~?dp0%?\\([^"'\r\n]+?\.(?:(?:c|m)?js|exe))["']?/i.exec(text);
-  if(!match)return null;
-  const dir=path.win32.dirname(shimPath);
-  return path.win32.join(dir,match[1]);
+  const lines=String(text).split(/\r?\n/).filter(line=>/%\*/.test(line));
+  if(lines.length!==1)return null;
+  const line=lines[0];
+  const targets=[...line.matchAll(/"%~?dp0%?\\([^"\r\n]+)"/gi)].map(match=>match[1]);
+  if(!targets.length)return null;
+  const relative=targets[targets.length-1];
+  if(/(^|\\)node\.exe$/i.test(relative))return null;
+  const viaNode=/"%_prog%"/i.test(line);
+  const isScript=/\.(?:c|m)?js$/i.test(relative),isExe=/\.exe$/i.test(relative);
+  if(viaNode?!isScript:!isExe)return null;
+  return {target:path.win32.join(path.win32.dirname(shimPath),relative),viaNode};
 }
 function findOnPath(names,{env,platform,fsImpl}){
   const dirs=String(pick(env,['PATH']).PATH||'').split(platform==='win32'?';':':').filter(Boolean);
@@ -60,12 +71,13 @@ function findOnPath(names,{env,platform,fsImpl}){
 function resolveWindowsShim(file,{env,fsImpl=fs}){
   if(!/\.(cmd|bat)$/i.test(file))return {command:file,args:[]};
   let text;try{text=fsImpl.readFileSync(file,'utf8');}catch{return null;}
-  const script=parseNpmShim(text,file);
-  if(!script||!isExecutable(script,{platform:'win32',fsImpl}))return null;
-  if(/\.exe$/i.test(script))return {command:script,args:[]};
-  const bundled=path.win32.join(path.win32.dirname(file),'node.exe');
-  const node=isExecutable(bundled,{platform:'win32',fsImpl})?bundled:findOnPath(['node.exe'],{env,platform:'win32',fsImpl});
-  return node?{command:node,args:[script]}:null;
+  const parsed=parseNpmShim(text,file);
+  if(!parsed||!isExecutable(parsed.target,{platform:'win32',fsImpl}))return null;
+  if(!parsed.viaNode)return {command:parsed.target,args:[]};
+  // Same interpreter choice as the shim: a node.exe next to it, otherwise node from PATH.
+  const companion=path.win32.join(path.win32.dirname(file),'node.exe');
+  const node=isExecutable(companion,{platform:'win32',fsImpl})?companion:findOnPath(['node.exe'],{env,platform:'win32',fsImpl});
+  return node?{command:node,args:[parsed.target]}:null;
 }
 function findCli(name,{platform=process.platform,env=process.env,fsImpl=fs}={}){
   if(platform!=='win32'){
@@ -134,5 +146,29 @@ function killTree(child,{force=true,platform=process.platform,env=process.env,ru
   return taskkill(child.pid,{force,env,run});
 }
 
-module.exports={LAYOUTS,layout,requiredFiles,envKeys,minimalEnv,findCli,launchSpec,parseNpmShim,resolveWindowsShim,
+// Stop a CLI/MCP child tree on Windows and prove it: resolve only on a real 'exit', reject with
+// code 'process-not-stopped' when neither the polite nor the forced taskkill ends it within the bound.
+// Callers must keep their handle (and refuse to restart) when this rejects.
+function stopProcessTree(proc,ms,{killTree:kill=killTree,platform='win32'}={}){
+  if(!proc||proc.exitCode!==null||proc.signalCode!==null)return Promise.resolve();
+  return new Promise((resolve,reject)=>{
+    let done=false,timer;
+    const finish=error=>{if(done)return;done=true;clearTimeout(timer);proc.removeListener('exit',onExit);error?reject(error):resolve();};
+    const onExit=()=>finish();
+    proc.once('exit',onExit);
+    const fail=()=>finish(Object.assign(Error('process-not-stopped'),{code:'process-not-stopped',pid:proc.pid}));
+    try{proc.stdin?.end();}catch{}
+    const force=()=>{
+      if(done)return;clearTimeout(timer);
+      void Promise.resolve(kill(proc,{force:true,platform})).catch(()=>false).then(()=>{
+        if(done)return;if(proc.exitCode!==null||proc.signalCode!==null)return finish();
+        timer=setTimeout(fail,ms);
+      });
+    };
+    timer=setTimeout(force,ms);
+    void Promise.resolve(kill(proc,{force:false,platform})).catch(()=>false).then(sent=>{if(!sent)force();});
+  });
+}
+
+module.exports={stopProcessTree,LAYOUTS,layout,requiredFiles,envKeys,minimalEnv,findCli,launchSpec,parseNpmShim,resolveWindowsShim,
   parseWindowsCommandLine,samePath,taskkill,killTree,isExecutable};

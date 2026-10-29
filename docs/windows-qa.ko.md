@@ -34,7 +34,7 @@ $qa = 'runtime\windows\qa'; New-Item -ItemType Directory -Force $qa | Out-Null
 | 모델 | `-Sdxl` 또는 `-Models` | 약 6.9 GB / 약 19 GB |
 | MCP | `-Mcp` | 약 30 MB |
 
-설치 출력의 마지막 줄 JSON(`torch`, `cuda_build`, `cuda_available`, `device`)을 `qa\install.json`에 저장한다.
+설치 출력의 torch 확인 JSON(`torch`, `cuda_build`, `cuda_available`, `device`)을 `qa\install.json`에, 마지막 `--prepare-only` 결과 JSON(`config`, `model_paths`, `written`)을 `qa\prepare.json`에 저장한다. 이 상태에서 `Pankeki.cmd`를 거치지 않고 3장의 데스크톱 확인을 먼저 해 본다(설치 직후 바로 열려야 한다).
 
 ## 2. 실행·생성·수정 (브라우저)
 

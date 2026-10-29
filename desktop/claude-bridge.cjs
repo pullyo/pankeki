@@ -264,7 +264,13 @@ function createClaudeBridge({projectRoot, claudePath, onEvent, resolveEditContex
     if (!s) return;
     for (const entry of s.pending.values()) { clearTimeout(entry.timer); entry.reject(new BridgeError('exited', 'Claude stopped')); }
     s.pending.clear();
-    await stopProcess(s.proc, limits.close);
+    try { await stopProcess(s.proc, limits.close); }
+    catch (error) {
+      // Still running: keep the session so no second Claude starts and the model is not switched.
+      if (s.proc.exitCode === null && s.proc.signalCode === null && session === null) session = s;
+      setState('error', new BridgeError('stop-failed', 'Claude could not be stopped'));
+      throw new BridgeError('stop-failed', 'Claude could not be stopped');
+    }
   }
 
   function onExit(s, code, signal) {

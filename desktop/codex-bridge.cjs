@@ -165,16 +165,9 @@ function rpc(proc, {onRequest, onNotification, log, label}) {
 
 async function stopProcess(proc, ms) {
   if (!proc || proc.exitCode !== null || proc.signalCode !== null) return;
-  if (process.platform === 'win32') {
-    // Signals are emulated on Windows and would end only the launcher; stop the whole tree.
-    await new Promise(resolve => {
-      const kill = setTimeout(() => { void platformInfo.killTree(proc, {force: true}); }, ms);
-      proc.once('exit', () => { clearTimeout(kill); resolve(); });
-      try { proc.stdin.end(); } catch {}
-      void platformInfo.killTree(proc, {force: false}).then(sent => { if (!sent && proc.exitCode === null) { clearTimeout(kill); void platformInfo.killTree(proc, {force: true}).then(() => resolve()); } });
-    });
-    return;
-  }
+  // Signals are emulated on Windows and would end only the launcher; stop the whole tree and reject
+  // (code process-not-stopped) if it is still alive, so the caller keeps its handle.
+  if (process.platform === 'win32') return platformInfo.stopProcessTree(proc, ms);
   await new Promise(resolve => {
     const kill = setTimeout(() => { try { proc.kill('SIGKILL'); } catch {} }, ms);
     proc.once('exit', () => { clearTimeout(kill); resolve(); });
@@ -251,7 +244,7 @@ function createCodexBridge({projectRoot, codexPath, onEvent, resolveEditContext,
       client.write({jsonrpc: '2.0', method: 'notifications/initialized'});
       return entry;
     })();
-    entry.ready.catch(() => { mcp.delete(projectId); stopProcess(proc, limits.close); });
+    entry.ready.catch(() => { mcp.delete(projectId); stopProcess(proc, limits.close).catch(error => log('mcp stop failed: ' + redact(error.message))); });
     mcp.set(projectId, entry);
     return entry.ready;
   }
@@ -602,7 +595,13 @@ function createCodexBridge({projectRoot, codexPath, onEvent, resolveEditContext,
     child = null;
     if (codexRpc) codexRpc.failAll(new BridgeError('exited', 'Codex restarted'));
     codexRpc = null;
-    await stopProcess(proc, limits.close);
+    try { await stopProcess(proc, limits.close); }
+    catch (error) {
+      // Still running: keep owning it so connect() does not start a second Codex beside it.
+      if (proc && proc.exitCode === null && proc.signalCode === null && child === null) child = proc;
+      setState('error', new BridgeError('stop-failed', 'Codex could not be stopped'));
+      throw new BridgeError('stop-failed', 'Codex could not be stopped');
+    }
   }
 
   async function enabledSkills() {
@@ -790,9 +789,12 @@ function createCodexBridge({projectRoot, codexPath, onEvent, resolveEditContext,
     for (const [jobId, entry] of ledger) if (!TERMINAL.has(entry.state) && mcp.has(entry.projectId)) await adapterCancel(entry.projectId, jobId);
     threads.clear();
     state.toolsReady = false;
-    const stops = [...mcp.values()].map(entry => stopProcess(entry.proc, limits.close));
+    const entries = [...mcp.entries()];
     mcp.clear();
-    await Promise.all([stopChild(), ...stops]);
+    const results = await Promise.allSettled([stopChild(), ...entries.map(([, entry]) => stopProcess(entry.proc, limits.close))]);
+    // Re-own any adapter whose process is still alive, so a later close can retry it.
+    results.slice(1).forEach((result, i) => { if (result.status === 'rejected' && !mcp.has(entries[i][0])) mcp.set(entries[i][0], entries[i][1]); });
+    if (results.some(result => result.status === 'rejected')) throw new BridgeError('stop-failed', 'Codex or Pankeki tools could not be stopped');
     ledger.clear();
     if (state.state !== 'missing') state.state = 'idle';
     return {unconfirmedSubmissions};

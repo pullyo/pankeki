@@ -93,14 +93,53 @@ def child_environment():
     return environment
 
 
+def model_paths_text(root=ROOT):
+    return 'pankeki:\n  base_path: ' + json.dumps(str(Path(root) / 'models')) + '\n  checkpoints: checkpoints\n'
+
+
+def prepare_runtime(root=ROOT, runtime=None):
+    """Write runtime/windows/config.json and model-paths.yaml without starting anything.
+
+    The desktop app needs both files to accept a project folder, and a fresh setup has neither. Only
+    generated content is touched: a missing file is created; an existing config keeps its extra keys
+    while its model registration still matches this folder, and is regenerated when it does not (moved
+    project, changed model list). Nothing is written when everything already matches.
+    """
+    runtime = Path(runtime) if runtime else Path(root) / 'runtime' / 'windows'
+    runtime.mkdir(parents=True, exist_ok=True)
+    expected = build_config(root)
+    config_path, model_paths = runtime / 'config.json', runtime / 'model-paths.yaml'
+    changes = []
+    current = None
+    if config_path.is_file():
+        try:
+            current = json.loads(config_path.read_text(encoding='utf-8'))
+        except (OSError, ValueError):
+            current = None
+    if not isinstance(current, dict) or any(current.get(key) != value for key, value in expected.items()):
+        config_path.write_text(json.dumps(expected, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+        changes.append(str(config_path))
+    text = model_paths_text(root)
+    if not model_paths.is_file() or model_paths.read_text(encoding='utf-8') != text:
+        model_paths.write_text(text, encoding='utf-8')
+        changes.append(str(model_paths))
+    return {'config': str(config_path), 'model_paths': str(model_paths), 'written': changes}
+
+
 def main():
     parser = argparse.ArgumentParser(description='Pankeki for Windows')
+    parser.add_argument('--prepare-only', action='store_true',
+                        help='Write runtime/windows/config.json and model-paths.yaml for the desktop app, then exit')
     parser.add_argument('--editor-only', action='store_true', help='Run editing/motion without starting image generation')
     parser.add_argument('--cpu', action='store_true', help='Generate on the CPU when no NVIDIA GPU is present (very slow)')
     parser.add_argument('--no-browser', action='store_true')
     parser.add_argument('--port', type=int, default=8190)
     parser.add_argument('--comfy-port', type=int, default=8188)
     args = parser.parse_args()
+    if args.prepare_only:
+        result = prepare_runtime()
+        print(json.dumps(result, ensure_ascii=False), flush=True)
+        return
     python = sys.executable
     gpu = None
     if not args.editor_only:
@@ -130,7 +169,7 @@ def main():
     config_path = RUNTIME / 'config.json'
     config_path.write_text(json.dumps(config, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
     model_paths = RUNTIME / 'model-paths.yaml'
-    model_paths.write_text('pankeki:\n  base_path: ' + json.dumps(str(ROOT / 'models')) + '\n  checkpoints: checkpoints\n', encoding='utf-8')
+    model_paths.write_text(model_paths_text(), encoding='utf-8')
     children, logs = [], []
 
     def stop(signum, frame):

@@ -37,6 +37,8 @@ powershell -ExecutionPolicy Bypass -File scripts\setup-windows.ps1 -Generation -
 
 기존 `vendor\ComfyUI`가 다른 commit이거나 핵심 파일이 다르면 덮어쓰지 않고 멈춘다. 기존 venv와 모델도 덮어쓰지 않는다.
 
+설치 마지막 단계는 서버를 띄우지 않고 `runtime\windows\config.json`과 `model-paths.yaml`만 만든다(`scripts\run_windows.py --prepare-only`). 데스크톱 앱이 이 두 파일을 요구하기 때문이다. 이미 같은 내용이면 쓰지 않고, 프로젝트를 옮겨 모델 경로가 달라졌으면 다시 만든다.
+
 ## 3. 실행
 
 ```bat
@@ -59,6 +61,8 @@ cd desktop
 npm ci
 npm start
 ```
+
+데스크톱 앱에는 `setup-windows.ps1 -Generation`(모델 포함이면 `-Sdxl` 또는 `-Models`)으로 준비한 폴더가 필요하다. 편집 환경만 있는 폴더는 앱이 받아들이지 않는다. 설치가 끝나면 `Pankeki.cmd`를 먼저 실행하지 않아도 바로 `npm start`나 `Pankeki.exe`로 열 수 있다. 프로젝트 폴더를 옮겼다면 `.venv-windows-editor\Scripts\python.exe scripts\run_windows.py --prepare-only`를 한 번 실행한다.
 
 앱은 위의 프로젝트 폴더(`.venv-windows`, `runtime\windows\config.json`, `vendor\ComfyUI`)를 찾아 ComfyUI와 앱 서버를 직접 띄운다. `Pankeki.cmd`로 이미 띄운 서버가 있으면 같은 프로젝트의 서버인지 명령줄로 확인한 뒤 재사용한다. 다른 폴더나 다른 프로그램이 포트를 쓰고 있으면 시작하지 않는다.
 

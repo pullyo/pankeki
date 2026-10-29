@@ -5,6 +5,7 @@ These are logic tests. They do not show that ComfyUI, CUDA or the app run on a r
 import importlib.util
 import json
 import os
+import shutil
 from pathlib import Path
 import subprocess
 import sys
@@ -112,6 +113,58 @@ class McpLauncherWindowsTests(unittest.TestCase):
                 self.assertEqual(launch.main(), 7)
         self.assertEqual(calls[0][0], sys.executable)
         self.assertEqual(calls[0][-2:], ['--state-dir', 'x'])
+
+
+class PrepareRuntimeTests(unittest.TestCase):
+    """Review finding 4: setup must leave the files the desktop app requires, without starting servers."""
+
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory(prefix='pankeki 한글 fresh ')
+        self.root = Path(self.temp.name)
+
+    def tearDown(self):
+        self.temp.cleanup()
+
+    def test_fresh_folder_gets_both_files_and_a_second_run_writes_nothing(self):
+        first = run_windows.prepare_runtime(self.root)
+        config = json.loads((self.root / 'runtime/windows/config.json').read_text(encoding='utf-8'))
+        self.assertEqual(config['models']['sdxl-base']['model_path'], str(self.root / 'models' / 'checkpoints' / 'sd_xl_base_1.0.safetensors'))
+        self.assertIn(json.dumps(str(self.root / 'models')), (self.root / 'runtime/windows/model-paths.yaml').read_text(encoding='utf-8'))
+        self.assertEqual(len(first['written']), 2)
+        self.assertEqual(run_windows.prepare_runtime(self.root)['written'], [])
+
+    def test_matching_config_keeps_extra_keys_and_a_moved_folder_is_regenerated(self):
+        run_windows.prepare_runtime(self.root)
+        path = self.root / 'runtime/windows/config.json'
+        config = json.loads(path.read_text(encoding='utf-8'))
+        config['comfy_atomic_cancel'] = {'schema': 1, 'state': 'unknown'}
+        path.write_text(json.dumps(config), encoding='utf-8')
+        run_windows.prepare_runtime(self.root)
+        self.assertIn('comfy_atomic_cancel', json.loads(path.read_text(encoding='utf-8')))
+        config['models']['sdxl-base']['model_path'] = 'D:\\old drive\\Pankeki\\models\\checkpoints\\sd_xl_base_1.0.safetensors'
+        path.write_text(json.dumps(config), encoding='utf-8')
+        self.assertIn(str(path), run_windows.prepare_runtime(self.root)['written'])
+        self.assertNotIn('old drive', path.read_text(encoding='utf-8'))
+
+    @unittest.skipUnless(shutil.which('node'), 'node is needed to load desktop/runtime-paths.cjs')
+    def test_prepared_folder_is_accepted_by_the_desktop_resolver_for_windows(self):
+        for relative in ('.venv-windows/Scripts/python.exe', 'vendor/ComfyUI/main.py', 'pankeki/__main__.py', 'web/index.html'):
+            target = self.root / relative
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.write_text('')
+        script = ("const {resolveRuntime}=require(process.argv[1]);"
+                  "try{const r=resolveRuntime({projectRoot:process.argv[2],platform:'win32',codexPath:null});console.log(JSON.stringify({ok:true,config:r.config}));}"
+                  "catch(e){console.log(JSON.stringify({ok:false,error:e.message}));}")
+        resolver = str(ROOT / 'desktop' / 'runtime-paths.cjs')
+        before = json.loads(subprocess.run(['node', '-e', script, resolver, str(self.root)], capture_output=True, text=True, check=True).stdout)
+        self.assertEqual(before, {'ok': False, 'error': 'runtime-missing'})
+        run_windows.prepare_runtime(self.root)
+        after = json.loads(subprocess.run(['node', '-e', script, resolver, str(self.root)], capture_output=True, text=True, check=True).stdout)
+        self.assertTrue(after['ok'], after)
+
+    def test_setup_script_runs_the_prepare_step(self):
+        text = (ROOT / 'scripts' / 'setup-windows.ps1').read_text(encoding='utf-8-sig')
+        self.assertIn("'--prepare-only'", text)
 
 
 if __name__ == '__main__':

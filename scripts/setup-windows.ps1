@@ -175,4 +175,10 @@ if ($Mcp) {
     Invoke-Checked $editorPy @((Join-Path $plugin 'setup_runtime.py'))
 }
 
+# 5) Runtime config for the desktop app (no server is started; only generated files, and only when changed)
+Invoke-Checked $editorPy @((Join-Path $root 'scripts\run_windows.py'), '--prepare-only')
+if (-not (Test-Path -LiteralPath $genPy)) {
+    Write-Output '참고: 데스크톱 앱(npm start / Pankeki.exe)은 생성 환경(.venv-windows)과 vendor\ComfyUI 가 필요합니다. -Generation 으로 준비하세요.'
+}
+
 Write-Output '준비 완료. Pankeki.cmd 를 실행하세요 (GPU 없이 편집만: Pankeki.cmd --editor-only).'

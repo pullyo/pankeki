@@ -45,7 +45,8 @@ const WINDOWS_PROCESS_SCRIPT=pid=>[
   "if(!$p){'null';exit 0}",
   '$a=@();$cur=[int]$p.ParentProcessId',
   "for($i=0;$i -lt 8 -and $cur -gt 0;$i++){$q=Get-CimInstance Win32_Process -Filter \"ProcessId=$cur\";if(!$q){break};$a+=[int]$q.ProcessId;$cur=[int]$q.ParentProcessId}",
-  '[ordered]@{pid=[int]$p.ProcessId;commandLine=[string]$p.CommandLine;executable=[string]$p.ExecutablePath;ancestors=$a}|ConvertTo-Json -Compress'
+  "$c=$(if($p.CreationDate){$p.CreationDate.ToUniversalTime().ToString('o')}else{$null})",
+  '[ordered]@{pid=[int]$p.ProcessId;commandLine=[string]$p.CommandLine;executable=[string]$p.ExecutablePath;created=$c;ancestors=$a}|ConvertTo-Json -Compress'
 ].join(';');
 function windowsTool(name,env=process.env){
   const root=(Object.entries(env).find(([key])=>key.toLowerCase()==='systemroot')||[])[1]||'C:\\Windows';
@@ -72,7 +73,8 @@ async function inspectWindowsListener(kind,{full=true,runImpl=run,env=process.en
   }catch{throw Error('listener-inspection-failed');}
   if(!info||info.pid!==pid)return {pid:0,loopback:false};
   return {pid,loopback,command:info.commandLine,args:platformInfo.parseWindowsCommandLine(info.commandLine),executable:info.executable,
-    ancestors:Array.isArray(info.ancestors)?info.ancestors.filter(Number.isInteger):[]};
+    created:typeof info.created==='string'&&info.created?info.created:null,
+    ancestors:Array.isArray(info.ancestors)?info.ancestors.filter(Number.isInteger):(Number.isInteger(info.ancestors)?[info.ancestors]:[])};
 }
 async function inspectListener(kind,options={}) {
   if((options.platform||process.platform)==='win32')return inspectWindowsListener(kind,options);
@@ -124,9 +126,15 @@ function createBackendManager({paths,platform=paths?.platform||process.platform,
   const windows=platform==='win32';
   const matches=(kind,listener)=>listenerMatches(kind,listener,paths,platform);
   // A Windows venv python.exe is a launcher; the socket belongs to its interpreter child.
-  const ownedBy=(listener,expectedPid)=>listener.pid===expectedPid||(windows&&Array.isArray(listener.ancestors)&&listener.ancestors.includes(expectedPid));
+  const ownedBy=(listener,expectedPid)=>{
+    if(!windows)return listener.pid===expectedPid;
+    // Windows identity is pid + creation time + executable; without a creation time it cannot be re-proven later.
+    if(typeof listener.created!=='string'||!listener.created)return false;
+    return listener.pid===expectedPid||(Array.isArray(listener.ancestors)&&listener.ancestors.includes(expectedPid));
+  };
+  const record=listener=>windows?{pid:listener.pid,created:listener.created,executable:listener.executable}:listener.pid;
   const stop=child=>stopChild(child,shutdownTimeouts,{platform,...(killTree?{killTree}:{})});
-  const owned=new Map();let startPromise,closePromise,closing=false,epoch=0;
+  const owned=new Map();let startPromise,closePromise,closing=false,epoch=0,verifying=null;
   const verified=new Map();
   const states={pankeki:{state:'stopped',ownership:'none'},comfy:{state:'stopped',ownership:'none'}};
   function status(){return structuredClone(states);}
@@ -147,7 +155,7 @@ function createBackendManager({paths,platform=paths?.platform||process.platform,
         const current=await inspect(kind);
         guard(token);
         if(!matches(kind,current)||!ownedBy(current,expectedPid))throw Error('backend-identity-changed');
-        return current.pid;
+        return record(current);
       }
       await new Promise(resolve=>setTimeout(resolve,400));
     }
@@ -192,13 +200,33 @@ function createBackendManager({paths,platform=paths?.platform||process.platform,
     try{return await startPromise;}catch(error){startPromise=null;throw error;}
   }
   async function verifyIdentity(){
-    for(const kind of ['pankeki','comfy']){
-      // Windows: every IPC call verifies, and a PowerShell process lookup costs about a second, so the
-      // recheck is the fast netstat ownership test against the PID whose full identity was verified at start.
-      const listener=await inspect(kind,windows?{full:false}:undefined);
-      if(windows?(!listener?.loopback||listener.pid!==verified.get(kind)):(!matches(kind,listener)||listener.pid!==verified.get(kind)))return false;
+    if(!windows){
+      for(const kind of ['pankeki','comfy']){const listener=await inspect(kind);if(!matches(kind,listener)||listener.pid!==verified.get(kind))return false;}
+      return true;
     }
-    return true;
+    // Concurrent IPC calls share one Windows check (a PowerShell lookup costs about a second).
+    if(verifying)return verifying;
+    verifying=(async()=>{
+      try{
+        for(const kind of ['pankeki','comfy']){
+          const expected=verified.get(kind),child=owned.get(kind);
+          if(!expected)return false;
+          if(child&&child.exitCode===null&&!child.signalCode){
+            // App-owned: Node holds the launcher's process handle, so its PID cannot be reused, and the venv
+            // launcher lives exactly as long as its interpreter. Same listener PID on loopback is enough.
+            const listener=await inspect(kind,{full:false});
+            if(!listener?.loopback||listener.pid!==expected.pid)return false;
+            continue;
+          }
+          // External (or owned child gone): re-prove pid + creation time + executable + command line.
+          const listener=await inspect(kind);
+          if(!matches(kind,listener)||listener.pid!==expected.pid||typeof listener.created!=='string'||listener.created!==expected.created
+            ||!platformInfo.samePath(listener.executable,expected.executable,'win32'))return false;
+        }
+        return true;
+      }catch{return false;}finally{verifying=null;}
+    })();
+    return verifying;
   }
   return {start,close,status,verifyIdentity};
 }

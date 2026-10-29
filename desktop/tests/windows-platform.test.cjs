@@ -65,7 +65,7 @@ function winListener(kind,pid,ancestors=[],overrides={}){
   const command=kind==='pankeki'
     ?`${q('C:\\Python312\\python.exe')} -u -m pankeki serve --port 8190 --comfy-url http://127.0.0.1:8188 --config ${q(winPaths.config.toUpperCase())}`
     :`${q('C:\\Python312\\python.exe')} -u ${q(W.join(winPaths.comfyRoot,'main.py'))} --listen 127.0.0.1 --port 8188 --extra-model-paths-config ${q(winPaths.modelPaths)}`;
-  return {pid,loopback:true,command,args:platformInfo.parseWindowsCommandLine(command),ancestors,...overrides};
+  return {pid,loopback:true,command,args:platformInfo.parseWindowsCommandLine(command),executable:'C:\\Python312\\python.exe',created:'2026-10-29T06:00:00.0000000Z',ancestors,...overrides};
 }
 test('Windows identity matches parsed argv case-insensitively and rejects lookalikes',()=>{
   assert.equal(listenerMatches('pankeki',winListener('pankeki',10),winPaths),true);
@@ -129,4 +129,56 @@ test('IPv6 netstat rows count as listeners and proxy/git-bash settings reach the
   assert.deepEqual(parseNetstat('  TCP    [::1]:8190             [::]:0                 LISTENING       77',8190),[{address:'[::1]',pid:77}]);
   const env=platformInfo.minimalEnv({HTTPS_PROXY:'http://proxy:8080',CLAUDE_CODE_GIT_BASH_PATH:'D:\\Git\\bin\\bash.exe',GITHUB_TOKEN:'x'},'win32');
   assert.equal(env.HTTPS_PROXY,'http://proxy:8080');assert.equal(env.CLAUDE_CODE_GIT_BASH_PATH,'D:\\Git\\bin\\bash.exe');assert.equal(env.GITHUB_TOKEN,undefined);
+});
+
+// --- Review findings (Codex, 2026-10-29): official npm shims, stop failures, identity re-proof -------
+const officialJsShim=['@ECHO off','GOTO start',':find_dp0','SET dp0=%~dp0','EXIT /b',':start','SETLOCAL','CALL :find_dp0','',
+  'IF EXIST "%dp0%\\node.exe" (','  SET "_prog=%dp0%\\node.exe"',') ELSE (','  SET "_prog=node"',')','',
+  'endLocal & goto #_undefined_# 2>NUL || title %COMSPEC% & set PATHEXT=%PATHEXT:;.JS;=;% & "%_prog%"  "%dp0%\\node_modules\\@openai\\codex\\bin\\codex.js" %*',''].join('\r\n');
+const officialExeShim=['@ECHO off','GOTO start',':find_dp0','SET dp0=%~dp0','EXIT /b',':start','SETLOCAL','CALL :find_dp0',
+  '"%dp0%\\node_modules\\@anthropic-ai\\claude-code\\bin\\claude.exe"   %*',''].join('\r\n');
+test('official npm cmd-shim (node probe before the call) resolves to node + script, with or without a companion node.exe',()=>{
+  const npm='C:\\Users\\김\\AppData\\Roaming\\npm',shim=W.join(npm,'codex.cmd'),cli=W.join(npm,'node_modules\\@openai\\codex\\bin\\codex.js'),pathNode='C:\\Program Files\\nodejs\\node.exe';
+  const env={APPDATA:'C:\\Users\\김\\AppData\\Roaming',USERPROFILE:'C:\\Users\\김',PATH:'C:\\Program Files\\nodejs'};
+  assert.deepEqual(platformInfo.parseNpmShim(officialJsShim,shim),{target:cli,viaNode:true});
+  assert.deepEqual(platformInfo.findCli('codex',{platform:'win32',env,fsImpl:fakeFs({[shim]:officialJsShim,[cli]:'',[pathNode]:''})}),{command:pathNode,args:[cli]});
+  const companion=W.join(npm,'node.exe');
+  assert.deepEqual(platformInfo.findCli('codex',{platform:'win32',env,fsImpl:fakeFs({[shim]:officialJsShim,[cli]:'',[pathNode]:'',[companion]:''})}),{command:companion,args:[cli]});
+  assert.equal(platformInfo.findCli('codex',{platform:'win32',env:{...env,PATH:''},fsImpl:fakeFs({[shim]:officialJsShim,[cli]:''})}),null,'no node anywhere: missing, never node-only');
+});
+test('official native-target cmd-shim runs the bundled exe; a shim whose call targets node.exe itself is refused',()=>{
+  const npm='C:\\Users\\김\\AppData\\Roaming\\npm',shim=W.join(npm,'claude.cmd'),exe=W.join(npm,'node_modules\\@anthropic-ai\\claude-code\\bin\\claude.exe');
+  assert.deepEqual(platformInfo.findCli('claude',{platform:'win32',env:{APPDATA:'C:\\Users\\김\\AppData\\Roaming'},fsImpl:fakeFs({[shim]:officialExeShim,[exe]:''})}),{command:exe,args:[]});
+  assert.equal(platformInfo.parseNpmShim('"%dp0%\\node.exe" %*',shim),null);
+  assert.equal(platformInfo.parseNpmShim('"%_prog%" "%dp0%\\x\\tool.exe" %*',shim),null,'node cannot run an exe target');
+});
+function liveChild(pid){const child=new EventEmitter();child.pid=pid;child.exitCode=null;child.signalCode=null;child.stdin={end(){}};return child;}
+test('stopProcessTree rejects (process-not-stopped) when both taskkills fail and no exit arrives',async()=>{
+  const child=liveChild(70),calls=[];
+  await assert.rejects(platformInfo.stopProcessTree(child,20,{killTree:async(_c,{force})=>{calls.push(force);return false;}}),error=>error.code==='process-not-stopped');
+  assert.deepEqual(calls,[false,true]);assert.equal(child.listenerCount('exit'),0);
+});
+test('stopProcessTree resolves only on a real exit after the forced kill',async()=>{
+  const child=liveChild(71);
+  await platformInfo.stopProcessTree(child,200,{killTree:async(c,{force})=>{if(force)setTimeout(()=>{c.exitCode=1;c.emit('exit',1,null);},10);return force;}});
+  assert.equal(child.exitCode,1);
+});
+test('Windows external server: same PID but foreign command, new creation time or missing time fails verifyIdentity',async()=>{
+  const live={pankeki:winListener('pankeki',204),comfy:winListener('comfy',205)};
+  const manager=createBackendManager({paths:winPaths,probe:async()=>true,inspectListener:async kind=>live[kind]});
+  await manager.start();assert.equal(manager.status().pankeki.ownership,'external');
+  assert.equal(await manager.verifyIdentity(),true);
+  const foreign='"C:\\OtherApp\\foreign.exe" --port 8190';
+  live.pankeki={...live.pankeki,command:foreign,args:platformInfo.parseWindowsCommandLine(foreign),executable:'C:\\OtherApp\\foreign.exe'};
+  assert.equal(await manager.verifyIdentity(),false,'reviewer reproduction: foreign command on the verified PID');
+  live.pankeki=winListener('pankeki',204,[],{created:'2026-10-29T07:00:00.0000000Z'});
+  assert.equal(await manager.verifyIdentity(),false,'PID reused by a newer process');
+  live.pankeki=winListener('pankeki',204,[],{created:null});
+  assert.equal(await manager.verifyIdentity(),false,'creation time unavailable fails closed');
+  live.pankeki=winListener('pankeki',204);
+  assert.equal(await manager.verifyIdentity(),true);
+});
+test('Windows refuses to adopt a listener whose creation time cannot be read',async()=>{
+  const manager=createBackendManager({paths:winPaths,probe:async()=>true,inspectListener:async kind=>winListener(kind,kind==='comfy'?301:302,[],{created:null})});
+  await assert.rejects(manager.start(),/identity-changed/);
 });
