@@ -8,9 +8,9 @@
 
 Korean is the primary UI language. Built for the Comfy.org Open Source Higgsfield challenge.
 
-![Pankeki home screen](docs/images/pankeki-home-20261029.jpg)
+![Pankeki home screen](docs/images/pankeki-home-20261030.jpg)
 
-*Pankeki home screen — user-provided image received on October 29, 2026.*
+*Pankeki home screen — user-provided image received on October 30, 2026.*
 
 ## Choose the right branch
 
