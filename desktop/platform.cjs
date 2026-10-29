@@ -19,7 +19,10 @@ function requiredFiles(platform=process.platform){const l=layout(platform);retur
 const POSIX_ENV=['HOME','PATH','USER','LOGNAME','LANG','LC_ALL','TMPDIR','SHELL'];
 const WINDOWS_ENV=['PATH','PATHEXT','SystemRoot','SystemDrive','windir','ComSpec','TEMP','TMP','USERPROFILE','USERNAME','USERDOMAIN',
   'HOMEDRIVE','HOMEPATH','APPDATA','LOCALAPPDATA','ProgramData','ProgramFiles','ProgramFiles(x86)','ProgramW6432','CommonProgramFiles',
-  'NUMBER_OF_PROCESSORS','PROCESSOR_ARCHITECTURE','OS','LANG','LC_ALL'];
+  'NUMBER_OF_PROCESSORS','PROCESSOR_ARCHITECTURE','OS','LANG','LC_ALL',
+  // Not secrets, but needed on real Windows setups: Claude Code's Git Bash location, a custom Codex
+  // home, and corporate proxies / certificate bundles.
+  'CLAUDE_CODE_GIT_BASH_PATH','CODEX_HOME','HTTP_PROXY','HTTPS_PROXY','NO_PROXY','SSL_CERT_FILE','NODE_EXTRA_CA_CERTS'];
 function envKeys(platform=process.platform){return platform==='win32'?WINDOWS_ENV:POSIX_ENV;}
 function pick(base,keys){
   // Windows env names are case-insensitive; look each one up without caring how the parent spelled it.
@@ -43,7 +46,8 @@ function isExecutable(file,{platform=process.platform,fsImpl=fs}={}){
 }
 function parseNpmShim(text,shimPath){
   // npm/cmd-shim: "%dp0%\node_modules\@openai\codex\bin\codex.js" or "%~dp0\..."; quoted or not.
-  const match=/["']?%~?dp0%?\\([^"'\r\n]+?\.(?:c|m)?js)["']?/i.exec(text);
+  // Newer packages (e.g. @anthropic-ai/claude-code) point the shim at a bundled native .exe instead.
+  const match=/["']?%~?dp0%?\\([^"'\r\n]+?\.(?:(?:c|m)?js|exe))["']?/i.exec(text);
   if(!match)return null;
   const dir=path.win32.dirname(shimPath);
   return path.win32.join(dir,match[1]);
@@ -58,6 +62,7 @@ function resolveWindowsShim(file,{env,fsImpl=fs}){
   let text;try{text=fsImpl.readFileSync(file,'utf8');}catch{return null;}
   const script=parseNpmShim(text,file);
   if(!script||!isExecutable(script,{platform:'win32',fsImpl}))return null;
+  if(/\.exe$/i.test(script))return {command:script,args:[]};
   const bundled=path.win32.join(path.win32.dirname(file),'node.exe');
   const node=isExecutable(bundled,{platform:'win32',fsImpl})?bundled:findOnPath(['node.exe'],{env,platform:'win32',fsImpl});
   return node?{command:node,args:[script]}:null;

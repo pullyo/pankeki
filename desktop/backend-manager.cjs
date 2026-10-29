@@ -31,7 +31,7 @@ function parseNetstat(text,port){
   const rows=[];
   for(const line of String(text).split(/\r?\n/)){
     const cols=line.trim().split(/\s+/);
-    if(cols.length<5||cols[0].toUpperCase()!=='TCP')continue;
+    if(cols.length<5||!/^TCP(V6)?$/i.test(cols[0]))continue;
     const local=cols[1],remote=cols[2],pid=Number(cols[cols.length-1]);
     const portAt=local.lastIndexOf(':');if(portAt<0||Number(local.slice(portAt+1))!==port)continue;
     if(!/^(0\.0\.0\.0|\[::\]|\*):(0|\*)$/.test(remote))continue;
@@ -53,8 +53,11 @@ function windowsTool(name,env=process.env){
 }
 async function inspectWindowsListener(kind,{full=true,runImpl=run,env=process.env}={}){
   let output;
-  try{output=(await runImpl(windowsTool('netstat',env),['-ano','-p','TCP'],{timeout:5000,windowsHide:true})).stdout;}
-  catch{throw Error('listener-inspection-failed');}
+  try{
+    // -p TCP is IPv4 only; a foreign listener on [::1] must also count as occupying the port.
+    const [v4,v6]=await Promise.all(['TCP','TCPv6'].map(protocol=>runImpl(windowsTool('netstat',env),['-ano','-p',protocol],{timeout:5000,windowsHide:true})));
+    output=v4.stdout+'\n'+v6.stdout;
+  }catch{throw Error('listener-inspection-failed');}
   const rows=parseNetstat(output,PORTS[kind]);
   if(!rows.length)return null;
   const pids=[...new Set(rows.map(row=>row.pid))];
@@ -99,7 +102,11 @@ async function stopChild(child,timeouts,{platform=process.platform,killTree=plat
   if(platform==='win32'){
     // Polite tree stop, then forced tree stop: the venv launcher's interpreter child must go too.
     for(const [force,limit] of [[false,timeouts.interrupt],[true,timeouts.terminate+timeouts.kill]]){
-      await killTree(child,{force,platform});let timer;
+      // taskkill without /F fails at once for windowless python.exe ("can only be terminated forcefully");
+      // then go straight to the forced step instead of waiting out the polite timeout.
+      const sent=await killTree(child,{force,platform});
+      if(!sent&&!force&&child.exitCode===null&&!child.signalCode)continue;
+      let timer;
       const exited=await Promise.race([ended.then(()=>true),new Promise(resolve=>{timer=setTimeout(()=>resolve(false),limit);})]);clearTimeout(timer);
       if(exited)return;
     }

@@ -55,10 +55,13 @@ def stop_tree(process, timeout=15):
         return
     if is_windows():
         taskkill = os.environ.get('SystemRoot', 'C:\\Windows').rstrip('\\/') + '\\System32\\taskkill.exe'
-        subprocess.run([taskkill, '/PID', str(process.pid), '/T'], capture_output=True, creationflags=CREATE_NO_WINDOW)
+        polite = subprocess.run([taskkill, '/PID', str(process.pid), '/T'], capture_output=True, creationflags=CREATE_NO_WINDOW)
         try:
-            process.wait(timeout=timeout)
-            return
+            # Windowless children refuse a polite taskkill (non-zero exit); force at once then.
+            if polite.returncode == 0:
+                process.wait(timeout=timeout)
+                return
+            raise subprocess.TimeoutExpired('taskkill', 0)
         except subprocess.TimeoutExpired:
             subprocess.run([taskkill, '/PID', str(process.pid), '/T', '/F'], capture_output=True, creationflags=CREATE_NO_WINDOW)
             process.wait(timeout=timeout)

@@ -114,3 +114,19 @@ test('taskkill is called with /T and only /F when forced, from SystemRoot',async
   assert.equal(calls[0].file,'C:\\Windows\\System32\\taskkill.exe');assert.deepEqual(calls[0].args,['/PID','1234','/T']);assert.deepEqual(calls[1].args,['/PID','1234','/T','/F']);
   assert.equal(calls[0].options.windowsHide,true);
 });
+
+test('a refused polite taskkill goes straight to the forced kill without waiting the interrupt timeout',async()=>{
+  const child=fakeChild(60),forces=[];const started=Date.now();
+  await stopChild(child,{interrupt:5000,terminate:50,kill:50},{platform:'win32',killTree:async(_c,{force})=>{forces.push(force);if(!force)return false;queueMicrotask(()=>{child.exitCode=1;child.emit('exit',1,null);});return true;}});
+  assert.deepEqual(forces,[false,true]);assert.ok(Date.now()-started<1000,'no 5 s polite wait');
+});
+test('an npm shim that points at a bundled native .exe runs that .exe directly',()=>{
+  const npm='C:\\Users\\김\\AppData\\Roaming\\npm',exe=W.join(npm,'node_modules\\@anthropic-ai\\claude-code\\bin\\claude.exe');
+  const files={[W.join(npm,'claude.cmd')]:'@ECHO off\r\n"%dp0%\\node_modules\\@anthropic-ai\\claude-code\\bin\\claude.exe"   %*\r\n',[exe]:''};
+  assert.deepEqual(platformInfo.findCli('claude',{platform:'win32',env:{APPDATA:'C:\\Users\\김\\AppData\\Roaming'},fsImpl:fakeFs(files)}),{command:exe,args:[]});
+});
+test('IPv6 netstat rows count as listeners and proxy/git-bash settings reach the CLIs',()=>{
+  assert.deepEqual(parseNetstat('  TCP    [::1]:8190             [::]:0                 LISTENING       77',8190),[{address:'[::1]',pid:77}]);
+  const env=platformInfo.minimalEnv({HTTPS_PROXY:'http://proxy:8080',CLAUDE_CODE_GIT_BASH_PATH:'D:\\Git\\bin\\bash.exe',GITHUB_TOKEN:'x'},'win32');
+  assert.equal(env.HTTPS_PROXY,'http://proxy:8080');assert.equal(env.CLAUDE_CODE_GIT_BASH_PATH,'D:\\Git\\bin\\bash.exe');assert.equal(env.GITHUB_TOKEN,undefined);
+});

@@ -44,6 +44,8 @@ function Invoke-Checked([string]$Exe, [string[]]$Arguments) {
 }
 
 function Test-PythonVersion([string]$Exe) {
+    # Windows PowerShell 5.1 turns redirected native stderr into a terminating error under 'Stop'.
+    $ErrorActionPreference = 'Continue'
     if (-not $Exe -or -not (Test-Path -LiteralPath $Exe)) { return $false }
     # The Microsoft Store alias in WindowsApps opens the Store instead of running Python.
     if ($Exe -like '*\WindowsApps\*') { return $false }
@@ -57,6 +59,7 @@ function Find-Python {
         throw "지정한 Python 이 3.12/3.13 64비트가 아닙니다: $Python"
     }
     $launcher = Get-Command py.exe -ErrorAction SilentlyContinue
+    $ErrorActionPreference = 'Continue'   # `py -3.12` prints to stderr when that version is absent
     if ($launcher) {
         foreach ($version in @('3.12', '3.13')) {
             $found = & $launcher.Source "-$version" -c 'import sys; print(sys.executable)' 2>$null
@@ -87,6 +90,7 @@ function Get-ComfyCommit([string]$Dir) {
 }
 
 function Test-ComfySources([string]$Root) {
+    $ErrorActionPreference = 'Continue'
     & $editorPy -c 'import sys; from pankeki.comfy_adapter import _atomic_sources, ATOMIC_CANCEL_SOURCE_PINS as P; sys.exit(0 if _atomic_sources(sys.argv[1]) == P else 1)' $Root 2>$null
     return ($LASTEXITCODE -eq 0)
 }
@@ -102,13 +106,14 @@ function Install-Comfy {
     }
     if (Test-Path -LiteralPath $target) { throw 'vendor\ComfyUI 폴더가 있지만 main.py 가 없습니다. 덮어쓰지 않고 중단합니다.' }
     New-Item -ItemType Directory -Force -Path (Join-Path $root 'vendor') | Out-Null
-    $staging = Join-Path $root ('vendor\.comfyui-download-' + [Guid]::NewGuid().ToString('N').Substring(0, 8))
+    # Stage under a short TEMP path: deep ComfyUI paths under a long/Korean project folder exceed MAX_PATH.
+    $staging = Join-Path ([IO.Path]::GetTempPath()) ('pk-comfy-' + [Guid]::NewGuid().ToString('N').Substring(0, 8))
     New-Item -ItemType Directory -Path (Join-Path $staging 'vendor') | Out-Null
     try {
         $zip = Join-Path $staging 'comfyui.zip'
         Write-Output "ComfyUI $ComfyCommit 내려받는 중…"
         Invoke-Checked "$env:SystemRoot\System32\curl.exe" @('--fail', '--location', '--retry', '3', '--silent', '--show-error', '--output', $zip, $ComfyArchive)
-        Expand-Archive -LiteralPath $zip -DestinationPath $staging
+        Invoke-Checked "$env:SystemRoot\System32\tar.exe" @('-xf', $zip, '-C', $staging)
         $extracted = Join-Path $staging "ComfyUI-$ComfyCommit"
         $staged = Join-Path $staging 'vendor\ComfyUI'
         Move-Item -LiteralPath $extracted -Destination $staged
@@ -152,7 +157,8 @@ if ($Generation) {
     Set-Content -LiteralPath $constraints -Value @("torch==$TorchVersion", "torchvision==$TorchvisionVersion") -Encoding ascii
     Invoke-Checked $genPy @('-m', 'pip', 'install', '--disable-pip-version-check', '--cache-dir', $pipCache, '-c', $constraints,
         '-r', (Join-Path $root 'requirements.txt'), '-r', (Join-Path $root 'vendor\ComfyUI\requirements.txt'))
-    & $genPy -c 'import torch, json; print(json.dumps({"torch": torch.__version__, "cuda_build": torch.version.cuda, "cuda_available": torch.cuda.is_available(), "device": torch.cuda.get_device_name(0) if torch.cuda.is_available() else None}))'
+    # No double quotes inside: Windows PowerShell 5.1 drops them when passing arguments to native programs.
+    & $genPy -c 'import torch, json; ok = torch.cuda.is_available(); print(json.dumps(dict(torch=torch.__version__, cuda_build=torch.version.cuda, cuda_available=ok, device=torch.cuda.get_device_name(0) if ok else None)))'
 }
 
 # 3) Models (SHA256-verified; existing verified files are kept, not downloaded again)

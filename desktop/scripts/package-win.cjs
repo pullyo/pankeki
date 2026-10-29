@@ -29,9 +29,8 @@ function canEmbedIcon(){
 }
 function zipFolder(folder,zipFile){
   if(process.platform==='win32'){
-    execFileSync(path.join(process.env.SystemRoot||'C:\\Windows','System32','WindowsPowerShell','v1.0','powershell.exe'),
-      ['-NoProfile','-NonInteractive','-Command','Compress-Archive -LiteralPath $env:PANKEKI_ZIP_SRC -DestinationPath $env:PANKEKI_ZIP_DST'],
-      {stdio:'pipe',env:{...process.env,PANKEKI_ZIP_SRC:folder,PANKEKI_ZIP_DST:zipFile}});
+    // bsdtar (Windows 10+) writes forward-slash entries and handles files over 2 GB, unlike Compress-Archive.
+    execFileSync(path.join(process.env.SystemRoot||'C:\\Windows','System32','tar.exe'),['-a','-c','-f',zipFile,path.basename(folder)],{cwd:path.dirname(folder),stdio:'pipe'});
     return;
   }
   // -X: no macOS extended attributes; -y: keep links as links (there should be none).
