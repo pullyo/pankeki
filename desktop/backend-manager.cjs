@@ -209,15 +209,21 @@ function createBackendManager({paths,platform=paths?.platform||process.platform,
     verifying=(async()=>{
       try{
         for(const kind of ['pankeki','comfy']){
-          const expected=verified.get(kind),child=owned.get(kind);
-          if(!expected)return false;
-          if(child&&child.exitCode===null&&!child.signalCode){
+          const expected=verified.get(kind),child=owned.get(kind),token=epoch;
+          if(closing||!expected)return false;
+          const alive=()=>child.exitCode===null&&!child.signalCode;
+          if(child&&alive()){
             // App-owned: Node holds the launcher's process handle, so its PID cannot be reused, and the venv
-            // launcher lives exactly as long as its interpreter. Same listener PID on loopback is enough.
+            // launcher lives exactly as long as its interpreter (an assumption not yet checked on real Windows).
             const listener=await inspect(kind,{full:false});
+            // Re-check after the await: the launcher may have exited, or close/restart replaced ownership,
+            // while netstat ran. Any of those is not proof of identity.
+            if(closing||token!==epoch||owned.get(kind)!==child||verified.get(kind)!==expected||!alive())return false;
             if(!listener?.loopback||listener.pid!==expected.pid)return false;
             continue;
           }
+          // Known-dead owned child: never fall through to trusting a fresh listener on its port.
+          if(child)return false;
           // External (or owned child gone): re-prove pid + creation time + executable + command line.
           const listener=await inspect(kind);
           if(!matches(kind,listener)||listener.pid!==expected.pid||typeof listener.created!=='string'||listener.created!==expected.created

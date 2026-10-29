@@ -227,7 +227,13 @@ function createCodexBridge({projectRoot, codexPath, onEvent, resolveEditContext,
 
   // ---- local MCP client of the existing Pankeki adapter (one per project) ----
   async function mcpFor(projectId) {
-    if (mcp.has(projectId)) return mcp.get(projectId).ready;
+    const existing = mcp.get(projectId);
+    if (existing) {
+      // An adapter whose initialize failed stays owned until its process is confirmed gone (the 'exit'
+      // handler then drops it). While it is still alive, never start a second one beside it.
+      if (existing.failed) throw new BridgeError('stop-failed', 'Previous Pankeki tools process is still stopping');
+      return existing.ready;
+    }
     const inputs = path.join(paths.inputs, projectId);
     fs.mkdirSync(inputs, {recursive: true});
     fs.mkdirSync(paths.state, {recursive: true});
@@ -244,7 +250,12 @@ function createCodexBridge({projectRoot, codexPath, onEvent, resolveEditContext,
       client.write({jsonrpc: '2.0', method: 'notifications/initialized'});
       return entry;
     })();
-    entry.ready.catch(() => { mcp.delete(projectId); stopProcess(proc, limits.close).catch(error => log('mcp stop failed: ' + redact(error.message))); });
+    entry.ready.catch(() => {
+      entry.failed = true;
+      // Keep the entry (and its handle) until the stop is proven; close() retries and reports a live one.
+      stopProcess(proc, limits.close).then(() => { if (mcp.get(projectId) === entry) mcp.delete(projectId); },
+        error => log('mcp stop failed: ' + redact(error.message)));
+    });
     mcp.set(projectId, entry);
     return entry.ready;
   }
