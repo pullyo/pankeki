@@ -1,10 +1,57 @@
 """Build one self-contained HTML file, optionally embedding pinned design assets."""
 from pathlib import Path
 import base64
+import io
 import json
 import re
+import sys
 
 ROOT = Path(__file__).resolve().parent
+sys.path.insert(0, str(ROOT.parent))
+from pankeki.build_identity import FONT_SOURCE, font_asset_path, html_source_id, source_content_id
+
+SCRIPT_MODULES = (
+    'profiles.js', 'character-document.js', 'character-renderer.js',
+    'character-export.js', 'character-motion.js',
+    'character-document-v3.js', 'character-renderer-v3.js',
+    'character-export-v3.js', 'character-workspace-v3.js',
+    'cubism-package.js', 'cubism-session.js', 'cubism-controller.js',
+    'cubism-workspace.js', 'project-library.js', 'app.js', 'studio.js',
+    'photo-editor.js', 'redesign.js', 'desktop-chat.js', 'video-workspace.js')
+SCRIPT_DEPENDENCIES = {
+    'profiles.js': (), 'character-document.js': ('profiles.js',), 'character-renderer.js': (),
+    'character-export.js': ('character-document.js', 'character-renderer.js'),
+    'character-motion.js': ('character-document.js', 'character-renderer.js', 'character-export.js'),
+    'character-document-v3.js': ('character-document.js',),
+    'character-renderer-v3.js': ('character-document-v3.js', 'character-renderer.js'),
+    'character-export-v3.js': ('character-document-v3.js', 'character-renderer-v3.js'),
+    'character-workspace-v3.js': ('character-document-v3.js', 'character-renderer-v3.js', 'character-export-v3.js'),
+    'cubism-package.js': (), 'cubism-session.js': (),
+    'cubism-controller.js': ('cubism-package.js', 'cubism-session.js'),
+    'cubism-runtime.js': ('cubism-package.js', 'cubism-controller.js'),
+    'cubism-workspace.js': ('cubism-package.js', 'cubism-session.js', 'cubism-controller.js'),
+    'project-library.js': ('profiles.js',),
+    'app.js': ('character-motion.js', 'character-workspace-v3.js', 'cubism-workspace.js', 'project-library.js'),
+    'studio.js': ('app.js',), 'photo-editor.js': ('app.js', 'studio.js'),
+    'redesign.js': ('app.js', 'studio.js', 'photo-editor.js'),
+    'desktop-chat.js': ('app.js', 'studio.js', 'redesign.js'),
+    'video-workspace.js': ('app.js', 'studio.js', 'redesign.js'),
+}
+
+
+def validate_script_order(scripts):
+    if len(set(scripts)) != len(scripts) or not set(SCRIPT_MODULES).issubset(scripts):
+        raise ValueError('Duplicate or missing JavaScript module')
+    ready = set()
+    for name in scripts:
+        if name not in SCRIPT_DEPENDENCIES:
+            raise ValueError('Unregistered JavaScript module: ' + name)
+        dependencies = set(SCRIPT_DEPENDENCIES[name])
+        if name == 'cubism-workspace.js' and 'cubism-runtime.js' in scripts:
+            dependencies.add('cubism-runtime.js')
+        if not dependencies.issubset(ready):
+            raise ValueError('JavaScript dependency order invalid: ' + name)
+        ready.add(name)
 # Original minimal fallback drawings; they are not distributed as Lucide assets.
 FALLBACK = {
  'layers':'<path d="m12 3 9 5-9 5-9-5Z"/><path d="m3 12 9 5 9-5M3 16l9 5 9-5"/>',
@@ -44,24 +91,53 @@ def icon(match):
     return f'<svg class="icon" viewBox="0 0 24 24" aria-hidden="true">{body}</svg>'
 
 def build():
-    font = ROOT/'vendor'/'pretendard'/'PretendardVariable.woff2'
-    css = (ROOT/'src'/'style.css').read_text(encoding='utf-8')
+    source_id = source_content_id(ROOT.parent)
+    if source_id is None:
+        raise RuntimeError('Source content identity unavailable; refusing an unidentified build')
+    font = ROOT.parent/FONT_SOURCE
+    font_url = None
+    css = (ROOT/'src'/'style.css').read_text(encoding='utf-8') + '\n' + (ROOT/'src'/'redesign.css').read_text(encoding='utf-8') + '\n' + (ROOT/'src'/'desktop-chat.css').read_text(encoding='utf-8') + '\n' + (ROOT/'src'/'photo-editor.css').read_text(encoding='utf-8') + '\n' + (ROOT/'src'/'video-workspace.css').read_text(encoding='utf-8')
     if font.exists():
-        css = css.replace('{{FONT_URL}}', 'url(data:font/woff2;base64,'+base64.b64encode(font.read_bytes()).decode()+')')
+        # Served by pankeki/server.py from FONT_SOURCE with a long immutable cache.
+        # The hashed name changes with the bytes, so the no-store page never pins stale fonts.
+        font_url = font_asset_path(font.read_bytes())
+        css = css.replace('{{FONT_URL}}', 'url("' + font_url + '")')
     else:
         # Resolve nested template braces before removing the optional font rule.
         # Otherwise {{FONT_URL}} ends the regex early and breaks the :root rule.
         css = css.replace('{{FONT_URL}}', 'url("")')
         css = re.sub(r'@font-face\{[^}]+\}\s*', '', css, count=1)
     html = (ROOT/'src'/'index.template.html').read_text(encoding='utf-8')
-    # User-selected original; the latest syrup-flow edit awaits user approval.
-    # Previous wordmark and geometric studies are preserved, not active.
-    logo = ROOT/'assets'/'pankeki-selected-base.png'
+    # User-provided 128px PNG, copied byte-for-byte; preserve its cream background.
+    # Earlier logo originals and studies remain preserved as inactive assets.
+    logo = ROOT/'assets'/'pankeki-user-20261025.png'
     logo_url = 'data:image/png;base64,' + base64.b64encode(logo.read_bytes()).decode()
     # CharacterDesign must be available before application initialization.
-    scripts = '\n;\n'.join((ROOT/'src'/name).read_text(encoding='utf-8') for name in (
-        'profiles.js', 'character-document.js', 'character-renderer.js',
-        'character-export.js', 'character-motion.js', 'app.js', 'studio.js'))
+    script_names = list(SCRIPT_MODULES)
+    if (ROOT/'src'/'cubism-runtime.js').is_file():
+        script_names.insert(script_names.index('cubism-workspace.js'), 'cubism-runtime.js')
+    validate_script_order(script_names)
+    scripts = '\n;\n'.join((ROOT/'src'/name).read_text(encoding='utf-8') for name in script_names)
+    # Reference artwork is encoded once at a display-appropriate size. The
+    # server can still deliver one portable HTML file without new asset routes.
+    from PIL import Image
+    artwork = {}
+    for path in sorted((ROOT/'assets'/'redesign').glob('*.png')):
+        with Image.open(path) as image:
+            image.load()
+            limit = 2048 if path.stem == 'home-honey-background' else 1200 if path.stem in ('pancake-cat', 'catgirl-hero') else 520
+            image.thumbnail((limit,limit), Image.Resampling.LANCZOS)
+            data = io.BytesIO()
+            image.save(data, format='WEBP', quality=88, method=6)
+            artwork[path.stem] = 'data:image/webp;base64,' + base64.b64encode(data.getvalue()).decode()
+    library_icons = {}
+    for path in sorted((ROOT/'vendor'/'lucide').glob('*.svg')):
+        raw = path.read_text(encoding='utf-8')
+        body = re.search(r'<svg\b[^>]*>(.*?)</svg>', raw, re.S).group(1)
+        library_icons[path.stem] = '<svg class="icon" viewBox="0 0 24 24" aria-hidden="true">' + body + '</svg>'
+    data_json = json.dumps({'images':artwork, 'icons':library_icons}, ensure_ascii=False, separators=(',', ':'))
+    data_json = data_json.replace('<', '\\u003c').replace('>', '\\u003e').replace('&', '\\u0026')
+    html = html.replace('</head>', '<script id="redesignAssets" type="application/json">' + data_json + '</script>\n</head>')
     # The original demo follows the same validated v2 load path as user projects.
     # Embed its own PNG bytes; never rely on an asset-serving route or remote URL.
     demo = json.loads((ROOT/'assets'/'motion-demo'/'project.json').read_text(encoding='utf-8'))
@@ -70,10 +146,17 @@ def build():
     html = html.replace('{{MOTION_DEMO_JSON}}', demo_json)
     html = html.replace('{{STYLE}}', css).replace('{{SCRIPT}}', scripts).replace('{{LOGO_URL}}', logo_url)
     html = re.sub(r'\{\{icon:([a-z0-9-]+)\}\}', icon, html)
+    if font_url:
+        html = html.replace('</head>', '<link rel="preload" href="' + font_url + '" as="font" type="font/woff2" crossorigin>\n</head>', 1)
+    html = html.replace('</head>', '<meta name="pankeki-source-id" content="' + source_id + '">\n</head>', 1)
     # Nested JavaScript object literals may contain '{{' legitimately.
     unresolved = re.findall(r'\{\{(?:[A-Z_]+|icon:[a-z0-9-]+)\}\}', html)
     if unresolved: raise RuntimeError('Unresolved template token: ' + ', '.join(unresolved))
+    if html_source_id(html.encode('utf-8')) != source_id:
+        raise RuntimeError('Generated HTML has no unique source identity')
+    if source_content_id(ROOT.parent) != source_id:
+        raise RuntimeError('Source changed during build; previous HTML preserved')
     (ROOT/'index.html').write_text(html, encoding='utf-8')
-    print(json.dumps({'file':str(ROOT/'index.html'),'bytes':len(html.encode()),'logo_embedded':str(logo),'profiles_embedded':True,'pretendard_embedded':font.exists(),'lucide_downloaded':(ROOT/'vendor'/'lucide'/'LICENSE').exists()}))
+    print(json.dumps({'file':str(ROOT/'index.html'),'bytes':len(html.encode()),'source_id':source_id,'logo_embedded':str(logo),'profiles_embedded':True,'pretendard_url':font_url,'lucide_downloaded':(ROOT/'vendor'/'lucide'/'LICENSE').exists()}))
 
 if __name__ == '__main__': build()

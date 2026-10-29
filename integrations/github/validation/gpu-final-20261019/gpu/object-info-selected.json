@@ -1,0 +1,476 @@
+{
+  "InpaintCropImproved": {
+    "input": {
+      "required": {
+        "image": [
+          "IMAGE"
+        ],
+        "downscale_algorithm": [
+          [
+            "nearest",
+            "bilinear",
+            "bicubic",
+            "lanczos",
+            "box",
+            "hamming"
+          ],
+          {
+            "default": "bilinear"
+          }
+        ],
+        "upscale_algorithm": [
+          [
+            "nearest",
+            "bilinear",
+            "bicubic",
+            "lanczos",
+            "box",
+            "hamming"
+          ],
+          {
+            "default": "bicubic"
+          }
+        ],
+        "preresize": [
+          "BOOLEAN",
+          {
+            "default": false,
+            "tooltip": "Resize the original image before processing."
+          }
+        ],
+        "preresize_mode": [
+          [
+            "ensure minimum resolution",
+            "ensure maximum resolution",
+            "ensure minimum and maximum resolution"
+          ],
+          {
+            "default": "ensure minimum resolution"
+          }
+        ],
+        "preresize_min_width": [
+          "INT",
+          {
+            "default": 1024,
+            "min": 0,
+            "max": 16384,
+            "step": 1
+          }
+        ],
+        "preresize_min_height": [
+          "INT",
+          {
+            "default": 1024,
+            "min": 0,
+            "max": 16384,
+            "step": 1
+          }
+        ],
+        "preresize_max_width": [
+          "INT",
+          {
+            "default": 16384,
+            "min": 0,
+            "max": 16384,
+            "step": 1
+          }
+        ],
+        "preresize_max_height": [
+          "INT",
+          {
+            "default": 16384,
+            "min": 0,
+            "max": 16384,
+            "step": 1
+          }
+        ],
+        "mask_fill_holes": [
+          "BOOLEAN",
+          {
+            "default": true,
+            "tooltip": "Mark as masked any areas fully enclosed by mask."
+          }
+        ],
+        "mask_expand_pixels": [
+          "INT",
+          {
+            "default": 0,
+            "min": 0,
+            "max": 16384,
+            "step": 1,
+            "tooltip": "Expand the mask by a certain amount of pixels before processing."
+          }
+        ],
+        "mask_invert": [
+          "BOOLEAN",
+          {
+            "default": false,
+            "tooltip": "Invert mask so that anything masked will be kept."
+          }
+        ],
+        "mask_blend_pixels": [
+          "INT",
+          {
+            "default": 32,
+            "min": 0,
+            "max": 256,
+            "step": 1,
+            "tooltip": "How many pixels to blend into the original image."
+          }
+        ],
+        "mask_hipass_filter": [
+          "FLOAT",
+          {
+            "default": 0.1,
+            "min": 0,
+            "max": 1,
+            "step": 0.01,
+            "tooltip": "Ignore mask values lower than this value."
+          }
+        ],
+        "extend_for_outpainting": [
+          "BOOLEAN",
+          {
+            "default": false,
+            "tooltip": "Extend the image for outpainting."
+          }
+        ],
+        "extend_up_factor": [
+          "FLOAT",
+          {
+            "default": 1.0,
+            "min": 0.01,
+            "max": 100.0,
+            "step": 0.01
+          }
+        ],
+        "extend_down_factor": [
+          "FLOAT",
+          {
+            "default": 1.0,
+            "min": 0.01,
+            "max": 100.0,
+            "step": 0.01
+          }
+        ],
+        "extend_left_factor": [
+          "FLOAT",
+          {
+            "default": 1.0,
+            "min": 0.01,
+            "max": 100.0,
+            "step": 0.01
+          }
+        ],
+        "extend_right_factor": [
+          "FLOAT",
+          {
+            "default": 1.0,
+            "min": 0.01,
+            "max": 100.0,
+            "step": 0.01
+          }
+        ],
+        "context_from_mask_extend_factor": [
+          "FLOAT",
+          {
+            "default": 1.2,
+            "min": 1.0,
+            "max": 100.0,
+            "step": 0.01,
+            "tooltip": "Grow the context area from the mask by a certain factor in every direction. For example, 1.5 grabs extra 50% up, down, left, and right as context."
+          }
+        ],
+        "output_resize_to_target_size": [
+          "BOOLEAN",
+          {
+            "default": true,
+            "tooltip": "Force a specific resolution for sampling."
+          }
+        ],
+        "output_target_width": [
+          "INT",
+          {
+            "default": 512,
+            "min": 64,
+            "max": 16384,
+            "step": 1
+          }
+        ],
+        "output_target_height": [
+          "INT",
+          {
+            "default": 512,
+            "min": 64,
+            "max": 16384,
+            "step": 1
+          }
+        ],
+        "output_padding": [
+          [
+            "0",
+            "8",
+            "16",
+            "32",
+            "64",
+            "128",
+            "256",
+            "512"
+          ],
+          {
+            "default": "32"
+          }
+        ],
+        "device_mode": [
+          [
+            "cpu (compatible)",
+            "gpu (much faster)"
+          ],
+          {
+            "default": "cpu (compatible)"
+          }
+        ]
+      },
+      "optional": {
+        "mask": [
+          "MASK"
+        ],
+        "optional_context_mask": [
+          "MASK"
+        ]
+      }
+    },
+    "input_order": {
+      "required": [
+        "image",
+        "downscale_algorithm",
+        "upscale_algorithm",
+        "preresize",
+        "preresize_mode",
+        "preresize_min_width",
+        "preresize_min_height",
+        "preresize_max_width",
+        "preresize_max_height",
+        "mask_fill_holes",
+        "mask_expand_pixels",
+        "mask_invert",
+        "mask_blend_pixels",
+        "mask_hipass_filter",
+        "extend_for_outpainting",
+        "extend_up_factor",
+        "extend_down_factor",
+        "extend_left_factor",
+        "extend_right_factor",
+        "context_from_mask_extend_factor",
+        "output_resize_to_target_size",
+        "output_target_width",
+        "output_target_height",
+        "output_padding",
+        "device_mode"
+      ],
+      "optional": [
+        "mask",
+        "optional_context_mask"
+      ]
+    },
+    "is_input_list": false,
+    "output": [
+      "STITCHER",
+      "IMAGE",
+      "MASK"
+    ],
+    "output_is_list": [
+      false,
+      false,
+      false
+    ],
+    "output_name": [
+      "stitcher",
+      "cropped_image",
+      "cropped_mask"
+    ],
+    "name": "InpaintCropImproved",
+    "display_name": "✂️ Inpaint Crop",
+    "description": "Crops an image around a mask for inpainting, the optional context mask defines an extra area to keep for the context.",
+    "python_module": "custom_nodes.ComfyUI-Inpaint-CropAndStitch",
+    "category": "inpaint",
+    "output_node": false,
+    "has_intermediate_output": false,
+    "search_aliases": []
+  },
+  "InpaintStitchImproved": {
+    "input": {
+      "required": {
+        "stitcher": [
+          "STITCHER"
+        ],
+        "inpainted_image": [
+          "IMAGE"
+        ]
+      }
+    },
+    "input_order": {
+      "required": [
+        "stitcher",
+        "inpainted_image"
+      ]
+    },
+    "is_input_list": false,
+    "output": [
+      "IMAGE"
+    ],
+    "output_is_list": [
+      false
+    ],
+    "output_name": [
+      "image"
+    ],
+    "name": "InpaintStitchImproved",
+    "display_name": "✂️ Inpaint Stitch",
+    "description": "Stitches an image cropped with Inpaint Crop back into the original image",
+    "python_module": "custom_nodes.ComfyUI-Inpaint-CropAndStitch",
+    "category": "inpaint",
+    "output_node": false,
+    "has_intermediate_output": false,
+    "search_aliases": []
+  },
+  "VAEEncodeForInpaint": {
+    "input": {
+      "required": {
+        "pixels": [
+          "IMAGE"
+        ],
+        "vae": [
+          "VAE"
+        ],
+        "mask": [
+          "MASK"
+        ],
+        "grow_mask_by": [
+          "INT",
+          {
+            "default": 6,
+            "min": 0,
+            "max": 64,
+            "step": 1
+          }
+        ]
+      }
+    },
+    "input_order": {
+      "required": [
+        "pixels",
+        "vae",
+        "mask",
+        "grow_mask_by"
+      ]
+    },
+    "is_input_list": false,
+    "output": [
+      "LATENT"
+    ],
+    "output_is_list": [
+      false
+    ],
+    "output_name": [
+      "LATENT"
+    ],
+    "name": "VAEEncodeForInpaint",
+    "display_name": "VAE Encode (for Inpainting)",
+    "description": "",
+    "python_module": "nodes",
+    "category": "model/latent",
+    "output_node": false,
+    "has_intermediate_output": false,
+    "search_aliases": []
+  },
+  "ImageCompositeMasked": {
+    "input": {
+      "required": {
+        "destination": [
+          "IMAGE",
+          {}
+        ],
+        "source": [
+          "IMAGE",
+          {}
+        ],
+        "x": [
+          "INT",
+          {
+            "default": 0,
+            "min": 0,
+            "max": 16384,
+            "step": 1
+          }
+        ],
+        "y": [
+          "INT",
+          {
+            "default": 0,
+            "min": 0,
+            "max": 16384,
+            "step": 1
+          }
+        ],
+        "resize_source": [
+          "BOOLEAN",
+          {
+            "default": false
+          }
+        ]
+      },
+      "optional": {
+        "mask": [
+          "MASK",
+          {}
+        ]
+      }
+    },
+    "input_order": {
+      "required": [
+        "destination",
+        "source",
+        "x",
+        "y",
+        "resize_source"
+      ],
+      "optional": [
+        "mask"
+      ]
+    },
+    "is_input_list": false,
+    "output": [
+      "IMAGE"
+    ],
+    "output_is_list": [
+      false
+    ],
+    "output_name": [
+      "IMAGE"
+    ],
+    "output_tooltips": [
+      null
+    ],
+    "output_matchtypes": null,
+    "name": "ImageCompositeMasked",
+    "display_name": "Image Composite Masked",
+    "description": "",
+    "python_module": "comfy_extras.nodes_mask",
+    "category": "image/compositing",
+    "output_node": false,
+    "deprecated": false,
+    "experimental": false,
+    "dev_only": false,
+    "api_node": false,
+    "price_badge": null,
+    "search_aliases": [
+      "overlay",
+      "layer",
+      "paste image",
+      "images composition"
+    ],
+    "essentials_category": null,
+    "has_intermediate_output": false
+  }
+}

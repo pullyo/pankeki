@@ -90,6 +90,40 @@ class ServerTests(unittest.TestCase):
         self.assertEqual(self.request('GET', '/api/jobs/' + '0' * 32)[0], 404)
         self.assertEqual(self.request('GET', '/api/results/../../outside')[0], 404)
 
+    def test_hashed_font_route_serves_exact_bytes_with_immutable_cache(self):
+        from pankeki.build_identity import font_asset_path
+        font = self.root / 'web/vendor/pretendard/PretendardVariable.woff2'
+        url = font_asset_path(b'wOF2 fixture')
+        self.assertEqual(self.request('GET', url)[0], 404, 'missing font is not served')
+        font.parent.mkdir(parents=True)
+        font.write_bytes(b'wOF2 fixture')
+        code, headers, data = self.request('GET', url)
+        self.assertEqual((code, data), (200, b'wOF2 fixture'))
+        self.assertEqual(headers['Content-Type'], 'font/woff2')
+        self.assertEqual(headers['X-Content-Type-Options'], 'nosniff')
+        self.assertEqual(headers['Cache-Control'], 'public, max-age=31536000, immutable')
+        self.assertEqual(self.request('GET', url + '?v=1')[0], 200)
+        self.assertEqual(self.request('GET', '/')[1]['Cache-Control'], 'no-store')
+        wrong = '/assets/fonts/pretendard-' + ('0' * 16) + '.woff2'
+        for path in [wrong, url.upper(), url[:-6] + '.woff', url.replace('/assets/fonts/', '/assets/fonts/../'),
+                     '/assets/fonts/PretendardVariable.woff2', '/assets/fonts/', '/web/vendor/pretendard/PretendardVariable.woff2',
+                     '/assets/fonts/pretendard-' + font_asset_path(b'wOF2 fixture')[25:41] + '0.woff2']:
+            with self.subTest(path=path):
+                code, headers, _ = self.request('GET', path)
+                self.assertEqual(code, 404)
+                self.assertEqual(headers['Cache-Control'], 'no-store')
+        for headers in ({'Origin': 'https://example.invalid'}, {'Host': 'attacker.invalid'}):
+            with self.subTest(headers=headers):
+                self.assertEqual(self.request('GET', url, headers=headers)[0], 400)
+        font.write_bytes(b'wOF2 replaced')
+        self.assertEqual(self.request('GET', url)[0], 404, 'old hash never serves new bytes')
+        self.assertEqual(self.request('GET', font_asset_path(b'wOF2 replaced'))[2], b'wOF2 replaced')
+        outside = self.root / 'outside.woff2'
+        outside.write_bytes(b'wOF2 replaced')
+        font.unlink()
+        font.symlink_to(outside)
+        self.assertEqual(self.request('GET', font_asset_path(b'wOF2 replaced'))[0], 404, 'symlinked font is rejected')
+
     def test_mutations_reject_cross_origin_wrong_host_and_content_type(self):
         for headers in ({'Origin': 'https://example.invalid'}, {'Host': 'attacker.invalid'},
                         {'Content-Type': 'text/plain'}, {'Origin': 'null'}):
@@ -200,10 +234,9 @@ class ServerTests(unittest.TestCase):
             self.assertEqual(output.tobytes(), expected.tobytes())
 
     def write_fixture_result(self, job):
-        directory = self.server.engine.runs / job.job_id
-        directory.mkdir(exist_ok=True)
-        (directory / 'result.png').write_bytes(png(Image.new('RGB', (64, 64), 'red')))
-        return {'image_url': '/api/results/' + job.job_id, 'metrics': {}}
+        directory = self.server.engine.run_store.begin(job.job_id, job.trace_id)
+        return self.server.engine._save(directory, job, png(Image.new('RGB', (64, 64), 'red')),
+            {'fixture': True}, {'kind': 'controlled_fixture'}, job.created)
 
     def test_new_revision_hides_old_preview_and_denies_canceled_result(self):
         started, release = threading.Event(), threading.Event()
@@ -293,8 +326,11 @@ class ServerTests(unittest.TestCase):
         info = json.loads(raw)
         self.assertEqual(info['default_model_id'], 'sdxl-base')
         models = {row['id']: row for row in info['models']}
-        self.assertEqual(set(models), {'sdxl-base', 'sd-turbo'})
-        self.assertTrue(all(row['available'] for row in models.values()))
+        self.assertEqual(set(models), {'sdxl-base', 'sd-turbo', 'animagine-xl-4.0-opt'})
+        self.assertTrue(all(models[key]['available'] for key in ('sdxl-base', 'sd-turbo')))
+        self.assertFalse(models['animagine-xl-4.0-opt']['available'])
+        self.assertEqual(models['animagine-xl-4.0-opt']['supported_modes'], ['txt2img', 'img2img'])
+        self.assertNotIn('inpaint', models['animagine-xl-4.0-opt']['supported_modes'])
         self.assertEqual(models['sdxl-base']['defaults']['steps'], 25)
         self.assertEqual(models['sd-turbo']['defaults']['width'], 512)
         self.assertEqual(self.client.calls, 0)
@@ -336,8 +372,8 @@ class ServerTests(unittest.TestCase):
             with patch('pankeki.server.Engine', side_effect=capture_engine), patch('pankeki.server.JobManager', side_effect=capture_manager), patch('pankeki.server.ThreadingHTTPServer', side_effect=OSError('bind failed')):
                 with self.assertRaises(OSError):
                     make_server(self.root, port=self.server.server_port)
-            self.assertTrue(engines[0]._closed)
-            self.assertFalse(managers[0].worker.is_alive())
+            self.assertEqual(engines, [])  # No runtime/cache initialization on bind failure.
+            self.assertEqual(managers, [])  # Bind precedes recovery/worker ownership.
         finally:
             for manager in managers:
                 manager.close()

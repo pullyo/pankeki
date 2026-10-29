@@ -1,0 +1,11 @@
+{
+  "verified_frontend_source_id": "17db7f8d4bc3768b43c8cf884e435c3ed7f677a4163a941c7e35bcdeba75a4cb",
+  "verified_html_matches_packaged_freeze": true,
+  "fresh_tests": {
+    "stable_home_presentation_pass": 2,
+    "windows_cli_csp_log_pass": 6
+  },
+  "stable_home_test_method": "read-only fs read hook selects pre-redesign source; current WIP source is left untouched",
+  "wip_syntax_check": "passed node --check only; no visual/build/functional passing claim",
+  "excluded": "machine-generated MCP absolute paths, runtime, models, venv, credentials, user project JSON and large packaged binaries"
+}

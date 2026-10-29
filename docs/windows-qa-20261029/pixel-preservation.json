@@ -1,0 +1,14 @@
+{
+  "source_matches_generated": true,
+  "imported_mask_pixels_match": true,
+  "outside_mask_rgb_max_error": 0,
+  "original_alpha_max_error": 0,
+  "face_hair_upper_region_max_rgb_error": 0,
+  "changed_rgb_pixels": 390570,
+  "mask_pixels": 390958,
+  "generated_sha256": "10f5c1fe31e7846a64ab4244cfeb0c19c281c4a37cc7ceb621f5314e02308df1",
+  "edited_sha256": "3fcdb5d0607fb04af3889e7e0c4fddd0c34850ab376533b24e4bfeaf34956ac9",
+  "mask_origin": "created analytically then imported in native Windows file dialog; not manually brushed",
+  "visual_quality": "partial: scarf mostly blue; red fringe remains where mask excluded scarf edges and feather blends inside mask",
+  "preservation_pass": true
+}

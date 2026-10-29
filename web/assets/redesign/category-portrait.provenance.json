@@ -1,0 +1,9 @@
+{
+  "tool": "built-in image_gen",
+  "use_case": "photorealistic-natural",
+  "reference_image": "/var/folders/mr/p6nxppgs1nld79dtrhl4_zjw0000gn/T/codex-clipboard-572abd9b-f450-4d1c-85b7-3ebe56cd577c.png",
+  "source_file": "~/.codex/generated_images/01a16368-3bd2-7ae2-afe2-c383bc991548/exec-eecc1c19-ca7c-4e58-a776-6e06bd9ae33c.png",
+  "transparent_background": false,
+  "prompt": "Use case: photorealistic-natural.\nAsset type: image style category tile, intended display size 165 x 100 pixels.\nInput image 1: screenshot is only visual reference. Match the warm portrait mood of the thumbnail labelled 실사풍 near the bottom, but deliver only a standalone portrait photograph with no UI.\nPrimary request: a natural cinematic photographic portrait of an adult East Asian woman in her twenties, dark brown straight hair, dark brown eyes, gentle relaxed expression, modern everyday charcoal dark clothing. Head and shoulders centered, looking toward camera, face clear and readable at small thumbnail size.\nScene: softly blurred cozy interior, warm cream and peach tones, subtle sunlight through a window. Soft flattering window light, natural skin texture, realistic facial proportions, photographic camera optics and detail.\nComposition: landscape 3:2 frame, centered head and shoulders with head fully in frame, tidy neutral background, visually warm and inviting.\nConstraints: adult woman, natural photorealism; no UI, text, letters, logos, watermark, border, inset panels or frame. Opaque image.",
+  "asset": "category-portrait.png"
+}

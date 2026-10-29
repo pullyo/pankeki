@@ -1,0 +1,3529 @@
+{
+  "status": "completed",
+  "kind": "real ComfyUI model generation",
+  "records": [
+    {
+      "case": "center",
+      "mode": "baseline",
+      "iteration": -1,
+      "warmup": true,
+      "seed": 1043,
+      "steps": 1,
+      "cfg": 1.0,
+      "denoise": 1.0,
+      "sampler": "euler",
+      "scheduler": "normal",
+      "total_observed_s": 1.219710400000622,
+      "model_size": [
+        768,
+        512
+      ],
+      "model_pixels": 393216,
+      "outside_mask_max_error": 0,
+      "sha256": "ef45e94d084313a6dd16b36619fb8616b9c8f7f9a856262ec938315eac6b820d",
+      "path": "integrations\\github\\validation\\gpu-final-20261019\\gpu\\center\\-01-baseline\\result.png",
+      "denoiser_cuda_s": null,
+      "gpu_peak_memory_bytes": null,
+      "perceptual_quality_approved": null,
+      "app_plan": null,
+      "adapter_metrics": {
+        "prompt_id": "c38695fb-7d5d-4596-9596-3a08fe278cfd",
+        "output": {
+          "filename": "PankekiExternalValidation_00001_.png",
+          "subfolder": "",
+          "type": "output",
+          "metadata": {
+            "kind": "image",
+            "width": 768,
+            "height": 512
+          }
+        },
+        "comfy_cached_nodes": [
+          "1",
+          "3"
+        ],
+        "node_wall_s": null,
+        "cuda_denoiser_s": null,
+        "cuda_vae_s": null,
+        "peak_vram_allocated_bytes": null,
+        "peak_vram_reserved_bytes": null,
+        "timing_method": "client WebSocket arrival wall time; not CUDA events",
+        "events": [],
+        "observe_s": 1.2124444999999469,
+        "preview_received_count": 0,
+        "preview_received_bytes": 0,
+        "first_preview_s": null,
+        "last_connection_error": null,
+        "history_messages": [
+          [
+            "execution_start",
+            {
+              "prompt_id": "c38695fb-7d5d-4596-9596-3a08fe278cfd",
+              "timestamp": 1792409973123
+            }
+          ],
+          [
+            "execution_cached",
+            {
+              "nodes": [
+                "1",
+                "3"
+              ],
+              "prompt_id": "c38695fb-7d5d-4596-9596-3a08fe278cfd",
+              "timestamp": 1792409973125
+            }
+          ],
+          [
+            "execution_success",
+            {
+              "prompt_id": "c38695fb-7d5d-4596-9596-3a08fe278cfd",
+              "timestamp": 1792409974139
+            }
+          ]
+        ],
+        "server_service_s": 1.016,
+        "denoiser_executed": true,
+        "denoiser_execution_basis": "built-in workflow sampler node 5 and history execution_cached",
+        "submit_to_download_s": 1.2161981999997806
+      }
+    },
+    {
+      "case": "center",
+      "mode": "app_roi",
+      "iteration": -1,
+      "warmup": true,
+      "seed": 1043,
+      "steps": 1,
+      "cfg": 1.0,
+      "denoise": 1.0,
+      "sampler": "euler",
+      "scheduler": "normal",
+      "total_observed_s": 0.856032800000321,
+      "model_size": [
+        288,
+        288
+      ],
+      "model_pixels": 82944,
+      "outside_mask_max_error": 0,
+      "sha256": "e491621b560eba22ea975ce2adce57003fc17a001e210ea85c0030ffdabfd4e9",
+      "path": "integrations\\github\\validation\\gpu-final-20261019\\gpu\\center\\-01-app_roi\\result.png",
+      "denoiser_cuda_s": null,
+      "gpu_peak_memory_bytes": null,
+      "perceptual_quality_approved": null,
+      "app_plan": {
+        "bbox": [
+          240,
+          112,
+          528,
+          400
+        ],
+        "original_size": [
+          768,
+          512
+        ],
+        "mode": "roi",
+        "mask_area": 50176,
+        "processed_area": 82944,
+        "reason": "crop including context and model alignment",
+        "padded_size": [
+          288,
+          288
+        ],
+        "padding": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "halo": 32,
+        "multiple": 8
+      },
+      "adapter_metrics": {
+        "prompt_id": "546e09f9-2b35-4282-85bf-1d48aaa30a98",
+        "output": {
+          "filename": "PankekiExternalValidation_00002_.png",
+          "subfolder": "",
+          "type": "output",
+          "metadata": {
+            "kind": "image",
+            "width": 288,
+            "height": 288
+          }
+        },
+        "comfy_cached_nodes": [
+          "1",
+          "2",
+          "3"
+        ],
+        "node_wall_s": null,
+        "cuda_denoiser_s": null,
+        "cuda_vae_s": null,
+        "peak_vram_allocated_bytes": null,
+        "peak_vram_reserved_bytes": null,
+        "timing_method": "client WebSocket arrival wall time; not CUDA events",
+        "events": [],
+        "observe_s": 0.8186961999999767,
+        "preview_received_count": 0,
+        "preview_received_bytes": 0,
+        "first_preview_s": null,
+        "last_connection_error": null,
+        "history_messages": [
+          [
+            "execution_start",
+            {
+              "prompt_id": "546e09f9-2b35-4282-85bf-1d48aaa30a98",
+              "timestamp": 1792409974371
+            }
+          ],
+          [
+            "execution_cached",
+            {
+              "nodes": [
+                "1",
+                "2",
+                "3"
+              ],
+              "prompt_id": "546e09f9-2b35-4282-85bf-1d48aaa30a98",
+              "timestamp": 1792409974372
+            }
+          ],
+          [
+            "execution_success",
+            {
+              "prompt_id": "546e09f9-2b35-4282-85bf-1d48aaa30a98",
+              "timestamp": 1792409974947
+            }
+          ]
+        ],
+        "server_service_s": 0.576,
+        "denoiser_executed": true,
+        "denoiser_execution_basis": "built-in workflow sampler node 5 and history execution_cached",
+        "submit_to_download_s": 0.8483311999998477
+      }
+    },
+    {
+      "case": "center",
+      "mode": "crop_and_stitch",
+      "iteration": -1,
+      "warmup": true,
+      "seed": 1043,
+      "steps": 1,
+      "cfg": 1.0,
+      "denoise": 1.0,
+      "sampler": "euler",
+      "scheduler": "normal",
+      "total_observed_s": 0.5416654000000563,
+      "model_size": [
+        288,
+        288
+      ],
+      "model_pixels": 82944,
+      "outside_mask_max_error": 0,
+      "sha256": "e491621b560eba22ea975ce2adce57003fc17a001e210ea85c0030ffdabfd4e9",
+      "path": "integrations\\github\\validation\\gpu-final-20261019\\gpu\\center\\-01-crop_and_stitch\\result.png",
+      "denoiser_cuda_s": null,
+      "gpu_peak_memory_bytes": null,
+      "perceptual_quality_approved": null,
+      "app_plan": null,
+      "adapter_metrics": {
+        "prompt_id": "fad5ccde-8011-4b49-99ce-5d87141572d5",
+        "output": {
+          "filename": "PankekiExternalValidation_00003_.png",
+          "subfolder": "",
+          "type": "output",
+          "metadata": {
+            "kind": "image",
+            "width": 768,
+            "height": 512
+          }
+        },
+        "comfy_cached_nodes": [
+          "1",
+          "2",
+          "3"
+        ],
+        "node_wall_s": null,
+        "cuda_denoiser_s": null,
+        "cuda_vae_s": null,
+        "peak_vram_allocated_bytes": null,
+        "peak_vram_reserved_bytes": null,
+        "timing_method": "client WebSocket arrival wall time; not CUDA events",
+        "events": [],
+        "observe_s": 0.5332689999995637,
+        "preview_received_count": 0,
+        "preview_received_bytes": 0,
+        "first_preview_s": null,
+        "last_connection_error": null,
+        "history_messages": [
+          [
+            "execution_start",
+            {
+              "prompt_id": "fad5ccde-8011-4b49-99ce-5d87141572d5",
+              "timestamp": 1792409975231
+            }
+          ],
+          [
+            "execution_cached",
+            {
+              "nodes": [
+                "1",
+                "2",
+                "3"
+              ],
+              "prompt_id": "fad5ccde-8011-4b49-99ce-5d87141572d5",
+              "timestamp": 1792409975233
+            }
+          ],
+          [
+            "execution_success",
+            {
+              "prompt_id": "fad5ccde-8011-4b49-99ce-5d87141572d5",
+              "timestamp": 1792409975725
+            }
+          ]
+        ],
+        "server_service_s": 0.494,
+        "denoiser_executed": true,
+        "denoiser_execution_basis": "built-in workflow sampler node 5 and history execution_cached",
+        "submit_to_download_s": 0.5369165000001885
+      }
+    },
+    {
+      "case": "center",
+      "mode": "app_roi",
+      "iteration": 0,
+      "warmup": false,
+      "seed": 42,
+      "steps": 1,
+      "cfg": 1.0,
+      "denoise": 1.0,
+      "sampler": "euler",
+      "scheduler": "normal",
+      "total_observed_s": 0.5200566000003164,
+      "model_size": [
+        288,
+        288
+      ],
+      "model_pixels": 82944,
+      "outside_mask_max_error": 0,
+      "sha256": "88ff172060a6ba6348012b2489f1b65dd6356046dd8a5dae34f7b083aa6dd9a9",
+      "path": "integrations\\github\\validation\\gpu-final-20261019\\gpu\\center\\+00-app_roi\\result.png",
+      "denoiser_cuda_s": null,
+      "gpu_peak_memory_bytes": null,
+      "perceptual_quality_approved": null,
+      "app_plan": {
+        "bbox": [
+          240,
+          112,
+          528,
+          400
+        ],
+        "original_size": [
+          768,
+          512
+        ],
+        "mode": "roi",
+        "mask_area": 50176,
+        "processed_area": 82944,
+        "reason": "crop including context and model alignment",
+        "padded_size": [
+          288,
+          288
+        ],
+        "padding": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "halo": 32,
+        "multiple": 8
+      },
+      "adapter_metrics": {
+        "prompt_id": "c9c25319-0bcb-42b9-b694-7947506decee",
+        "output": {
+          "filename": "PankekiExternalValidation_00004_.png",
+          "subfolder": "",
+          "type": "output",
+          "metadata": {
+            "kind": "image",
+            "width": 288,
+            "height": 288
+          }
+        },
+        "comfy_cached_nodes": [
+          "1",
+          "2",
+          "3"
+        ],
+        "node_wall_s": null,
+        "cuda_denoiser_s": null,
+        "cuda_vae_s": null,
+        "peak_vram_allocated_bytes": null,
+        "peak_vram_reserved_bytes": null,
+        "timing_method": "client WebSocket arrival wall time; not CUDA events",
+        "events": [],
+        "observe_s": 0.5103493000005983,
+        "preview_received_count": 0,
+        "preview_received_bytes": 0,
+        "first_preview_s": null,
+        "last_connection_error": null,
+        "history_messages": [
+          [
+            "execution_start",
+            {
+              "prompt_id": "c9c25319-0bcb-42b9-b694-7947506decee",
+              "timestamp": 1792409975791
+            }
+          ],
+          [
+            "execution_cached",
+            {
+              "nodes": [
+                "1",
+                "2",
+                "3"
+              ],
+              "prompt_id": "c9c25319-0bcb-42b9-b694-7947506decee",
+              "timestamp": 1792409975792
+            }
+          ],
+          [
+            "execution_success",
+            {
+              "prompt_id": "c9c25319-0bcb-42b9-b694-7947506decee",
+              "timestamp": 1792409976221
+            }
+          ]
+        ],
+        "server_service_s": 0.43,
+        "denoiser_executed": true,
+        "denoiser_execution_basis": "built-in workflow sampler node 5 and history execution_cached",
+        "submit_to_download_s": 0.5138128999997207
+      }
+    },
+    {
+      "case": "center",
+      "mode": "baseline",
+      "iteration": 0,
+      "warmup": false,
+      "seed": 42,
+      "steps": 1,
+      "cfg": 1.0,
+      "denoise": 1.0,
+      "sampler": "euler",
+      "scheduler": "normal",
+      "total_observed_s": 0.7729311000002781,
+      "model_size": [
+        768,
+        512
+      ],
+      "model_pixels": 393216,
+      "outside_mask_max_error": 0,
+      "sha256": "30ebecee05d1e3ce5925bdbe37ebbc6da7d4d1da320ff986b1d8212d593ce019",
+      "path": "integrations\\github\\validation\\gpu-final-20261019\\gpu\\center\\+00-baseline\\result.png",
+      "denoiser_cuda_s": null,
+      "gpu_peak_memory_bytes": null,
+      "perceptual_quality_approved": null,
+      "app_plan": null,
+      "adapter_metrics": {
+        "prompt_id": "5c49dd3d-9909-4b2a-bb1c-1b21331afb2c",
+        "output": {
+          "filename": "PankekiExternalValidation_00005_.png",
+          "subfolder": "",
+          "type": "output",
+          "metadata": {
+            "kind": "image",
+            "width": 768,
+            "height": 512
+          }
+        },
+        "comfy_cached_nodes": [
+          "1",
+          "2",
+          "3"
+        ],
+        "node_wall_s": null,
+        "cuda_denoiser_s": null,
+        "cuda_vae_s": null,
+        "peak_vram_allocated_bytes": null,
+        "peak_vram_reserved_bytes": null,
+        "timing_method": "client WebSocket arrival wall time; not CUDA events",
+        "events": [],
+        "observe_s": 0.7660873999993782,
+        "preview_received_count": 0,
+        "preview_received_bytes": 0,
+        "first_preview_s": null,
+        "last_connection_error": null,
+        "history_messages": [
+          [
+            "execution_start",
+            {
+              "prompt_id": "5c49dd3d-9909-4b2a-bb1c-1b21331afb2c",
+              "timestamp": 1792409976329
+            }
+          ],
+          [
+            "execution_cached",
+            {
+              "nodes": [
+                "1",
+                "2",
+                "3"
+              ],
+              "prompt_id": "5c49dd3d-9909-4b2a-bb1c-1b21331afb2c",
+              "timestamp": 1792409976330
+            }
+          ],
+          [
+            "execution_success",
+            {
+              "prompt_id": "5c49dd3d-9909-4b2a-bb1c-1b21331afb2c",
+              "timestamp": 1792409977080
+            }
+          ]
+        ],
+        "server_service_s": 0.751,
+        "denoiser_executed": true,
+        "denoiser_execution_basis": "built-in workflow sampler node 5 and history execution_cached",
+        "submit_to_download_s": 0.7695705999994971
+      }
+    },
+    {
+      "case": "center",
+      "mode": "crop_and_stitch",
+      "iteration": 0,
+      "warmup": false,
+      "seed": 42,
+      "steps": 1,
+      "cfg": 1.0,
+      "denoise": 1.0,
+      "sampler": "euler",
+      "scheduler": "normal",
+      "total_observed_s": 0.519820499999696,
+      "model_size": [
+        288,
+        288
+      ],
+      "model_pixels": 82944,
+      "outside_mask_max_error": 0,
+      "sha256": "88ff172060a6ba6348012b2489f1b65dd6356046dd8a5dae34f7b083aa6dd9a9",
+      "path": "integrations\\github\\validation\\gpu-final-20261019\\gpu\\center\\+00-crop_and_stitch\\result.png",
+      "denoiser_cuda_s": null,
+      "gpu_peak_memory_bytes": null,
+      "perceptual_quality_approved": null,
+      "app_plan": null,
+      "adapter_metrics": {
+        "prompt_id": "24664c88-e51b-4bf7-9d99-d3473f43ebae",
+        "output": {
+          "filename": "PankekiExternalValidation_00006_.png",
+          "subfolder": "",
+          "type": "output",
+          "metadata": {
+            "kind": "image",
+            "width": 768,
+            "height": 512
+          }
+        },
+        "comfy_cached_nodes": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ],
+        "node_wall_s": null,
+        "cuda_denoiser_s": null,
+        "cuda_vae_s": null,
+        "peak_vram_allocated_bytes": null,
+        "peak_vram_reserved_bytes": null,
+        "timing_method": "client WebSocket arrival wall time; not CUDA events",
+        "events": [],
+        "observe_s": 0.5113803999993252,
+        "preview_received_count": 0,
+        "preview_received_bytes": 0,
+        "first_preview_s": null,
+        "last_connection_error": null,
+        "history_messages": [
+          [
+            "execution_start",
+            {
+              "prompt_id": "24664c88-e51b-4bf7-9d99-d3473f43ebae",
+              "timestamp": 1792409977119
+            }
+          ],
+          [
+            "execution_cached",
+            {
+              "nodes": [
+                "1",
+                "2",
+                "3",
+                "4"
+              ],
+              "prompt_id": "24664c88-e51b-4bf7-9d99-d3473f43ebae",
+              "timestamp": 1792409977121
+            }
+          ],
+          [
+            "execution_success",
+            {
+              "prompt_id": "24664c88-e51b-4bf7-9d99-d3473f43ebae",
+              "timestamp": 1792409977595
+            }
+          ]
+        ],
+        "server_service_s": 0.476,
+        "denoiser_executed": true,
+        "denoiser_execution_basis": "built-in workflow sampler node 5 and history execution_cached",
+        "submit_to_download_s": 0.5149701000000277
+      }
+    },
+    {
+      "case": "center",
+      "mode": "crop_and_stitch",
+      "iteration": 1,
+      "warmup": false,
+      "seed": 43,
+      "steps": 1,
+      "cfg": 1.0,
+      "denoise": 1.0,
+      "sampler": "euler",
+      "scheduler": "normal",
+      "total_observed_s": 0.5188341000002765,
+      "model_size": [
+        288,
+        288
+      ],
+      "model_pixels": 82944,
+      "outside_mask_max_error": 0,
+      "sha256": "aa9dcad74af905884cb2e102495baf245efc752dcab10cf736a05b821a317282",
+      "path": "integrations\\github\\validation\\gpu-final-20261019\\gpu\\center\\+01-crop_and_stitch\\result.png",
+      "denoiser_cuda_s": null,
+      "gpu_peak_memory_bytes": null,
+      "perceptual_quality_approved": null,
+      "app_plan": null,
+      "adapter_metrics": {
+        "prompt_id": "bffdbaad-0d72-4080-bc49-a577396900ba",
+        "output": {
+          "filename": "PankekiExternalValidation_00007_.png",
+          "subfolder": "",
+          "type": "output",
+          "metadata": {
+            "kind": "image",
+            "width": 768,
+            "height": 512
+          }
+        },
+        "comfy_cached_nodes": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "8",
+          "9",
+          "pankeki_crop_evidence"
+        ],
+        "node_wall_s": null,
+        "cuda_denoiser_s": null,
+        "cuda_vae_s": null,
+        "peak_vram_allocated_bytes": null,
+        "peak_vram_reserved_bytes": null,
+        "timing_method": "client WebSocket arrival wall time; not CUDA events",
+        "events": [],
+        "observe_s": 0.5104322999995929,
+        "preview_received_count": 0,
+        "preview_received_bytes": 0,
+        "first_preview_s": null,
+        "last_connection_error": null,
+        "history_messages": [
+          [
+            "execution_start",
+            {
+              "prompt_id": "bffdbaad-0d72-4080-bc49-a577396900ba",
+              "timestamp": 1792409977655
+            }
+          ],
+          [
+            "execution_cached",
+            {
+              "nodes": [
+                "1",
+                "2",
+                "3",
+                "4",
+                "8",
+                "9",
+                "pankeki_crop_evidence"
+              ],
+              "prompt_id": "bffdbaad-0d72-4080-bc49-a577396900ba",
+              "timestamp": 1792409977657
+            }
+          ],
+          [
+            "execution_success",
+            {
+              "prompt_id": "bffdbaad-0d72-4080-bc49-a577396900ba",
+              "timestamp": 1792409978055
+            }
+          ]
+        ],
+        "server_service_s": 0.4,
+        "denoiser_executed": true,
+        "denoiser_execution_basis": "built-in workflow sampler node 5 and history execution_cached",
+        "submit_to_download_s": 0.5138464000001477
+      }
+    },
+    {
+      "case": "center",
+      "mode": "app_roi",
+      "iteration": 1,
+      "warmup": false,
+      "seed": 43,
+      "steps": 1,
+      "cfg": 1.0,
+      "denoise": 1.0,
+      "sampler": "euler",
+      "scheduler": "normal",
+      "total_observed_s": 0.5221031999999468,
+      "model_size": [
+        288,
+        288
+      ],
+      "model_pixels": 82944,
+      "outside_mask_max_error": 0,
+      "sha256": "aa9dcad74af905884cb2e102495baf245efc752dcab10cf736a05b821a317282",
+      "path": "integrations\\github\\validation\\gpu-final-20261019\\gpu\\center\\+01-app_roi\\result.png",
+      "denoiser_cuda_s": null,
+      "gpu_peak_memory_bytes": null,
+      "perceptual_quality_approved": null,
+      "app_plan": {
+        "bbox": [
+          240,
+          112,
+          528,
+          400
+        ],
+        "original_size": [
+          768,
+          512
+        ],
+        "mode": "roi",
+        "mask_area": 50176,
+        "processed_area": 82944,
+        "reason": "crop including context and model alignment",
+        "padded_size": [
+          288,
+          288
+        ],
+        "padding": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "halo": 32,
+        "multiple": 8
+      },
+      "adapter_metrics": {
+        "prompt_id": "9569acda-6725-4fd0-958c-d9597093a347",
+        "output": {
+          "filename": "PankekiExternalValidation_00008_.png",
+          "subfolder": "",
+          "type": "output",
+          "metadata": {
+            "kind": "image",
+            "width": 288,
+            "height": 288
+          }
+        },
+        "comfy_cached_nodes": [
+          "1",
+          "2",
+          "3"
+        ],
+        "node_wall_s": null,
+        "cuda_denoiser_s": null,
+        "cuda_vae_s": null,
+        "peak_vram_allocated_bytes": null,
+        "peak_vram_reserved_bytes": null,
+        "timing_method": "client WebSocket arrival wall time; not CUDA events",
+        "events": [],
+        "observe_s": 0.5116519999992306,
+        "preview_received_count": 0,
+        "preview_received_bytes": 0,
+        "first_preview_s": null,
+        "last_connection_error": null,
+        "history_messages": [
+          [
+            "execution_start",
+            {
+              "prompt_id": "9569acda-6725-4fd0-958c-d9597093a347",
+              "timestamp": 1792409978191
+            }
+          ],
+          [
+            "execution_cached",
+            {
+              "nodes": [
+                "1",
+                "2",
+                "3"
+              ],
+              "prompt_id": "9569acda-6725-4fd0-958c-d9597093a347",
+              "timestamp": 1792409978193
+            }
+          ],
+          [
+            "execution_success",
+            {
+              "prompt_id": "9569acda-6725-4fd0-958c-d9597093a347",
+              "timestamp": 1792409978636
+            }
+          ]
+        ],
+        "server_service_s": 0.445,
+        "denoiser_executed": true,
+        "denoiser_execution_basis": "built-in workflow sampler node 5 and history execution_cached",
+        "submit_to_download_s": 0.515821899999537
+      }
+    },
+    {
+      "case": "center",
+      "mode": "baseline",
+      "iteration": 1,
+      "warmup": false,
+      "seed": 43,
+      "steps": 1,
+      "cfg": 1.0,
+      "denoise": 1.0,
+      "sampler": "euler",
+      "scheduler": "normal",
+      "total_observed_s": 0.7901031999999759,
+      "model_size": [
+        768,
+        512
+      ],
+      "model_pixels": 393216,
+      "outside_mask_max_error": 0,
+      "sha256": "c8caf5483d70d686b9e7d29f3797b3668590523bf4336ca4b3885b41573bba7a",
+      "path": "integrations\\github\\validation\\gpu-final-20261019\\gpu\\center\\+01-baseline\\result.png",
+      "denoiser_cuda_s": null,
+      "gpu_peak_memory_bytes": null,
+      "perceptual_quality_approved": null,
+      "app_plan": null,
+      "adapter_metrics": {
+        "prompt_id": "20d864fe-7175-4a67-a038-7e9dbc08ea8a",
+        "output": {
+          "filename": "PankekiExternalValidation_00009_.png",
+          "subfolder": "",
+          "type": "output",
+          "metadata": {
+            "kind": "image",
+            "width": 768,
+            "height": 512
+          }
+        },
+        "comfy_cached_nodes": [
+          "1",
+          "2",
+          "3"
+        ],
+        "node_wall_s": null,
+        "cuda_denoiser_s": null,
+        "cuda_vae_s": null,
+        "peak_vram_allocated_bytes": null,
+        "peak_vram_reserved_bytes": null,
+        "timing_method": "client WebSocket arrival wall time; not CUDA events",
+        "events": [],
+        "observe_s": 0.7830588000006173,
+        "preview_received_count": 0,
+        "preview_received_bytes": 0,
+        "first_preview_s": null,
+        "last_connection_error": null,
+        "history_messages": [
+          [
+            "execution_start",
+            {
+              "prompt_id": "20d864fe-7175-4a67-a038-7e9dbc08ea8a",
+              "timestamp": 1792409978729
+            }
+          ],
+          [
+            "execution_cached",
+            {
+              "nodes": [
+                "1",
+                "2",
+                "3"
+              ],
+              "prompt_id": "20d864fe-7175-4a67-a038-7e9dbc08ea8a",
+              "timestamp": 1792409978731
+            }
+          ],
+          [
+            "execution_success",
+            {
+              "prompt_id": "20d864fe-7175-4a67-a038-7e9dbc08ea8a",
+              "timestamp": 1792409979484
+            }
+          ]
+        ],
+        "server_service_s": 0.755,
+        "denoiser_executed": true,
+        "denoiser_execution_basis": "built-in workflow sampler node 5 and history execution_cached",
+        "submit_to_download_s": 0.786639599999944
+      }
+    },
+    {
+      "case": "center",
+      "mode": "baseline",
+      "iteration": 2,
+      "warmup": false,
+      "seed": 44,
+      "steps": 1,
+      "cfg": 1.0,
+      "denoise": 1.0,
+      "sampler": "euler",
+      "scheduler": "normal",
+      "total_observed_s": 0.523002699999779,
+      "model_size": [
+        768,
+        512
+      ],
+      "model_pixels": 393216,
+      "outside_mask_max_error": 0,
+      "sha256": "901c749bbf2a24c1056beafefc97cbc799a9cdefb5454c73af7ea6b23ca0308f",
+      "path": "integrations\\github\\validation\\gpu-final-20261019\\gpu\\center\\+02-baseline\\result.png",
+      "denoiser_cuda_s": null,
+      "gpu_peak_memory_bytes": null,
+      "perceptual_quality_approved": null,
+      "app_plan": null,
+      "adapter_metrics": {
+        "prompt_id": "0def120b-398a-4f91-aa4d-41296b616a28",
+        "output": {
+          "filename": "PankekiExternalValidation_00010_.png",
+          "subfolder": "",
+          "type": "output",
+          "metadata": {
+            "kind": "image",
+            "width": 768,
+            "height": 512
+          }
+        },
+        "comfy_cached_nodes": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "8"
+        ],
+        "node_wall_s": null,
+        "cuda_denoiser_s": null,
+        "cuda_vae_s": null,
+        "peak_vram_allocated_bytes": null,
+        "peak_vram_reserved_bytes": null,
+        "timing_method": "client WebSocket arrival wall time; not CUDA events",
+        "events": [],
+        "observe_s": 0.51201889999993,
+        "preview_received_count": 0,
+        "preview_received_bytes": 0,
+        "first_preview_s": null,
+        "last_connection_error": null,
+        "history_messages": [
+          [
+            "execution_start",
+            {
+              "prompt_id": "0def120b-398a-4f91-aa4d-41296b616a28",
+              "timestamp": 1792409979540
+            }
+          ],
+          [
+            "execution_cached",
+            {
+              "nodes": [
+                "1",
+                "2",
+                "3",
+                "4",
+                "8"
+              ],
+              "prompt_id": "0def120b-398a-4f91-aa4d-41296b616a28",
+              "timestamp": 1792409979542
+            }
+          ],
+          [
+            "execution_success",
+            {
+              "prompt_id": "0def120b-398a-4f91-aa4d-41296b616a28",
+              "timestamp": 1792409980049
+            }
+          ]
+        ],
+        "server_service_s": 0.509,
+        "denoiser_executed": true,
+        "denoiser_execution_basis": "built-in workflow sampler node 5 and history execution_cached",
+        "submit_to_download_s": 0.5194689999998445
+      }
+    },
+    {
+      "case": "center",
+      "mode": "app_roi",
+      "iteration": 2,
+      "warmup": false,
+      "seed": 44,
+      "steps": 1,
+      "cfg": 1.0,
+      "denoise": 1.0,
+      "sampler": "euler",
+      "scheduler": "normal",
+      "total_observed_s": 0.5407003000000259,
+      "model_size": [
+        288,
+        288
+      ],
+      "model_pixels": 82944,
+      "outside_mask_max_error": 0,
+      "sha256": "14562217b4d135327177ad493dc9ff20669cf7fea0b018eee5a7077cdde0b79f",
+      "path": "integrations\\github\\validation\\gpu-final-20261019\\gpu\\center\\+02-app_roi\\result.png",
+      "denoiser_cuda_s": null,
+      "gpu_peak_memory_bytes": null,
+      "perceptual_quality_approved": null,
+      "app_plan": {
+        "bbox": [
+          240,
+          112,
+          528,
+          400
+        ],
+        "original_size": [
+          768,
+          512
+        ],
+        "mode": "roi",
+        "mask_area": 50176,
+        "processed_area": 82944,
+        "reason": "crop including context and model alignment",
+        "padded_size": [
+          288,
+          288
+        ],
+        "padding": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "halo": 32,
+        "multiple": 8
+      },
+      "adapter_metrics": {
+        "prompt_id": "524aed09-c9d4-4f60-a063-aa7dd7b05b7c",
+        "output": {
+          "filename": "PankekiExternalValidation_00011_.png",
+          "subfolder": "",
+          "type": "output",
+          "metadata": {
+            "kind": "image",
+            "width": 288,
+            "height": 288
+          }
+        },
+        "comfy_cached_nodes": [
+          "1",
+          "2",
+          "3"
+        ],
+        "node_wall_s": null,
+        "cuda_denoiser_s": null,
+        "cuda_vae_s": null,
+        "peak_vram_allocated_bytes": null,
+        "peak_vram_reserved_bytes": null,
+        "timing_method": "client WebSocket arrival wall time; not CUDA events",
+        "events": [],
+        "observe_s": 0.5304978000003757,
+        "preview_received_count": 0,
+        "preview_received_bytes": 0,
+        "first_preview_s": null,
+        "last_connection_error": null,
+        "history_messages": [
+          [
+            "execution_start",
+            {
+              "prompt_id": "524aed09-c9d4-4f60-a063-aa7dd7b05b7c",
+              "timestamp": 1792409980077
+            }
+          ],
+          [
+            "execution_cached",
+            {
+              "nodes": [
+                "1",
+                "2",
+                "3"
+              ],
+              "prompt_id": "524aed09-c9d4-4f60-a063-aa7dd7b05b7c",
+              "timestamp": 1792409980078
+            }
+          ],
+          [
+            "execution_success",
+            {
+              "prompt_id": "524aed09-c9d4-4f60-a063-aa7dd7b05b7c",
+              "timestamp": 1792409980513
+            }
+          ]
+        ],
+        "server_service_s": 0.436,
+        "denoiser_executed": true,
+        "denoiser_execution_basis": "built-in workflow sampler node 5 and history execution_cached",
+        "submit_to_download_s": 0.5342032000007748
+      }
+    },
+    {
+      "case": "center",
+      "mode": "crop_and_stitch",
+      "iteration": 2,
+      "warmup": false,
+      "seed": 44,
+      "steps": 1,
+      "cfg": 1.0,
+      "denoise": 1.0,
+      "sampler": "euler",
+      "scheduler": "normal",
+      "total_observed_s": 0.7726450000000114,
+      "model_size": [
+        288,
+        288
+      ],
+      "model_pixels": 82944,
+      "outside_mask_max_error": 0,
+      "sha256": "14562217b4d135327177ad493dc9ff20669cf7fea0b018eee5a7077cdde0b79f",
+      "path": "integrations\\github\\validation\\gpu-final-20261019\\gpu\\center\\+02-crop_and_stitch\\result.png",
+      "denoiser_cuda_s": null,
+      "gpu_peak_memory_bytes": null,
+      "perceptual_quality_approved": null,
+      "app_plan": null,
+      "adapter_metrics": {
+        "prompt_id": "fb95155c-f4cf-4ec2-8ed2-a5f4ffa7b715",
+        "output": {
+          "filename": "PankekiExternalValidation_00012_.png",
+          "subfolder": "",
+          "type": "output",
+          "metadata": {
+            "kind": "image",
+            "width": 768,
+            "height": 512
+          }
+        },
+        "comfy_cached_nodes": [
+          "1",
+          "2",
+          "3"
+        ],
+        "node_wall_s": null,
+        "cuda_denoiser_s": null,
+        "cuda_vae_s": null,
+        "peak_vram_allocated_bytes": null,
+        "peak_vram_reserved_bytes": null,
+        "timing_method": "client WebSocket arrival wall time; not CUDA events",
+        "events": [],
+        "observe_s": 0.7634169000002657,
+        "preview_received_count": 0,
+        "preview_received_bytes": 0,
+        "first_preview_s": null,
+        "last_connection_error": null,
+        "history_messages": [
+          [
+            "execution_start",
+            {
+              "prompt_id": "fb95155c-f4cf-4ec2-8ed2-a5f4ffa7b715",
+              "timestamp": 1792409980636
+            }
+          ],
+          [
+            "execution_cached",
+            {
+              "nodes": [
+                "1",
+                "2",
+                "3"
+              ],
+              "prompt_id": "fb95155c-f4cf-4ec2-8ed2-a5f4ffa7b715",
+              "timestamp": 1792409980637
+            }
+          ],
+          [
+            "execution_success",
+            {
+              "prompt_id": "fb95155c-f4cf-4ec2-8ed2-a5f4ffa7b715",
+              "timestamp": 1792409981358
+            }
+          ]
+        ],
+        "server_service_s": 0.722,
+        "denoiser_executed": true,
+        "denoiser_execution_basis": "built-in workflow sampler node 5 and history execution_cached",
+        "submit_to_download_s": 0.7670006999996986
+      }
+    },
+    {
+      "case": "edge",
+      "mode": "crop_and_stitch",
+      "iteration": -1,
+      "warmup": true,
+      "seed": 1043,
+      "steps": 1,
+      "cfg": 1.0,
+      "denoise": 1.0,
+      "sampler": "euler",
+      "scheduler": "normal",
+      "total_observed_s": 0.5185417000002417,
+      "model_size": [
+        256,
+        256
+      ],
+      "model_pixels": 65536,
+      "outside_mask_max_error": 0,
+      "sha256": "d5032f228329b7f9a429e087b1e572e624439f9c54c90c64557a707effc8453d",
+      "path": "integrations\\github\\validation\\gpu-final-20261019\\gpu\\edge\\-01-crop_and_stitch\\result.png",
+      "denoiser_cuda_s": null,
+      "gpu_peak_memory_bytes": null,
+      "perceptual_quality_approved": null,
+      "app_plan": null,
+      "adapter_metrics": {
+        "prompt_id": "9e6f5f86-4cd0-4ea1-b24a-1c9100bc8a12",
+        "output": {
+          "filename": "PankekiExternalValidation_00013_.png",
+          "subfolder": "",
+          "type": "output",
+          "metadata": {
+            "kind": "image",
+            "width": 768,
+            "height": 512
+          }
+        },
+        "comfy_cached_nodes": [
+          "1",
+          "2",
+          "3"
+        ],
+        "node_wall_s": null,
+        "cuda_denoiser_s": null,
+        "cuda_vae_s": null,
+        "peak_vram_allocated_bytes": null,
+        "peak_vram_reserved_bytes": null,
+        "timing_method": "client WebSocket arrival wall time; not CUDA events",
+        "events": [],
+        "observe_s": 0.5097961999999825,
+        "preview_received_count": 0,
+        "preview_received_bytes": 0,
+        "first_preview_s": null,
+        "last_connection_error": null,
+        "history_messages": [
+          [
+            "execution_start",
+            {
+              "prompt_id": "9e6f5f86-4cd0-4ea1-b24a-1c9100bc8a12",
+              "timestamp": 1792409981443
+            }
+          ],
+          [
+            "execution_cached",
+            {
+              "nodes": [
+                "1",
+                "2",
+                "3"
+              ],
+              "prompt_id": "9e6f5f86-4cd0-4ea1-b24a-1c9100bc8a12",
+              "timestamp": 1792409981445
+            }
+          ],
+          [
+            "execution_success",
+            {
+              "prompt_id": "9e6f5f86-4cd0-4ea1-b24a-1c9100bc8a12",
+              "timestamp": 1792409981794
+            }
+          ]
+        ],
+        "server_service_s": 0.351,
+        "denoiser_executed": true,
+        "denoiser_execution_basis": "built-in workflow sampler node 5 and history execution_cached",
+        "submit_to_download_s": 0.5136917999998332
+      }
+    },
+    {
+      "case": "edge",
+      "mode": "baseline",
+      "iteration": -1,
+      "warmup": true,
+      "seed": 1043,
+      "steps": 1,
+      "cfg": 1.0,
+      "denoise": 1.0,
+      "sampler": "euler",
+      "scheduler": "normal",
+      "total_observed_s": 0.7979802999998356,
+      "model_size": [
+        768,
+        512
+      ],
+      "model_pixels": 393216,
+      "outside_mask_max_error": 0,
+      "sha256": "e56d6d73d8f87a1c9dce72b93f5feccf1b48c669d9a282bb5b6cfd83c18d0760",
+      "path": "integrations\\github\\validation\\gpu-final-20261019\\gpu\\edge\\-01-baseline\\result.png",
+      "denoiser_cuda_s": null,
+      "gpu_peak_memory_bytes": null,
+      "perceptual_quality_approved": null,
+      "app_plan": null,
+      "adapter_metrics": {
+        "prompt_id": "8a00679e-f709-4aac-b54e-2497980ecbd4",
+        "output": {
+          "filename": "PankekiExternalValidation_00014_.png",
+          "subfolder": "",
+          "type": "output",
+          "metadata": {
+            "kind": "image",
+            "width": 768,
+            "height": 512
+          }
+        },
+        "comfy_cached_nodes": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ],
+        "node_wall_s": null,
+        "cuda_denoiser_s": null,
+        "cuda_vae_s": null,
+        "peak_vram_allocated_bytes": null,
+        "peak_vram_reserved_bytes": null,
+        "timing_method": "client WebSocket arrival wall time; not CUDA events",
+        "events": [],
+        "observe_s": 0.7885777999999846,
+        "preview_received_count": 0,
+        "preview_received_bytes": 0,
+        "first_preview_s": null,
+        "last_connection_error": null,
+        "history_messages": [
+          [
+            "execution_start",
+            {
+              "prompt_id": "8a00679e-f709-4aac-b54e-2497980ecbd4",
+              "timestamp": 1792409981982
+            }
+          ],
+          [
+            "execution_cached",
+            {
+              "nodes": [
+                "1",
+                "2",
+                "3",
+                "4"
+              ],
+              "prompt_id": "8a00679e-f709-4aac-b54e-2497980ecbd4",
+              "timestamp": 1792409981983
+            }
+          ],
+          [
+            "execution_success",
+            {
+              "prompt_id": "8a00679e-f709-4aac-b54e-2497980ecbd4",
+              "timestamp": 1792409982732
+            }
+          ]
+        ],
+        "server_service_s": 0.75,
+        "denoiser_executed": true,
+        "denoiser_execution_basis": "built-in workflow sampler node 5 and history execution_cached",
+        "submit_to_download_s": 0.7947002999999313
+      }
+    },
+    {
+      "case": "edge",
+      "mode": "app_roi",
+      "iteration": -1,
+      "warmup": true,
+      "seed": 1043,
+      "steps": 1,
+      "cfg": 1.0,
+      "denoise": 1.0,
+      "sampler": "euler",
+      "scheduler": "normal",
+      "total_observed_s": 0.5472184999998717,
+      "model_size": [
+        256,
+        256
+      ],
+      "model_pixels": 65536,
+      "outside_mask_max_error": 0,
+      "sha256": "d5032f228329b7f9a429e087b1e572e624439f9c54c90c64557a707effc8453d",
+      "path": "integrations\\github\\validation\\gpu-final-20261019\\gpu\\edge\\-01-app_roi\\result.png",
+      "denoiser_cuda_s": null,
+      "gpu_peak_memory_bytes": null,
+      "perceptual_quality_approved": null,
+      "app_plan": {
+        "bbox": [
+          0,
+          0,
+          256,
+          256
+        ],
+        "original_size": [
+          768,
+          512
+        ],
+        "mode": "roi",
+        "mask_area": 50176,
+        "processed_area": 65536,
+        "reason": "crop including context and model alignment",
+        "padded_size": [
+          256,
+          256
+        ],
+        "padding": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "halo": 32,
+        "multiple": 8
+      },
+      "adapter_metrics": {
+        "prompt_id": "2c3e4bab-f343-4fdf-a277-59e6b15a1885",
+        "output": {
+          "filename": "PankekiExternalValidation_00015_.png",
+          "subfolder": "",
+          "type": "output",
+          "metadata": {
+            "kind": "image",
+            "width": 256,
+            "height": 256
+          }
+        },
+        "comfy_cached_nodes": [
+          "1",
+          "2",
+          "3"
+        ],
+        "node_wall_s": null,
+        "cuda_denoiser_s": null,
+        "cuda_vae_s": null,
+        "peak_vram_allocated_bytes": null,
+        "peak_vram_reserved_bytes": null,
+        "timing_method": "client WebSocket arrival wall time; not CUDA events",
+        "events": [],
+        "observe_s": 0.5240404999995008,
+        "preview_received_count": 0,
+        "preview_received_bytes": 0,
+        "first_preview_s": null,
+        "last_connection_error": null,
+        "history_messages": [
+          [
+            "execution_start",
+            {
+              "prompt_id": "2c3e4bab-f343-4fdf-a277-59e6b15a1885",
+              "timestamp": 1792409982795
+            }
+          ],
+          [
+            "execution_cached",
+            {
+              "nodes": [
+                "1",
+                "2",
+                "3"
+              ],
+              "prompt_id": "2c3e4bab-f343-4fdf-a277-59e6b15a1885",
+              "timestamp": 1792409982796
+            }
+          ],
+          [
+            "execution_success",
+            {
+              "prompt_id": "2c3e4bab-f343-4fdf-a277-59e6b15a1885",
+              "timestamp": 1792409983075
+            }
+          ]
+        ],
+        "server_service_s": 0.28,
+        "denoiser_executed": true,
+        "denoiser_execution_basis": "built-in workflow sampler node 5 and history execution_cached",
+        "submit_to_download_s": 0.5414913000004162
+      }
+    },
+    {
+      "case": "edge",
+      "mode": "crop_and_stitch",
+      "iteration": 0,
+      "warmup": false,
+      "seed": 42,
+      "steps": 1,
+      "cfg": 1.0,
+      "denoise": 1.0,
+      "sampler": "euler",
+      "scheduler": "normal",
+      "total_observed_s": 0.5950442000003022,
+      "model_size": [
+        256,
+        256
+      ],
+      "model_pixels": 65536,
+      "outside_mask_max_error": 0,
+      "sha256": "9c4c4f2eca27c9eb61317c1c812ab40b6af76d7e439dcffdddab741465ad246b",
+      "path": "integrations\\github\\validation\\gpu-final-20261019\\gpu\\edge\\+00-crop_and_stitch\\result.png",
+      "denoiser_cuda_s": null,
+      "gpu_peak_memory_bytes": null,
+      "perceptual_quality_approved": null,
+      "app_plan": null,
+      "adapter_metrics": {
+        "prompt_id": "4227cc56-1977-4483-a146-26e9c3ad718e",
+        "output": {
+          "filename": "PankekiExternalValidation_00016_.png",
+          "subfolder": "",
+          "type": "output",
+          "metadata": {
+            "kind": "image",
+            "width": 768,
+            "height": 512
+          }
+        },
+        "comfy_cached_nodes": [
+          "1",
+          "2",
+          "3"
+        ],
+        "node_wall_s": null,
+        "cuda_denoiser_s": null,
+        "cuda_vae_s": null,
+        "peak_vram_allocated_bytes": null,
+        "peak_vram_reserved_bytes": null,
+        "timing_method": "client WebSocket arrival wall time; not CUDA events",
+        "events": [],
+        "observe_s": 0.5352578000001813,
+        "preview_received_count": 0,
+        "preview_received_bytes": 0,
+        "first_preview_s": null,
+        "last_connection_error": null,
+        "history_messages": [
+          [
+            "execution_start",
+            {
+              "prompt_id": "4227cc56-1977-4483-a146-26e9c3ad718e",
+              "timestamp": 1792409983383
+            }
+          ],
+          [
+            "execution_cached",
+            {
+              "nodes": [
+                "1",
+                "2",
+                "3"
+              ],
+              "prompt_id": "4227cc56-1977-4483-a146-26e9c3ad718e",
+              "timestamp": 1792409983384
+            }
+          ],
+          [
+            "execution_success",
+            {
+              "prompt_id": "4227cc56-1977-4483-a146-26e9c3ad718e",
+              "timestamp": 1792409983727
+            }
+          ]
+        ],
+        "server_service_s": 0.344,
+        "denoiser_executed": true,
+        "denoiser_execution_basis": "built-in workflow sampler node 5 and history execution_cached",
+        "submit_to_download_s": 0.5783564000003025
+      }
+    },
+    {
+      "case": "edge",
+      "mode": "baseline",
+      "iteration": 0,
+      "warmup": false,
+      "seed": 42,
+      "steps": 1,
+      "cfg": 1.0,
+      "denoise": 1.0,
+      "sampler": "euler",
+      "scheduler": "normal",
+      "total_observed_s": 0.9824445000003834,
+      "model_size": [
+        768,
+        512
+      ],
+      "model_pixels": 393216,
+      "outside_mask_max_error": 0,
+      "sha256": "e71eb70099dcff73041caab3f07bd76667e26f87a620c2085b395721993ab29b",
+      "path": "integrations\\github\\validation\\gpu-final-20261019\\gpu\\edge\\+00-baseline\\result.png",
+      "denoiser_cuda_s": null,
+      "gpu_peak_memory_bytes": null,
+      "perceptual_quality_approved": null,
+      "app_plan": null,
+      "adapter_metrics": {
+        "prompt_id": "765f0900-6bb4-45b8-8d36-443d191f45ac",
+        "output": {
+          "filename": "PankekiExternalValidation_00017_.png",
+          "subfolder": "",
+          "type": "output",
+          "metadata": {
+            "kind": "image",
+            "width": 768,
+            "height": 512
+          }
+        },
+        "comfy_cached_nodes": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ],
+        "node_wall_s": null,
+        "cuda_denoiser_s": null,
+        "cuda_vae_s": null,
+        "peak_vram_allocated_bytes": null,
+        "peak_vram_reserved_bytes": null,
+        "timing_method": "client WebSocket arrival wall time; not CUDA events",
+        "events": [],
+        "observe_s": 0.938123999999334,
+        "preview_received_count": 0,
+        "preview_received_bytes": 0,
+        "first_preview_s": null,
+        "last_connection_error": null,
+        "history_messages": [
+          [
+            "execution_start",
+            {
+              "prompt_id": "765f0900-6bb4-45b8-8d36-443d191f45ac",
+              "timestamp": 1792409983983
+            }
+          ],
+          [
+            "execution_cached",
+            {
+              "nodes": [
+                "1",
+                "2",
+                "3",
+                "4"
+              ],
+              "prompt_id": "765f0900-6bb4-45b8-8d36-443d191f45ac",
+              "timestamp": 1792409983984
+            }
+          ],
+          [
+            "execution_success",
+            {
+              "prompt_id": "765f0900-6bb4-45b8-8d36-443d191f45ac",
+              "timestamp": 1792409984713
+            }
+          ]
+        ],
+        "server_service_s": 0.73,
+        "denoiser_executed": true,
+        "denoiser_execution_basis": "built-in workflow sampler node 5 and history execution_cached",
+        "submit_to_download_s": 0.9791997000002084
+      }
+    },
+    {
+      "case": "edge",
+      "mode": "app_roi",
+      "iteration": 0,
+      "warmup": false,
+      "seed": 42,
+      "steps": 1,
+      "cfg": 1.0,
+      "denoise": 1.0,
+      "sampler": "euler",
+      "scheduler": "normal",
+      "total_observed_s": 0.5988545999998678,
+      "model_size": [
+        256,
+        256
+      ],
+      "model_pixels": 65536,
+      "outside_mask_max_error": 0,
+      "sha256": "9c4c4f2eca27c9eb61317c1c812ab40b6af76d7e439dcffdddab741465ad246b",
+      "path": "integrations\\github\\validation\\gpu-final-20261019\\gpu\\edge\\+00-app_roi\\result.png",
+      "denoiser_cuda_s": null,
+      "gpu_peak_memory_bytes": null,
+      "perceptual_quality_approved": null,
+      "app_plan": {
+        "bbox": [
+          0,
+          0,
+          256,
+          256
+        ],
+        "original_size": [
+          768,
+          512
+        ],
+        "mode": "roi",
+        "mask_area": 50176,
+        "processed_area": 65536,
+        "reason": "crop including context and model alignment",
+        "padded_size": [
+          256,
+          256
+        ],
+        "padding": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "halo": 32,
+        "multiple": 8
+      },
+      "adapter_metrics": {
+        "prompt_id": "764a5a3f-95f9-41c5-bff7-03d6fdc76fdc",
+        "output": {
+          "filename": "PankekiExternalValidation_00018_.png",
+          "subfolder": "",
+          "type": "output",
+          "metadata": {
+            "kind": "image",
+            "width": 256,
+            "height": 256
+          }
+        },
+        "comfy_cached_nodes": [
+          "1",
+          "2",
+          "3"
+        ],
+        "node_wall_s": null,
+        "cuda_denoiser_s": null,
+        "cuda_vae_s": null,
+        "peak_vram_allocated_bytes": null,
+        "peak_vram_reserved_bytes": null,
+        "timing_method": "client WebSocket arrival wall time; not CUDA events",
+        "events": [],
+        "observe_s": 0.5505446000006486,
+        "preview_received_count": 0,
+        "preview_received_bytes": 0,
+        "first_preview_s": null,
+        "last_connection_error": null,
+        "history_messages": [
+          [
+            "execution_start",
+            {
+              "prompt_id": "764a5a3f-95f9-41c5-bff7-03d6fdc76fdc",
+              "timestamp": 1792409984994
+            }
+          ],
+          [
+            "execution_cached",
+            {
+              "nodes": [
+                "1",
+                "2",
+                "3"
+              ],
+              "prompt_id": "764a5a3f-95f9-41c5-bff7-03d6fdc76fdc",
+              "timestamp": 1792409984995
+            }
+          ],
+          [
+            "execution_success",
+            {
+              "prompt_id": "764a5a3f-95f9-41c5-bff7-03d6fdc76fdc",
+              "timestamp": 1792409985268
+            }
+          ]
+        ],
+        "server_service_s": 0.274,
+        "denoiser_executed": true,
+        "denoiser_execution_basis": "built-in workflow sampler node 5 and history execution_cached",
+        "submit_to_download_s": 0.5931927000001451
+      }
+    },
+    {
+      "case": "edge",
+      "mode": "crop_and_stitch",
+      "iteration": 1,
+      "warmup": false,
+      "seed": 43,
+      "steps": 1,
+      "cfg": 1.0,
+      "denoise": 1.0,
+      "sampler": "euler",
+      "scheduler": "normal",
+      "total_observed_s": 0.5794572000004337,
+      "model_size": [
+        256,
+        256
+      ],
+      "model_pixels": 65536,
+      "outside_mask_max_error": 0,
+      "sha256": "af2a51faa785778e839a8ee241199cd574e0d0f31563986d1a3bd01f7fe8431d",
+      "path": "integrations\\github\\validation\\gpu-final-20261019\\gpu\\edge\\+01-crop_and_stitch\\result.png",
+      "denoiser_cuda_s": null,
+      "gpu_peak_memory_bytes": null,
+      "perceptual_quality_approved": null,
+      "app_plan": null,
+      "adapter_metrics": {
+        "prompt_id": "573877c2-6576-4bae-99b3-082d62d977ea",
+        "output": {
+          "filename": "PankekiExternalValidation_00019_.png",
+          "subfolder": "",
+          "type": "output",
+          "metadata": {
+            "kind": "image",
+            "width": 768,
+            "height": 512
+          }
+        },
+        "comfy_cached_nodes": [
+          "1",
+          "2",
+          "3"
+        ],
+        "node_wall_s": null,
+        "cuda_denoiser_s": null,
+        "cuda_vae_s": null,
+        "peak_vram_allocated_bytes": null,
+        "peak_vram_reserved_bytes": null,
+        "timing_method": "client WebSocket arrival wall time; not CUDA events",
+        "events": [],
+        "observe_s": 0.5370239000003494,
+        "preview_received_count": 0,
+        "preview_received_bytes": 0,
+        "first_preview_s": null,
+        "last_connection_error": null,
+        "history_messages": [
+          [
+            "execution_start",
+            {
+              "prompt_id": "573877c2-6576-4bae-99b3-082d62d977ea",
+              "timestamp": 1792409985585
+            }
+          ],
+          [
+            "execution_cached",
+            {
+              "nodes": [
+                "1",
+                "2",
+                "3"
+              ],
+              "prompt_id": "573877c2-6576-4bae-99b3-082d62d977ea",
+              "timestamp": 1792409985587
+            }
+          ],
+          [
+            "execution_success",
+            {
+              "prompt_id": "573877c2-6576-4bae-99b3-082d62d977ea",
+              "timestamp": 1792409985929
+            }
+          ]
+        ],
+        "server_service_s": 0.344,
+        "denoiser_executed": true,
+        "denoiser_execution_basis": "built-in workflow sampler node 5 and history execution_cached",
+        "submit_to_download_s": 0.5630521000002773
+      }
+    },
+    {
+      "case": "edge",
+      "mode": "app_roi",
+      "iteration": 1,
+      "warmup": false,
+      "seed": 43,
+      "steps": 1,
+      "cfg": 1.0,
+      "denoise": 1.0,
+      "sampler": "euler",
+      "scheduler": "normal",
+      "total_observed_s": 0.5894299000001411,
+      "model_size": [
+        256,
+        256
+      ],
+      "model_pixels": 65536,
+      "outside_mask_max_error": 0,
+      "sha256": "af2a51faa785778e839a8ee241199cd574e0d0f31563986d1a3bd01f7fe8431d",
+      "path": "integrations\\github\\validation\\gpu-final-20261019\\gpu\\edge\\+01-app_roi\\result.png",
+      "denoiser_cuda_s": null,
+      "gpu_peak_memory_bytes": null,
+      "perceptual_quality_approved": null,
+      "app_plan": {
+        "bbox": [
+          0,
+          0,
+          256,
+          256
+        ],
+        "original_size": [
+          768,
+          512
+        ],
+        "mode": "roi",
+        "mask_area": 50176,
+        "processed_area": 65536,
+        "reason": "crop including context and model alignment",
+        "padded_size": [
+          256,
+          256
+        ],
+        "padding": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "halo": 32,
+        "multiple": 8
+      },
+      "adapter_metrics": {
+        "prompt_id": "50236c7a-ce14-434e-8af1-774dc0b1c968",
+        "output": {
+          "filename": "PankekiExternalValidation_00020_.png",
+          "subfolder": "",
+          "type": "output",
+          "metadata": {
+            "kind": "image",
+            "width": 256,
+            "height": 256
+          }
+        },
+        "comfy_cached_nodes": [
+          "1",
+          "2",
+          "3"
+        ],
+        "node_wall_s": null,
+        "cuda_denoiser_s": null,
+        "cuda_vae_s": null,
+        "peak_vram_allocated_bytes": null,
+        "peak_vram_reserved_bytes": null,
+        "timing_method": "client WebSocket arrival wall time; not CUDA events",
+        "events": [],
+        "observe_s": 0.5524900999998863,
+        "preview_received_count": 0,
+        "preview_received_bytes": 0,
+        "first_preview_s": null,
+        "last_connection_error": null,
+        "history_messages": [
+          [
+            "execution_start",
+            {
+              "prompt_id": "50236c7a-ce14-434e-8af1-774dc0b1c968",
+              "timestamp": 1792409986193
+            }
+          ],
+          [
+            "execution_cached",
+            {
+              "nodes": [
+                "1",
+                "2",
+                "3"
+              ],
+              "prompt_id": "50236c7a-ce14-434e-8af1-774dc0b1c968",
+              "timestamp": 1792409986194
+            }
+          ],
+          [
+            "execution_success",
+            {
+              "prompt_id": "50236c7a-ce14-434e-8af1-774dc0b1c968",
+              "timestamp": 1792409986486
+            }
+          ]
+        ],
+        "server_service_s": 0.293,
+        "denoiser_executed": true,
+        "denoiser_execution_basis": "built-in workflow sampler node 5 and history execution_cached",
+        "submit_to_download_s": 0.5839757000003374
+      }
+    },
+    {
+      "case": "edge",
+      "mode": "baseline",
+      "iteration": 1,
+      "warmup": false,
+      "seed": 43,
+      "steps": 1,
+      "cfg": 1.0,
+      "denoise": 1.0,
+      "sampler": "euler",
+      "scheduler": "normal",
+      "total_observed_s": 0.7887387999999191,
+      "model_size": [
+        768,
+        512
+      ],
+      "model_pixels": 393216,
+      "outside_mask_max_error": 0,
+      "sha256": "3148b7a057e8fd02ee480d39e2b05b16e430d86fddaf3ceda62adae53cd2bace",
+      "path": "integrations\\github\\validation\\gpu-final-20261019\\gpu\\edge\\+01-baseline\\result.png",
+      "denoiser_cuda_s": null,
+      "gpu_peak_memory_bytes": null,
+      "perceptual_quality_approved": null,
+      "app_plan": null,
+      "adapter_metrics": {
+        "prompt_id": "abdcd002-c614-46b2-a6d5-81dc9eca4999",
+        "output": {
+          "filename": "PankekiExternalValidation_00021_.png",
+          "subfolder": "",
+          "type": "output",
+          "metadata": {
+            "kind": "image",
+            "width": 768,
+            "height": 512
+          }
+        },
+        "comfy_cached_nodes": [
+          "1",
+          "2",
+          "3"
+        ],
+        "node_wall_s": null,
+        "cuda_denoiser_s": null,
+        "cuda_vae_s": null,
+        "peak_vram_allocated_bytes": null,
+        "peak_vram_reserved_bytes": null,
+        "timing_method": "client WebSocket arrival wall time; not CUDA events",
+        "events": [],
+        "observe_s": 0.7820686999993995,
+        "preview_received_count": 0,
+        "preview_received_bytes": 0,
+        "first_preview_s": null,
+        "last_connection_error": null,
+        "history_messages": [
+          [
+            "execution_start",
+            {
+              "prompt_id": "abdcd002-c614-46b2-a6d5-81dc9eca4999",
+              "timestamp": 1792409986784
+            }
+          ],
+          [
+            "execution_cached",
+            {
+              "nodes": [
+                "1",
+                "2",
+                "3"
+              ],
+              "prompt_id": "abdcd002-c614-46b2-a6d5-81dc9eca4999",
+              "timestamp": 1792409986785
+            }
+          ],
+          [
+            "execution_success",
+            {
+              "prompt_id": "abdcd002-c614-46b2-a6d5-81dc9eca4999",
+              "timestamp": 1792409987535
+            }
+          ]
+        ],
+        "server_service_s": 0.751,
+        "denoiser_executed": true,
+        "denoiser_execution_basis": "built-in workflow sampler node 5 and history execution_cached",
+        "submit_to_download_s": 0.785442399999738
+      }
+    },
+    {
+      "case": "edge",
+      "mode": "baseline",
+      "iteration": 2,
+      "warmup": false,
+      "seed": 44,
+      "steps": 1,
+      "cfg": 1.0,
+      "denoise": 1.0,
+      "sampler": "euler",
+      "scheduler": "normal",
+      "total_observed_s": 0.5373676000008345,
+      "model_size": [
+        768,
+        512
+      ],
+      "model_pixels": 393216,
+      "outside_mask_max_error": 0,
+      "sha256": "56486eea8b8d2540d6cbbbd09d24839540c8ef5748a2d3ce54dabbfb131456aa",
+      "path": "integrations\\github\\validation\\gpu-final-20261019\\gpu\\edge\\+02-baseline\\result.png",
+      "denoiser_cuda_s": null,
+      "gpu_peak_memory_bytes": null,
+      "perceptual_quality_approved": null,
+      "app_plan": null,
+      "adapter_metrics": {
+        "prompt_id": "4a78a2b9-f06c-47d2-ad02-f5c58984c8c8",
+        "output": {
+          "filename": "PankekiExternalValidation_00022_.png",
+          "subfolder": "",
+          "type": "output",
+          "metadata": {
+            "kind": "image",
+            "width": 768,
+            "height": 512
+          }
+        },
+        "comfy_cached_nodes": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "8"
+        ],
+        "node_wall_s": null,
+        "cuda_denoiser_s": null,
+        "cuda_vae_s": null,
+        "peak_vram_allocated_bytes": null,
+        "peak_vram_reserved_bytes": null,
+        "timing_method": "client WebSocket arrival wall time; not CUDA events",
+        "events": [],
+        "observe_s": 0.5301450999995723,
+        "preview_received_count": 0,
+        "preview_received_bytes": 0,
+        "first_preview_s": null,
+        "last_connection_error": null,
+        "history_messages": [
+          [
+            "execution_start",
+            {
+              "prompt_id": "4a78a2b9-f06c-47d2-ad02-f5c58984c8c8",
+              "timestamp": 1792409987591
+            }
+          ],
+          [
+            "execution_cached",
+            {
+              "nodes": [
+                "1",
+                "2",
+                "3",
+                "4",
+                "8"
+              ],
+              "prompt_id": "4a78a2b9-f06c-47d2-ad02-f5c58984c8c8",
+              "timestamp": 1792409987592
+            }
+          ],
+          [
+            "execution_success",
+            {
+              "prompt_id": "4a78a2b9-f06c-47d2-ad02-f5c58984c8c8",
+              "timestamp": 1792409988115
+            }
+          ]
+        ],
+        "server_service_s": 0.524,
+        "denoiser_executed": true,
+        "denoiser_execution_basis": "built-in workflow sampler node 5 and history execution_cached",
+        "submit_to_download_s": 0.5338151999994807
+      }
+    },
+    {
+      "case": "edge",
+      "mode": "crop_and_stitch",
+      "iteration": 2,
+      "warmup": false,
+      "seed": 44,
+      "steps": 1,
+      "cfg": 1.0,
+      "denoise": 1.0,
+      "sampler": "euler",
+      "scheduler": "normal",
+      "total_observed_s": 0.5195991000000504,
+      "model_size": [
+        256,
+        256
+      ],
+      "model_pixels": 65536,
+      "outside_mask_max_error": 0,
+      "sha256": "7aa72cc3ab4efe2979912e6c16e162d3264dc187903074f58e846a64e8a2bc4c",
+      "path": "integrations\\github\\validation\\gpu-final-20261019\\gpu\\edge\\+02-crop_and_stitch\\result.png",
+      "denoiser_cuda_s": null,
+      "gpu_peak_memory_bytes": null,
+      "perceptual_quality_approved": null,
+      "app_plan": null,
+      "adapter_metrics": {
+        "prompt_id": "f206726f-82ee-4e3c-88b7-b744ec97dd81",
+        "output": {
+          "filename": "PankekiExternalValidation_00023_.png",
+          "subfolder": "",
+          "type": "output",
+          "metadata": {
+            "kind": "image",
+            "width": 768,
+            "height": 512
+          }
+        },
+        "comfy_cached_nodes": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ],
+        "node_wall_s": null,
+        "cuda_denoiser_s": null,
+        "cuda_vae_s": null,
+        "peak_vram_allocated_bytes": null,
+        "peak_vram_reserved_bytes": null,
+        "timing_method": "client WebSocket arrival wall time; not CUDA events",
+        "events": [],
+        "observe_s": 0.5102939999997034,
+        "preview_received_count": 0,
+        "preview_received_bytes": 0,
+        "first_preview_s": null,
+        "last_connection_error": null,
+        "history_messages": [
+          [
+            "execution_start",
+            {
+              "prompt_id": "f206726f-82ee-4e3c-88b7-b744ec97dd81",
+              "timestamp": 1792409988145
+            }
+          ],
+          [
+            "execution_cached",
+            {
+              "nodes": [
+                "1",
+                "2",
+                "3",
+                "4"
+              ],
+              "prompt_id": "f206726f-82ee-4e3c-88b7-b744ec97dd81",
+              "timestamp": 1792409988147
+            }
+          ],
+          [
+            "execution_success",
+            {
+              "prompt_id": "f206726f-82ee-4e3c-88b7-b744ec97dd81",
+              "timestamp": 1792409988479
+            }
+          ]
+        ],
+        "server_service_s": 0.334,
+        "denoiser_executed": true,
+        "denoiser_execution_basis": "built-in workflow sampler node 5 and history execution_cached",
+        "submit_to_download_s": 0.5140486999998757
+      }
+    },
+    {
+      "case": "edge",
+      "mode": "app_roi",
+      "iteration": 2,
+      "warmup": false,
+      "seed": 44,
+      "steps": 1,
+      "cfg": 1.0,
+      "denoise": 1.0,
+      "sampler": "euler",
+      "scheduler": "normal",
+      "total_observed_s": 0.5998769999996512,
+      "model_size": [
+        256,
+        256
+      ],
+      "model_pixels": 65536,
+      "outside_mask_max_error": 0,
+      "sha256": "7aa72cc3ab4efe2979912e6c16e162d3264dc187903074f58e846a64e8a2bc4c",
+      "path": "integrations\\github\\validation\\gpu-final-20261019\\gpu\\edge\\+02-app_roi\\result.png",
+      "denoiser_cuda_s": null,
+      "gpu_peak_memory_bytes": null,
+      "perceptual_quality_approved": null,
+      "app_plan": {
+        "bbox": [
+          0,
+          0,
+          256,
+          256
+        ],
+        "original_size": [
+          768,
+          512
+        ],
+        "mode": "roi",
+        "mask_area": 50176,
+        "processed_area": 65536,
+        "reason": "crop including context and model alignment",
+        "padded_size": [
+          256,
+          256
+        ],
+        "padding": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "halo": 32,
+        "multiple": 8
+      },
+      "adapter_metrics": {
+        "prompt_id": "4b9b0379-5ccd-4db6-bb65-ccbac746d3d8",
+        "output": {
+          "filename": "PankekiExternalValidation_00024_.png",
+          "subfolder": "",
+          "type": "output",
+          "metadata": {
+            "kind": "image",
+            "width": 256,
+            "height": 256
+          }
+        },
+        "comfy_cached_nodes": [
+          "1",
+          "2",
+          "3"
+        ],
+        "node_wall_s": null,
+        "cuda_denoiser_s": null,
+        "cuda_vae_s": null,
+        "peak_vram_allocated_bytes": null,
+        "peak_vram_reserved_bytes": null,
+        "timing_method": "client WebSocket arrival wall time; not CUDA events",
+        "events": [],
+        "observe_s": 0.5655974000001152,
+        "preview_received_count": 0,
+        "preview_received_bytes": 0,
+        "first_preview_s": null,
+        "last_connection_error": null,
+        "history_messages": [
+          [
+            "execution_start",
+            {
+              "prompt_id": "4b9b0379-5ccd-4db6-bb65-ccbac746d3d8",
+              "timestamp": 1792409988690
+            }
+          ],
+          [
+            "execution_cached",
+            {
+              "nodes": [
+                "1",
+                "2",
+                "3"
+              ],
+              "prompt_id": "4b9b0379-5ccd-4db6-bb65-ccbac746d3d8",
+              "timestamp": 1792409988691
+            }
+          ],
+          [
+            "execution_success",
+            {
+              "prompt_id": "4b9b0379-5ccd-4db6-bb65-ccbac746d3d8",
+              "timestamp": 1792409988977
+            }
+          ]
+        ],
+        "server_service_s": 0.287,
+        "denoiser_executed": true,
+        "denoiser_execution_basis": "built-in workflow sampler node 5 and history execution_cached",
+        "submit_to_download_s": 0.5942285999999513
+      }
+    },
+    {
+      "case": "full",
+      "mode": "baseline",
+      "iteration": -1,
+      "warmup": true,
+      "seed": 1043,
+      "steps": 1,
+      "cfg": 1.0,
+      "denoise": 1.0,
+      "sampler": "euler",
+      "scheduler": "normal",
+      "total_observed_s": 0.8524433000002318,
+      "model_size": [
+        512,
+        512
+      ],
+      "model_pixels": 262144,
+      "outside_mask_max_error": 0,
+      "sha256": "43c02c2ad28a8520bd3e5a5d250558bc6bbd27627123e27ead0a48fa428fdf58",
+      "path": "integrations\\github\\validation\\gpu-final-20261019\\gpu\\full\\-01-baseline\\result.png",
+      "denoiser_cuda_s": null,
+      "gpu_peak_memory_bytes": null,
+      "perceptual_quality_approved": null,
+      "app_plan": null,
+      "adapter_metrics": {
+        "prompt_id": "30838841-4909-4744-9e53-61c4fe57069d",
+        "output": {
+          "filename": "PankekiExternalValidation_00025_.png",
+          "subfolder": "",
+          "type": "output",
+          "metadata": {
+            "kind": "image",
+            "width": 512,
+            "height": 512
+          }
+        },
+        "comfy_cached_nodes": [
+          "1",
+          "2",
+          "3"
+        ],
+        "node_wall_s": null,
+        "cuda_denoiser_s": null,
+        "cuda_vae_s": null,
+        "peak_vram_allocated_bytes": null,
+        "peak_vram_reserved_bytes": null,
+        "timing_method": "client WebSocket arrival wall time; not CUDA events",
+        "events": [],
+        "observe_s": 0.8160573000004661,
+        "preview_received_count": 0,
+        "preview_received_bytes": 0,
+        "first_preview_s": null,
+        "last_connection_error": null,
+        "history_messages": [
+          [
+            "execution_start",
+            {
+              "prompt_id": "30838841-4909-4744-9e53-61c4fe57069d",
+              "timestamp": 1792409989350
+            }
+          ],
+          [
+            "execution_cached",
+            {
+              "nodes": [
+                "1",
+                "2",
+                "3"
+              ],
+              "prompt_id": "30838841-4909-4744-9e53-61c4fe57069d",
+              "timestamp": 1792409989351
+            }
+          ],
+          [
+            "execution_success",
+            {
+              "prompt_id": "30838841-4909-4744-9e53-61c4fe57069d",
+              "timestamp": 1792409989932
+            }
+          ]
+        ],
+        "server_service_s": 0.582,
+        "denoiser_executed": true,
+        "denoiser_execution_basis": "built-in workflow sampler node 5 and history execution_cached",
+        "submit_to_download_s": 0.8475515999998606
+      }
+    },
+    {
+      "case": "full",
+      "mode": "app_roi",
+      "iteration": -1,
+      "warmup": true,
+      "seed": 1043,
+      "steps": 1,
+      "cfg": 1.0,
+      "denoise": 1.0,
+      "sampler": "euler",
+      "scheduler": "normal",
+      "total_observed_s": 0.3149500999998054,
+      "model_size": [
+        512,
+        512
+      ],
+      "model_pixels": 262144,
+      "outside_mask_max_error": 0,
+      "sha256": "43c02c2ad28a8520bd3e5a5d250558bc6bbd27627123e27ead0a48fa428fdf58",
+      "path": "integrations\\github\\validation\\gpu-final-20261019\\gpu\\full\\-01-app_roi\\result.png",
+      "denoiser_cuda_s": null,
+      "gpu_peak_memory_bytes": null,
+      "perceptual_quality_approved": null,
+      "app_plan": {
+        "bbox": [
+          0,
+          0,
+          512,
+          512
+        ],
+        "original_size": [
+          512,
+          512
+        ],
+        "mode": "baseline",
+        "mask_area": 262144,
+        "processed_area": 262144,
+        "reason": "aligned crop meets area threshold: use full-frame baseline",
+        "padded_size": [
+          512,
+          512
+        ],
+        "padding": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "halo": 32,
+        "multiple": 8
+      },
+      "adapter_metrics": {
+        "prompt_id": "5d431991-c966-4249-b816-78bd8508e5f6",
+        "output": {
+          "filename": "PankekiExternalValidation_00026_.png",
+          "subfolder": "",
+          "type": "output",
+          "metadata": {
+            "kind": "image",
+            "width": 512,
+            "height": 512
+          }
+        },
+        "comfy_cached_nodes": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "8"
+        ],
+        "node_wall_s": null,
+        "cuda_denoiser_s": null,
+        "cuda_vae_s": null,
+        "peak_vram_allocated_bytes": null,
+        "peak_vram_reserved_bytes": null,
+        "timing_method": "client WebSocket arrival wall time; not CUDA events",
+        "events": [],
+        "observe_s": 0.2669713999994201,
+        "preview_received_count": 0,
+        "preview_received_bytes": 0,
+        "first_preview_s": null,
+        "last_connection_error": null,
+        "history_messages": [
+          [
+            "execution_start",
+            {
+              "prompt_id": "5d431991-c966-4249-b816-78bd8508e5f6",
+              "timestamp": 1792409990229
+            }
+          ],
+          [
+            "execution_cached",
+            {
+              "nodes": [
+                "1",
+                "2",
+                "3",
+                "4",
+                "5",
+                "6",
+                "8"
+              ],
+              "prompt_id": "5d431991-c966-4249-b816-78bd8508e5f6",
+              "timestamp": 1792409990230
+            }
+          ],
+          [
+            "execution_success",
+            {
+              "prompt_id": "5d431991-c966-4249-b816-78bd8508e5f6",
+              "timestamp": 1792409990258
+            }
+          ]
+        ],
+        "server_service_s": 0.029,
+        "denoiser_executed": false,
+        "denoiser_execution_basis": "built-in workflow sampler node 5 and history execution_cached",
+        "submit_to_download_s": 0.29601939999975
+      }
+    },
+    {
+      "case": "full",
+      "mode": "crop_and_stitch",
+      "iteration": -1,
+      "warmup": true,
+      "seed": 1043,
+      "steps": 1,
+      "cfg": 1.0,
+      "denoise": 1.0,
+      "sampler": "euler",
+      "scheduler": "normal",
+      "total_observed_s": 0.8342941999999312,
+      "model_size": [
+        512,
+        512
+      ],
+      "model_pixels": 262144,
+      "outside_mask_max_error": 0,
+      "sha256": "43c02c2ad28a8520bd3e5a5d250558bc6bbd27627123e27ead0a48fa428fdf58",
+      "path": "integrations\\github\\validation\\gpu-final-20261019\\gpu\\full\\-01-crop_and_stitch\\result.png",
+      "denoiser_cuda_s": null,
+      "gpu_peak_memory_bytes": null,
+      "perceptual_quality_approved": null,
+      "app_plan": null,
+      "adapter_metrics": {
+        "prompt_id": "abc80497-598e-4355-9b45-f44f2e3cf584",
+        "output": {
+          "filename": "PankekiExternalValidation_00027_.png",
+          "subfolder": "",
+          "type": "output",
+          "metadata": {
+            "kind": "image",
+            "width": 512,
+            "height": 512
+          }
+        },
+        "comfy_cached_nodes": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ],
+        "node_wall_s": null,
+        "cuda_denoiser_s": null,
+        "cuda_vae_s": null,
+        "peak_vram_allocated_bytes": null,
+        "peak_vram_reserved_bytes": null,
+        "timing_method": "client WebSocket arrival wall time; not CUDA events",
+        "events": [],
+        "observe_s": 0.7993065999999089,
+        "preview_received_count": 0,
+        "preview_received_bytes": 0,
+        "first_preview_s": null,
+        "last_connection_error": null,
+        "history_messages": [
+          [
+            "execution_start",
+            {
+              "prompt_id": "abc80497-598e-4355-9b45-f44f2e3cf584",
+              "timestamp": 1792409990560
+            }
+          ],
+          [
+            "execution_cached",
+            {
+              "nodes": [
+                "1",
+                "2",
+                "3",
+                "4"
+              ],
+              "prompt_id": "abc80497-598e-4355-9b45-f44f2e3cf584",
+              "timestamp": 1792409990561
+            }
+          ],
+          [
+            "execution_success",
+            {
+              "prompt_id": "abc80497-598e-4355-9b45-f44f2e3cf584",
+              "timestamp": 1792409991173
+            }
+          ]
+        ],
+        "server_service_s": 0.613,
+        "denoiser_executed": true,
+        "denoiser_execution_basis": "built-in workflow sampler node 5 and history execution_cached",
+        "submit_to_download_s": 0.8179299999992509
+      }
+    },
+    {
+      "case": "full",
+      "mode": "app_roi",
+      "iteration": 0,
+      "warmup": false,
+      "seed": 42,
+      "steps": 1,
+      "cfg": 1.0,
+      "denoise": 1.0,
+      "sampler": "euler",
+      "scheduler": "normal",
+      "total_observed_s": 0.8395409000004292,
+      "model_size": [
+        512,
+        512
+      ],
+      "model_pixels": 262144,
+      "outside_mask_max_error": 0,
+      "sha256": "8a7a639ae6a437001c12961b12c2a3cef229b904a5918dfff92bade1a9d4aa9d",
+      "path": "integrations\\github\\validation\\gpu-final-20261019\\gpu\\full\\+00-app_roi\\result.png",
+      "denoiser_cuda_s": null,
+      "gpu_peak_memory_bytes": null,
+      "perceptual_quality_approved": null,
+      "app_plan": {
+        "bbox": [
+          0,
+          0,
+          512,
+          512
+        ],
+        "original_size": [
+          512,
+          512
+        ],
+        "mode": "baseline",
+        "mask_area": 262144,
+        "processed_area": 262144,
+        "reason": "aligned crop meets area threshold: use full-frame baseline",
+        "padded_size": [
+          512,
+          512
+        ],
+        "padding": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "halo": 32,
+        "multiple": 8
+      },
+      "adapter_metrics": {
+        "prompt_id": "4d60968d-79ed-47b2-b73c-0fa9a03c33ff",
+        "output": {
+          "filename": "PankekiExternalValidation_00028_.png",
+          "subfolder": "",
+          "type": "output",
+          "metadata": {
+            "kind": "image",
+            "width": 512,
+            "height": 512
+          }
+        },
+        "comfy_cached_nodes": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ],
+        "node_wall_s": null,
+        "cuda_denoiser_s": null,
+        "cuda_vae_s": null,
+        "peak_vram_allocated_bytes": null,
+        "peak_vram_reserved_bytes": null,
+        "timing_method": "client WebSocket arrival wall time; not CUDA events",
+        "events": [],
+        "observe_s": 0.7867366000000402,
+        "preview_received_count": 0,
+        "preview_received_bytes": 0,
+        "first_preview_s": null,
+        "last_connection_error": null,
+        "history_messages": [
+          [
+            "execution_start",
+            {
+              "prompt_id": "4d60968d-79ed-47b2-b73c-0fa9a03c33ff",
+              "timestamp": 1792409991439
+            }
+          ],
+          [
+            "execution_cached",
+            {
+              "nodes": [
+                "1",
+                "2",
+                "3",
+                "4"
+              ],
+              "prompt_id": "4d60968d-79ed-47b2-b73c-0fa9a03c33ff",
+              "timestamp": 1792409991440
+            }
+          ],
+          [
+            "execution_success",
+            {
+              "prompt_id": "4d60968d-79ed-47b2-b73c-0fa9a03c33ff",
+              "timestamp": 1792409991984
+            }
+          ]
+        ],
+        "server_service_s": 0.545,
+        "denoiser_executed": true,
+        "denoiser_execution_basis": "built-in workflow sampler node 5 and history execution_cached",
+        "submit_to_download_s": 0.8230567999999039
+      }
+    },
+    {
+      "case": "full",
+      "mode": "crop_and_stitch",
+      "iteration": 0,
+      "warmup": false,
+      "seed": 42,
+      "steps": 1,
+      "cfg": 1.0,
+      "denoise": 1.0,
+      "sampler": "euler",
+      "scheduler": "normal",
+      "total_observed_s": 1.1208882999999332,
+      "model_size": [
+        512,
+        512
+      ],
+      "model_pixels": 262144,
+      "outside_mask_max_error": 0,
+      "sha256": "8a7a639ae6a437001c12961b12c2a3cef229b904a5918dfff92bade1a9d4aa9d",
+      "path": "integrations\\github\\validation\\gpu-final-20261019\\gpu\\full\\+00-crop_and_stitch\\result.png",
+      "denoiser_cuda_s": null,
+      "gpu_peak_memory_bytes": null,
+      "perceptual_quality_approved": null,
+      "app_plan": null,
+      "adapter_metrics": {
+        "prompt_id": "0a829017-01d1-4550-a6cb-d06ada7b0c7a",
+        "output": {
+          "filename": "PankekiExternalValidation_00029_.png",
+          "subfolder": "",
+          "type": "output",
+          "metadata": {
+            "kind": "image",
+            "width": 512,
+            "height": 512
+          }
+        },
+        "comfy_cached_nodes": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ],
+        "node_wall_s": null,
+        "cuda_denoiser_s": null,
+        "cuda_vae_s": null,
+        "peak_vram_allocated_bytes": null,
+        "peak_vram_reserved_bytes": null,
+        "timing_method": "client WebSocket arrival wall time; not CUDA events",
+        "events": [],
+        "observe_s": 1.0669699000000037,
+        "preview_received_count": 0,
+        "preview_received_bytes": 0,
+        "first_preview_s": null,
+        "last_connection_error": null,
+        "history_messages": [
+          [
+            "execution_start",
+            {
+              "prompt_id": "0a829017-01d1-4550-a6cb-d06ada7b0c7a",
+              "timestamp": 1792409992306
+            }
+          ],
+          [
+            "execution_cached",
+            {
+              "nodes": [
+                "1",
+                "2",
+                "3",
+                "4"
+              ],
+              "prompt_id": "0a829017-01d1-4550-a6cb-d06ada7b0c7a",
+              "timestamp": 1792409992308
+            }
+          ],
+          [
+            "execution_success",
+            {
+              "prompt_id": "0a829017-01d1-4550-a6cb-d06ada7b0c7a",
+              "timestamp": 1792409993127
+            }
+          ]
+        ],
+        "server_service_s": 0.821,
+        "denoiser_executed": true,
+        "denoiser_execution_basis": "built-in workflow sampler node 5 and history execution_cached",
+        "submit_to_download_s": 1.1043781999997009
+      }
+    },
+    {
+      "case": "full",
+      "mode": "baseline",
+      "iteration": 0,
+      "warmup": false,
+      "seed": 42,
+      "steps": 1,
+      "cfg": 1.0,
+      "denoise": 1.0,
+      "sampler": "euler",
+      "scheduler": "normal",
+      "total_observed_s": 0.8159335000000283,
+      "model_size": [
+        512,
+        512
+      ],
+      "model_pixels": 262144,
+      "outside_mask_max_error": 0,
+      "sha256": "8a7a639ae6a437001c12961b12c2a3cef229b904a5918dfff92bade1a9d4aa9d",
+      "path": "integrations\\github\\validation\\gpu-final-20261019\\gpu\\full\\+00-baseline\\result.png",
+      "denoiser_cuda_s": null,
+      "gpu_peak_memory_bytes": null,
+      "perceptual_quality_approved": null,
+      "app_plan": null,
+      "adapter_metrics": {
+        "prompt_id": "a9df837a-d5c2-40e2-9b81-7da0b47af5ce",
+        "output": {
+          "filename": "PankekiExternalValidation_00030_.png",
+          "subfolder": "",
+          "type": "output",
+          "metadata": {
+            "kind": "image",
+            "width": 512,
+            "height": 512
+          }
+        },
+        "comfy_cached_nodes": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ],
+        "node_wall_s": null,
+        "cuda_denoiser_s": null,
+        "cuda_vae_s": null,
+        "peak_vram_allocated_bytes": null,
+        "peak_vram_reserved_bytes": null,
+        "timing_method": "client WebSocket arrival wall time; not CUDA events",
+        "events": [],
+        "observe_s": 0.7909036000000924,
+        "preview_received_count": 0,
+        "preview_received_bytes": 0,
+        "first_preview_s": null,
+        "last_connection_error": null,
+        "history_messages": [
+          [
+            "execution_start",
+            {
+              "prompt_id": "a9df837a-d5c2-40e2-9b81-7da0b47af5ce",
+              "timestamp": 1792409993450
+            }
+          ],
+          [
+            "execution_cached",
+            {
+              "nodes": [
+                "1",
+                "2",
+                "3",
+                "4"
+              ],
+              "prompt_id": "a9df837a-d5c2-40e2-9b81-7da0b47af5ce",
+              "timestamp": 1792409993452
+            }
+          ],
+          [
+            "execution_success",
+            {
+              "prompt_id": "a9df837a-d5c2-40e2-9b81-7da0b47af5ce",
+              "timestamp": 1792409994021
+            }
+          ]
+        ],
+        "server_service_s": 0.571,
+        "denoiser_executed": true,
+        "denoiser_execution_basis": "built-in workflow sampler node 5 and history execution_cached",
+        "submit_to_download_s": 0.8119269999997414
+      }
+    },
+    {
+      "case": "full",
+      "mode": "baseline",
+      "iteration": 1,
+      "warmup": false,
+      "seed": 43,
+      "steps": 1,
+      "cfg": 1.0,
+      "denoise": 1.0,
+      "sampler": "euler",
+      "scheduler": "normal",
+      "total_observed_s": 0.6657198000002609,
+      "model_size": [
+        512,
+        512
+      ],
+      "model_pixels": 262144,
+      "outside_mask_max_error": 0,
+      "sha256": "c7208888a24e43271063c9398e84b69a104bf481dd9ad4de04a3ba40d1dd4090",
+      "path": "integrations\\github\\validation\\gpu-final-20261019\\gpu\\full\\+01-baseline\\result.png",
+      "denoiser_cuda_s": null,
+      "gpu_peak_memory_bytes": null,
+      "perceptual_quality_approved": null,
+      "app_plan": null,
+      "adapter_metrics": {
+        "prompt_id": "252bf9cc-c4ee-49bb-a850-4418b5375827",
+        "output": {
+          "filename": "PankekiExternalValidation_00031_.png",
+          "subfolder": "",
+          "type": "output",
+          "metadata": {
+            "kind": "image",
+            "width": 512,
+            "height": 512
+          }
+        },
+        "comfy_cached_nodes": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "8"
+        ],
+        "node_wall_s": null,
+        "cuda_denoiser_s": null,
+        "cuda_vae_s": null,
+        "peak_vram_allocated_bytes": null,
+        "peak_vram_reserved_bytes": null,
+        "timing_method": "client WebSocket arrival wall time; not CUDA events",
+        "events": [],
+        "observe_s": 0.6229732000001604,
+        "preview_received_count": 0,
+        "preview_received_bytes": 0,
+        "first_preview_s": null,
+        "last_connection_error": null,
+        "history_messages": [
+          [
+            "execution_start",
+            {
+              "prompt_id": "252bf9cc-c4ee-49bb-a850-4418b5375827",
+              "timestamp": 1792409994290
+            }
+          ],
+          [
+            "execution_cached",
+            {
+              "nodes": [
+                "1",
+                "2",
+                "3",
+                "4",
+                "8"
+              ],
+              "prompt_id": "252bf9cc-c4ee-49bb-a850-4418b5375827",
+              "timestamp": 1792409994291
+            }
+          ],
+          [
+            "execution_success",
+            {
+              "prompt_id": "252bf9cc-c4ee-49bb-a850-4418b5375827",
+              "timestamp": 1792409994680
+            }
+          ]
+        ],
+        "server_service_s": 0.39,
+        "denoiser_executed": true,
+        "denoiser_execution_basis": "built-in workflow sampler node 5 and history execution_cached",
+        "submit_to_download_s": 0.6616566000002422
+      }
+    },
+    {
+      "case": "full",
+      "mode": "crop_and_stitch",
+      "iteration": 1,
+      "warmup": false,
+      "seed": 43,
+      "steps": 1,
+      "cfg": 1.0,
+      "denoise": 1.0,
+      "sampler": "euler",
+      "scheduler": "normal",
+      "total_observed_s": 0.8587280000001556,
+      "model_size": [
+        512,
+        512
+      ],
+      "model_pixels": 262144,
+      "outside_mask_max_error": 0,
+      "sha256": "c7208888a24e43271063c9398e84b69a104bf481dd9ad4de04a3ba40d1dd4090",
+      "path": "integrations\\github\\validation\\gpu-final-20261019\\gpu\\full\\+01-crop_and_stitch\\result.png",
+      "denoiser_cuda_s": null,
+      "gpu_peak_memory_bytes": null,
+      "perceptual_quality_approved": null,
+      "app_plan": null,
+      "adapter_metrics": {
+        "prompt_id": "4c529e84-f279-47c7-bd25-f067e49b6429",
+        "output": {
+          "filename": "PankekiExternalValidation_00032_.png",
+          "subfolder": "",
+          "type": "output",
+          "metadata": {
+            "kind": "image",
+            "width": 512,
+            "height": 512
+          }
+        },
+        "comfy_cached_nodes": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ],
+        "node_wall_s": null,
+        "cuda_denoiser_s": null,
+        "cuda_vae_s": null,
+        "peak_vram_allocated_bytes": null,
+        "peak_vram_reserved_bytes": null,
+        "timing_method": "client WebSocket arrival wall time; not CUDA events",
+        "events": [],
+        "observe_s": 0.8187579999994341,
+        "preview_received_count": 0,
+        "preview_received_bytes": 0,
+        "first_preview_s": null,
+        "last_connection_error": null,
+        "history_messages": [
+          [
+            "execution_start",
+            {
+              "prompt_id": "4c529e84-f279-47c7-bd25-f067e49b6429",
+              "timestamp": 1792409994982
+            }
+          ],
+          [
+            "execution_cached",
+            {
+              "nodes": [
+                "1",
+                "2",
+                "3",
+                "4"
+              ],
+              "prompt_id": "4c529e84-f279-47c7-bd25-f067e49b6429",
+              "timestamp": 1792409994984
+            }
+          ],
+          [
+            "execution_success",
+            {
+              "prompt_id": "4c529e84-f279-47c7-bd25-f067e49b6429",
+              "timestamp": 1792409995586
+            }
+          ]
+        ],
+        "server_service_s": 0.604,
+        "denoiser_executed": true,
+        "denoiser_execution_basis": "built-in workflow sampler node 5 and history execution_cached",
+        "submit_to_download_s": 0.8523505000002842
+      }
+    },
+    {
+      "case": "full",
+      "mode": "app_roi",
+      "iteration": 1,
+      "warmup": false,
+      "seed": 43,
+      "steps": 1,
+      "cfg": 1.0,
+      "denoise": 1.0,
+      "sampler": "euler",
+      "scheduler": "normal",
+      "total_observed_s": 0.8377511999997296,
+      "model_size": [
+        512,
+        512
+      ],
+      "model_pixels": 262144,
+      "outside_mask_max_error": 0,
+      "sha256": "c7208888a24e43271063c9398e84b69a104bf481dd9ad4de04a3ba40d1dd4090",
+      "path": "integrations\\github\\validation\\gpu-final-20261019\\gpu\\full\\+01-app_roi\\result.png",
+      "denoiser_cuda_s": null,
+      "gpu_peak_memory_bytes": null,
+      "perceptual_quality_approved": null,
+      "app_plan": {
+        "bbox": [
+          0,
+          0,
+          512,
+          512
+        ],
+        "original_size": [
+          512,
+          512
+        ],
+        "mode": "baseline",
+        "mask_area": 262144,
+        "processed_area": 262144,
+        "reason": "aligned crop meets area threshold: use full-frame baseline",
+        "padded_size": [
+          512,
+          512
+        ],
+        "padding": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "halo": 32,
+        "multiple": 8
+      },
+      "adapter_metrics": {
+        "prompt_id": "fc6ec9dc-f854-4818-b992-330b34b43795",
+        "output": {
+          "filename": "PankekiExternalValidation_00033_.png",
+          "subfolder": "",
+          "type": "output",
+          "metadata": {
+            "kind": "image",
+            "width": 512,
+            "height": 512
+          }
+        },
+        "comfy_cached_nodes": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ],
+        "node_wall_s": null,
+        "cuda_denoiser_s": null,
+        "cuda_vae_s": null,
+        "peak_vram_allocated_bytes": null,
+        "peak_vram_reserved_bytes": null,
+        "timing_method": "client WebSocket arrival wall time; not CUDA events",
+        "events": [],
+        "observe_s": 0.7897640000001047,
+        "preview_received_count": 0,
+        "preview_received_bytes": 0,
+        "first_preview_s": null,
+        "last_connection_error": null,
+        "history_messages": [
+          [
+            "execution_start",
+            {
+              "prompt_id": "fc6ec9dc-f854-4818-b992-330b34b43795",
+              "timestamp": 1792409995865
+            }
+          ],
+          [
+            "execution_cached",
+            {
+              "nodes": [
+                "1",
+                "2",
+                "3",
+                "4"
+              ],
+              "prompt_id": "fc6ec9dc-f854-4818-b992-330b34b43795",
+              "timestamp": 1792409995866
+            }
+          ],
+          [
+            "execution_success",
+            {
+              "prompt_id": "fc6ec9dc-f854-4818-b992-330b34b43795",
+              "timestamp": 1792409996413
+            }
+          ]
+        ],
+        "server_service_s": 0.548,
+        "denoiser_executed": true,
+        "denoiser_execution_basis": "built-in workflow sampler node 5 and history execution_cached",
+        "submit_to_download_s": 0.8213294999995924
+      }
+    },
+    {
+      "case": "full",
+      "mode": "crop_and_stitch",
+      "iteration": 2,
+      "warmup": false,
+      "seed": 44,
+      "steps": 1,
+      "cfg": 1.0,
+      "denoise": 1.0,
+      "sampler": "euler",
+      "scheduler": "normal",
+      "total_observed_s": 0.827548399999614,
+      "model_size": [
+        512,
+        512
+      ],
+      "model_pixels": 262144,
+      "outside_mask_max_error": 0,
+      "sha256": "5380fae357ae8a9f3773e6eeb15e78ade6aa14d546904553fab670887c3a770f",
+      "path": "integrations\\github\\validation\\gpu-final-20261019\\gpu\\full\\+02-crop_and_stitch\\result.png",
+      "denoiser_cuda_s": null,
+      "gpu_peak_memory_bytes": null,
+      "perceptual_quality_approved": null,
+      "app_plan": null,
+      "adapter_metrics": {
+        "prompt_id": "621ee396-4593-4c32-8633-529a812e4146",
+        "output": {
+          "filename": "PankekiExternalValidation_00034_.png",
+          "subfolder": "",
+          "type": "output",
+          "metadata": {
+            "kind": "image",
+            "width": 512,
+            "height": 512
+          }
+        },
+        "comfy_cached_nodes": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ],
+        "node_wall_s": null,
+        "cuda_denoiser_s": null,
+        "cuda_vae_s": null,
+        "peak_vram_allocated_bytes": null,
+        "peak_vram_reserved_bytes": null,
+        "timing_method": "client WebSocket arrival wall time; not CUDA events",
+        "events": [],
+        "observe_s": 0.7976359999993292,
+        "preview_received_count": 0,
+        "preview_received_bytes": 0,
+        "first_preview_s": null,
+        "last_connection_error": null,
+        "history_messages": [
+          [
+            "execution_start",
+            {
+              "prompt_id": "621ee396-4593-4c32-8633-529a812e4146",
+              "timestamp": 1792409996736
+            }
+          ],
+          [
+            "execution_cached",
+            {
+              "nodes": [
+                "1",
+                "2",
+                "3",
+                "4"
+              ],
+              "prompt_id": "621ee396-4593-4c32-8633-529a812e4146",
+              "timestamp": 1792409996738
+            }
+          ],
+          [
+            "execution_success",
+            {
+              "prompt_id": "621ee396-4593-4c32-8633-529a812e4146",
+              "timestamp": 1792409997333
+            }
+          ]
+        ],
+        "server_service_s": 0.597,
+        "denoiser_executed": true,
+        "denoiser_execution_basis": "built-in workflow sampler node 5 and history execution_cached",
+        "submit_to_download_s": 0.8206761000001279
+      }
+    },
+    {
+      "case": "full",
+      "mode": "app_roi",
+      "iteration": 2,
+      "warmup": false,
+      "seed": 44,
+      "steps": 1,
+      "cfg": 1.0,
+      "denoise": 1.0,
+      "sampler": "euler",
+      "scheduler": "normal",
+      "total_observed_s": 0.8491015999998126,
+      "model_size": [
+        512,
+        512
+      ],
+      "model_pixels": 262144,
+      "outside_mask_max_error": 0,
+      "sha256": "5380fae357ae8a9f3773e6eeb15e78ade6aa14d546904553fab670887c3a770f",
+      "path": "integrations\\github\\validation\\gpu-final-20261019\\gpu\\full\\+02-app_roi\\result.png",
+      "denoiser_cuda_s": null,
+      "gpu_peak_memory_bytes": null,
+      "perceptual_quality_approved": null,
+      "app_plan": {
+        "bbox": [
+          0,
+          0,
+          512,
+          512
+        ],
+        "original_size": [
+          512,
+          512
+        ],
+        "mode": "baseline",
+        "mask_area": 262144,
+        "processed_area": 262144,
+        "reason": "aligned crop meets area threshold: use full-frame baseline",
+        "padded_size": [
+          512,
+          512
+        ],
+        "padding": [
+          0,
+          0,
+          0,
+          0
+        ],
+        "halo": 32,
+        "multiple": 8
+      },
+      "adapter_metrics": {
+        "prompt_id": "d42dc873-daad-4025-a4e7-349470285d22",
+        "output": {
+          "filename": "PankekiExternalValidation_00035_.png",
+          "subfolder": "",
+          "type": "output",
+          "metadata": {
+            "kind": "image",
+            "width": 512,
+            "height": 512
+          }
+        },
+        "comfy_cached_nodes": [
+          "1",
+          "2",
+          "3",
+          "4"
+        ],
+        "node_wall_s": null,
+        "cuda_denoiser_s": null,
+        "cuda_vae_s": null,
+        "peak_vram_allocated_bytes": null,
+        "peak_vram_reserved_bytes": null,
+        "timing_method": "client WebSocket arrival wall time; not CUDA events",
+        "events": [],
+        "observe_s": 0.799878599999829,
+        "preview_received_count": 0,
+        "preview_received_bytes": 0,
+        "first_preview_s": null,
+        "last_connection_error": null,
+        "history_messages": [
+          [
+            "execution_start",
+            {
+              "prompt_id": "d42dc873-daad-4025-a4e7-349470285d22",
+              "timestamp": 1792409997582
+            }
+          ],
+          [
+            "execution_cached",
+            {
+              "nodes": [
+                "1",
+                "2",
+                "3",
+                "4"
+              ],
+              "prompt_id": "d42dc873-daad-4025-a4e7-349470285d22",
+              "timestamp": 1792409997582
+            }
+          ],
+          [
+            "execution_success",
+            {
+              "prompt_id": "d42dc873-daad-4025-a4e7-349470285d22",
+              "timestamp": 1792409998145
+            }
+          ]
+        ],
+        "server_service_s": 0.563,
+        "denoiser_executed": true,
+        "denoiser_execution_basis": "built-in workflow sampler node 5 and history execution_cached",
+        "submit_to_download_s": 0.831065800000033
+      }
+    },
+    {
+      "case": "full",
+      "mode": "baseline",
+      "iteration": 2,
+      "warmup": false,
+      "seed": 44,
+      "steps": 1,
+      "cfg": 1.0,
+      "denoise": 1.0,
+      "sampler": "euler",
+      "scheduler": "normal",
+      "total_observed_s": 0.32344820000071195,
+      "model_size": [
+        512,
+        512
+      ],
+      "model_pixels": 262144,
+      "outside_mask_max_error": 0,
+      "sha256": "5380fae357ae8a9f3773e6eeb15e78ade6aa14d546904553fab670887c3a770f",
+      "path": "integrations\\github\\validation\\gpu-final-20261019\\gpu\\full\\+02-baseline\\result.png",
+      "denoiser_cuda_s": null,
+      "gpu_peak_memory_bytes": null,
+      "perceptual_quality_approved": null,
+      "app_plan": null,
+      "adapter_metrics": {
+        "prompt_id": "4268c278-315a-4c01-8ac1-7c9c2a41cccc",
+        "output": {
+          "filename": "PankekiExternalValidation_00036_.png",
+          "subfolder": "",
+          "type": "output",
+          "metadata": {
+            "kind": "image",
+            "width": 512,
+            "height": 512
+          }
+        },
+        "comfy_cached_nodes": [
+          "1",
+          "2",
+          "3",
+          "4",
+          "5",
+          "6",
+          "8"
+        ],
+        "node_wall_s": null,
+        "cuda_denoiser_s": null,
+        "cuda_vae_s": null,
+        "peak_vram_allocated_bytes": null,
+        "peak_vram_reserved_bytes": null,
+        "timing_method": "client WebSocket arrival wall time; not CUDA events",
+        "events": [],
+        "observe_s": 0.28140780000012455,
+        "preview_received_count": 0,
+        "preview_received_bytes": 0,
+        "first_preview_s": null,
+        "last_connection_error": null,
+        "history_messages": [
+          [
+            "execution_start",
+            {
+              "prompt_id": "4268c278-315a-4c01-8ac1-7c9c2a41cccc",
+              "timestamp": 1792409998462
+            }
+          ],
+          [
+            "execution_cached",
+            {
+              "nodes": [
+                "1",
+                "2",
+                "3",
+                "4",
+                "5",
+                "6",
+                "8"
+              ],
+              "prompt_id": "4268c278-315a-4c01-8ac1-7c9c2a41cccc",
+              "timestamp": 1792409998464
+            }
+          ],
+          [
+            "execution_success",
+            {
+              "prompt_id": "4268c278-315a-4c01-8ac1-7c9c2a41cccc",
+              "timestamp": 1792409998510
+            }
+          ]
+        ],
+        "server_service_s": 0.048,
+        "denoiser_executed": false,
+        "denoiser_execution_basis": "built-in workflow sampler node 5 and history execution_cached",
+        "submit_to_download_s": 0.31846779999978025
+      }
+    }
+  ],
+  "fairness": [
+    "Same source, mask, seed, prompt and sampler settings per iteration",
+    "New seed each iteration prevents identical denoiser-result hits across repetitions",
+    "Mode execution order shuffled with fixed seed; upstream Comfy caches remain active and logged",
+    "Uploads occur before timed runs; output fetch and app composite are included",
+    "External crop evidence fetch adds observation overhead; use adapter submit_to_download_s for comparison",
+    "Crop context differs across modes; output quality equivalence is NOT established",
+    "CUDA stage timings and peak GPU memory are not measured"
+  ]
+}

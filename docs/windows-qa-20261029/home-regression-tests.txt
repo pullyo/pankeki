@@ -1,0 +1,10 @@
+✔ home request shows its new conversation instead of the old selected image, library=false (4765.6665ms)
+✔ home request shows its new conversation instead of the old selected image, library=true (6705.8694ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 11605.2896

@@ -1,0 +1,28 @@
+{
+  "job_id": "805fa06ed66248a7a254deed833f6adc",
+  "state": "succeeded",
+  "request": {
+    "prompt": "1other, solo, cat ears, red scarf, front view, upper body, face fully visible, entire scarf in frame, white background, masterpiece, high score, great score, absurdres",
+    "negative": "lowres, bad anatomy, bad hands, text, extra digits, missing fingers, worst quality, low quality, watermark, blurry",
+    "model_id": "animagine-xl-4.0-opt",
+    "seed": 46,
+    "steps": 28,
+    "cfg": 5.0,
+    "sampler": "euler_ancestral",
+    "scheduler": "normal",
+    "cache": false,
+    "preview": true,
+    "mode": "txt2img",
+    "width": 1024,
+    "height": 1024,
+    "trace_id": "bf6d5b31-1bc2-4bf1-b6f8-98811261afa0",
+    "denoise": 1.0,
+    "roi": false,
+    "halo": 32,
+    "feather": 4,
+    "preview_interval": 0.2
+  },
+  "total_s": 15.962742600000638,
+  "gpu_completed": true,
+  "image_sha256": "10f5c1fe31e7846a64ab4244cfeb0c19c281c4a37cc7ceb621f5314e02308df1"
+}

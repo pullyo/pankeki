@@ -1,23 +1,35 @@
+# Python
 __pycache__/
 *.py[cod]
+.ruff_cache/
 .venv*/
-.env
-.env.*
-runtime/
-models/
-vendor/
-evidence/
-work/
+.deps/
+
+# Node
 node_modules/
-web/index.html
+
+# Machine-local, generated or very large (models alone are tens of GB)
+/models/
+/runtime/
+/work/
+/output/
+/evidence/
+/vendor/
+/.tools/
+/.impeccable/
 integrations/github/sources/
 *.safetensors
 *.gguf
 *.ckpt
-*.log
 *.sqlite3
+*.log
+
+# Secrets and local project files
+.env
+.env.*
+!.env.example
+*.pankeki.json
+
+# OS
 .DS_Store
 Thumbs.db
-
-.tools/
-previews/**/index.html

@@ -1,6 +1,7 @@
 import argparse
 import json
 from pathlib import Path
+import signal
 
 from .server import make_server
 
@@ -16,6 +17,9 @@ def main():
     config_path = args.config or root / 'runtime' / 'config.json'
     config = json.loads(config_path.read_text(encoding='utf-8-sig')) if config_path.exists() else {}
     server = make_server(root, args.port, args.comfy_url, config)
+    def terminate(signum, frame):
+        raise KeyboardInterrupt
+    signal.signal(signal.SIGTERM, terminate)
     print(f'Pankeki: http://127.0.0.1:{server.server_port}', flush=True)
     try:
         server.serve_forever()

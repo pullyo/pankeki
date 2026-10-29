@@ -1,0 +1,114 @@
+{
+  "case": "edge",
+  "mode": "app_roi",
+  "iteration": 0,
+  "warmup": false,
+  "seed": 42,
+  "steps": 1,
+  "cfg": 1.0,
+  "denoise": 1.0,
+  "sampler": "euler",
+  "scheduler": "normal",
+  "total_observed_s": 0.5988545999998678,
+  "model_size": [
+    256,
+    256
+  ],
+  "model_pixels": 65536,
+  "outside_mask_max_error": 0,
+  "sha256": "9c4c4f2eca27c9eb61317c1c812ab40b6af76d7e439dcffdddab741465ad246b",
+  "path": "integrations\\github\\validation\\gpu-final-20261019\\gpu\\edge\\+00-app_roi\\result.png",
+  "denoiser_cuda_s": null,
+  "gpu_peak_memory_bytes": null,
+  "perceptual_quality_approved": null,
+  "app_plan": {
+    "bbox": [
+      0,
+      0,
+      256,
+      256
+    ],
+    "original_size": [
+      768,
+      512
+    ],
+    "mode": "roi",
+    "mask_area": 50176,
+    "processed_area": 65536,
+    "reason": "crop including context and model alignment",
+    "padded_size": [
+      256,
+      256
+    ],
+    "padding": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "halo": 32,
+    "multiple": 8
+  },
+  "adapter_metrics": {
+    "prompt_id": "764a5a3f-95f9-41c5-bff7-03d6fdc76fdc",
+    "output": {
+      "filename": "PankekiExternalValidation_00018_.png",
+      "subfolder": "",
+      "type": "output",
+      "metadata": {
+        "kind": "image",
+        "width": 256,
+        "height": 256
+      }
+    },
+    "comfy_cached_nodes": [
+      "1",
+      "2",
+      "3"
+    ],
+    "node_wall_s": null,
+    "cuda_denoiser_s": null,
+    "cuda_vae_s": null,
+    "peak_vram_allocated_bytes": null,
+    "peak_vram_reserved_bytes": null,
+    "timing_method": "client WebSocket arrival wall time; not CUDA events",
+    "events": [],
+    "observe_s": 0.5505446000006486,
+    "preview_received_count": 0,
+    "preview_received_bytes": 0,
+    "first_preview_s": null,
+    "last_connection_error": null,
+    "history_messages": [
+      [
+        "execution_start",
+        {
+          "prompt_id": "764a5a3f-95f9-41c5-bff7-03d6fdc76fdc",
+          "timestamp": 1792409984994
+        }
+      ],
+      [
+        "execution_cached",
+        {
+          "nodes": [
+            "1",
+            "2",
+            "3"
+          ],
+          "prompt_id": "764a5a3f-95f9-41c5-bff7-03d6fdc76fdc",
+          "timestamp": 1792409984995
+        }
+      ],
+      [
+        "execution_success",
+        {
+          "prompt_id": "764a5a3f-95f9-41c5-bff7-03d6fdc76fdc",
+          "timestamp": 1792409985268
+        }
+      ]
+    ],
+    "server_service_s": 0.274,
+    "denoiser_executed": true,
+    "denoiser_execution_basis": "built-in workflow sampler node 5 and history execution_cached",
+    "submit_to_download_s": 0.5931927000001451
+  }
+}

@@ -1,0 +1,93 @@
+{
+  "started_utc": "2026-10-19T11:33:26.742356+00:00",
+  "python": "3.12.14 (main, Aug 25 2026, 14:01:42) [MSC v.1944 64 bit (AMD64)]",
+  "executable": "D:\\Pankeki\\.venv-comfy\\Scripts\\python.exe",
+  "platform": "Windows-10-10.0.19045-SP0",
+  "arguments": {
+    "phase": "cpu",
+    "output": "integrations\\github\\validation\\cpu-final-20261019",
+    "url": "http://127.0.0.1:8188",
+    "model": "sd_turbo.safetensors",
+    "prompt": "a red ceramic teapot, detailed product photograph, soft daylight",
+    "minimum": 256,
+    "maximum": 2048,
+    "steps": 1,
+    "warmup": 1,
+    "repeats": 3,
+    "cases": [
+      "center",
+      "edge",
+      "full"
+    ],
+    "timeout": 600
+  },
+  "source_lock": {
+    "schema_version": 1,
+    "recorded_date": "2026-10-19",
+    "sources": [
+      {
+        "id": "crop-and-stitch",
+        "repository": "https://github.com/lquesada/ComfyUI-Inpaint-CropAndStitch",
+        "commit": "348a8bbaad1a9000523e42dd3eaf6ab34a8fe62f",
+        "declared_version": "3.0.18",
+        "license": "GPL-3.0",
+        "license_sha256": "230184f60bae2feaf244f10a8bac053c8ff33a183bcc365b4d8b876d2b7f4809",
+        "source_path": "sources/ComfyUI-Inpaint-CropAndStitch",
+        "status": "downloaded_not_yet_runtime_verified",
+        "intended_use": "optional_roi_workflow",
+        "nodes": [
+          "InpaintCropImproved",
+          "InpaintStitchImproved"
+        ],
+        "runtime_dependencies": [
+          "torch",
+          "torchvision",
+          "numpy",
+          "Pillow",
+          "scipy",
+          "ComfyUI"
+        ]
+      },
+      {
+        "id": "wavespeed",
+        "repository": "https://github.com/chengzeyi/Comfy-WaveSpeed",
+        "commit": "ee5ffd4c66ce9a618fa95621110fa68b1f26e58f",
+        "declared_version": "1.1.8",
+        "license": "MIT",
+        "license_sha256": "4946e92e32eda1d64c16880783a76558f458074441fd485d8777e6430c5b3cba",
+        "source_path": "sources/Comfy-WaveSpeed",
+        "status": "downloaded_disabled",
+        "intended_use": "model_compatible_ablation_only",
+        "nodes": [
+          "ApplyFBCacheOnModel"
+        ],
+        "default_enabled": false,
+        "runtime_dependencies": [
+          "torch",
+          "ComfyUI"
+        ],
+        "default_residual_diff_threshold": 0.0,
+        "compile_enabled": false
+      }
+    ],
+    "not_selected": [
+      {
+        "repository": "https://github.com/welltop-cn/ComfyUI-TeaCache",
+        "reason": "선택 모델 미확정. SD1.5/SDXL 지원 근거 부족과 추가 Diffusers 의존성 때문에 지금 설치하지 않음."
+      },
+      {
+        "repository": "https://github.com/grantjenks/python-diskcache",
+        "reason": "기존 개발 작업이 자체 완료 캐시를 구현 중이므로 중복 캐시 프레임워크를 추가하지 않음."
+      }
+    ]
+  },
+  "source_sha256": {
+    "scripts\\benchmark_external.py": "569c8d707b50d9fbf3bc39e3eefa0aca77af5f5c87a7fa7fc428177590293c60",
+    "integrations\\github\\workflow_bridge.py": "d53f26b2dba18cb2c248304d7a97e62a057dca3149da8a0579735cb0e7386209",
+    "integrations\\github\\sources\\ComfyUI-Inpaint-CropAndStitch\\inpaint_cropandstitch.py": "23395a36e87668acf64d2b8f5ecf1bf3acf9f87488c184b7b579ee3bee3c4780"
+  },
+  "cpu_status": "passed",
+  "gpu_status": "not_run",
+  "wavespeed_enabled": false,
+  "status": "completed"
+}
