@@ -8,10 +8,9 @@
 
 주 UI 언어는 한국어입니다. Comfy.org Open Source Higgsfield 챌린지를 목표로 개발하고 있습니다.
 
-<!-- QA가 실제 네이티브 캡처 파일을 승인한 뒤에만 다음 이미지를 게시합니다.
-![Pankeki 작업 화면](docs/images/pankeki-home-20261029.png)
-![Pankeki 대화 작업 공간](docs/images/pankeki-workspace-20261029.png)
-과거 스크린샷을 현재 화면으로 재사용하지 않습니다. -->
+![Pankeki 홈 화면](docs/images/pankeki-home-20261029.jpg)
+
+*Pankeki 홈 화면 — 2026년 10월 29일 사용자 제공 이미지.*
 
 ## 사용할 브랜치
 
