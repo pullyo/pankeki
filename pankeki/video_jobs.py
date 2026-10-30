@@ -12,6 +12,7 @@ import uuid
 
 from .video_runtime import DEFAULTS, VideoCanceled, VideoError, atomic_json, regular_path
 from .blender_video import sha256
+from .video_profiles import video_profile
 
 ACTIVE = {'queued','running','canceling'}
 
@@ -60,7 +61,9 @@ class VideoJobManager:
 
     def _public(self, item):
         value = {key:copy.deepcopy(item.get(key)) for key in ('id','status','phase','progress','guide_url','result_url','error',
-                 'width','height','frames','fps','project_id','epoch')}
+                 'width','height','frames','fps','project_id','epoch','profile','reference_id','phase_timings_s','guide_cache','queue_wait_s','guide_cache_publish','guide_cache_error')}
+        value['profile'] = item.get('profile') or item.get('request',{}).get('profile','preview')
+        value['reference_id'] = item.get('reference_id') or item.get('request',{}).get('reference_id')
         if item.get('started_at') and item.get('status') in ACTIVE:
             value['elapsed_seconds'] = round(max(0,time.time()-item['started_at']),3)
         else:
@@ -80,7 +83,7 @@ class VideoJobManager:
                     if recorded_digest is None and isinstance(item.get('request'),dict):
                         # Upgrade the comparison from the immutable accepted snapshot,
                         # never from the current filesystem or expired grant.
-                        previous = {key:item['request'][key] for key in ('scene_id','project_id','epoch','prompt','seed') if key in item['request']}
+                        previous = {key:item['request'][key] for key in ('scene_id','project_id','epoch','prompt','seed','profile','reference_id') if key in item['request']}
                         previous = self.runtime.normalize_request(previous)
                         recorded_digest = hashlib.sha256(json.dumps(previous,sort_keys=True,ensure_ascii=False).encode()).hexdigest()
                     if recorded_digest == fingerprint:
@@ -96,9 +99,10 @@ class VideoJobManager:
                     self._cancel(item)
             job_id = uuid.uuid4().hex
             item = {'id':job_id,'status':'queued','phase':'queued','progress':None,'guide_url':None,'result_url':None,'error':None,
-                    'created_at':time.time(),'started_at':None,'elapsed_seconds':0,'request':request,
+                    'created_at':time.time(),'queued_monotonic':time.monotonic(),'started_at':None,'elapsed_seconds':0,'request':request,
                     'durable_request_sha256':fingerprint,'source_sha256':request['scene_sha256'],
-                    'project_id':request['project_id'],'epoch':request['epoch'],**DEFAULTS}
+                    'project_id':request['project_id'],'epoch':request['epoch'],**video_profile(request.get('profile','preview')),
+                    'profile':request.get('profile','preview'),'reference_id':request.get('reference_id')}
             self._save(item)
             self.jobs[job_id] = item
             self.cancels[job_id], self.done[job_id] = threading.Event(), threading.Event()
@@ -147,7 +151,7 @@ class VideoJobManager:
                     with self.lock:
                         if cancel.is_set():
                             raise VideoCanceled('대기 중 영상 작업을 취소했습니다.')
-                        item.update(status='running',started_at=time.time())
+                        item.update(status='running',started_at=time.time(),queue_wait_s=round(max(0,time.monotonic()-item['queued_monotonic']),6))
                         self._save(item)
                     directory = self.runs/job_id
                     directory.mkdir(exist_ok=False)
@@ -170,7 +174,33 @@ class VideoJobManager:
                         os.replace(directory/'result.pending.mp4',directory/'result.mp4')
                         atomic_json(directory/'complete.json',{'schema':'pankeki.video-result.v1','job_id':job_id,
                                     'verification_sha256':sha256(verification),'result_sha256':result['sha256']})
-                        item.update(status='succeeded',phase='completed',result_url=result['url'],progress=1.0)
+                        item.update(status='succeeded',phase='completed',result_url=result['url'],progress=1.0,
+                                    completed_at=time.time(),elapsed_seconds=round(max(0,time.time()-item['started_at']),3),guide_cache_publish='pending')
+                        self._save(item)
+                    # Decode/hash/copy outside the job state lock. Only atomic rename
+                    # takes it again, after a final succeeded/closed/cancel check.
+                    def commit_cache(publish):
+                        with self.lock:
+                            if self.closed or cancel.is_set() or item['status'] != 'succeeded':
+                                return False
+                            publish()
+                            return True
+                    cache_error = None
+                    try:
+                        cached = self.runtime.publish_guide_cache(directory,cancel,commit=commit_cache)
+                        publication = 'ready' if cached else 'skipped'
+                    except Exception as exc:
+                        # Optional preparation cache can never revoke a committed video.
+                        publication = 'skipped'
+                        cache_error = type(exc).__name__
+                    with self.lock:
+                        item['guide_cache_publish'] = publication
+                        item['guide_cache_error'] = cache_error
+                        try:
+                            self._save(item)
+                        except Exception as exc:
+                            # The earlier succeeded journal and result marker remain valid.
+                            item['guide_cache_error'] = 'metadata_save:'+type(exc).__name__
                 except Exception as exc:
                     with self.lock:
                         item.update(status='canceled' if cancel.is_set() or isinstance(exc,VideoCanceled) else 'failed',
@@ -179,9 +209,10 @@ class VideoJobManager:
                 finally:
                     with self.lock:
                         if item.get('started_at'):
-                            item['elapsed_seconds'] = round(max(0,time.time()-item['started_at']),3)
+                            item['elapsed_seconds'] = round(max(0,item.get('completed_at',time.time())-item['started_at']),3)
                         try:
-                            self._save(item)
+                            if item['status'] != 'succeeded':
+                                self._save(item)
                         finally:
                             self.done[job_id].set()
                             self.queue.task_done()

@@ -4,14 +4,22 @@ const fs=require('node:fs');const path=require('node:path');const {randomUUID}=r
 const {isTrustedSender,makeCsp,allowRequest,createPermissionPolicy}=require('./security.cjs');
 const {createIpcController}=require('./ipc.cjs');
 
+// The UI is laid out for the 1672×941 reference. Larger windows zoom like Cmd+= so text, sidebar and art keep those
+// proportions instead of staying small in a wide, empty window. Smaller windows keep 1×; the cap avoids oversized UI.
+const UI_REFERENCE=[1672,941],UI_ZOOM_MAX=1.6;
+function uiZoomFactor(width,height){
+  const ratio=Math.min(width/UI_REFERENCE[0],height/UI_REFERENCE[1]);
+  if(!Number.isFinite(ratio)||ratio<=1)return 1;
+  return Math.round(Math.min(ratio,UI_ZOOM_MAX)*20)/20;
+}
 async function createEditorWindow({origin,html,projectRoot,contexts,results,resultsFactory,bridgeFactory,getAppStatus,allowLiveSend=false,verifyBackend=async()=>true,mapBridgeMessage,notifyUnconfirmedClose,
   partition='persist:pankeki-editor'}={}) {
   const isolated=session.fromPartition(partition);
-  const win=new BrowserWindow({title:'Pankeki',width:1360,height:920,minWidth:960,minHeight:640,backgroundColor:'#f6f2ec',
+  const win=new BrowserWindow({title:'Pankeki',width:1360,height:920,minWidth:960,minHeight:640,backgroundColor:'#171615',
     webPreferences:{preload:path.join(__dirname,'preload.cjs'),nodeIntegration:false,contextIsolation:true,sandbox:true,webSecurity:true,session:isolated,spellcheck:false}});
   let closing=false,controller;
   const pickVideoScene=projectRoot?require('./video-scene-picker.cjs').createVideoScenePicker({projectRoot,
-    chooseFile:()=>dialog.showOpenDialog(win,{title:'Blender 구도 파일 선택',buttonLabel:'이 구도 사용',filters:[{name:'Blender 구도',extensions:['blend']}],properties:['openFile','dontAddToRecent']})}):undefined;
+    chooseFile:()=>dialog.showOpenDialog(win,{title:'Select a Blender scene',buttonLabel:'Use this scene',filters:[{name:'Blender scene',extensions:['blend']}],properties:['openFile','dontAddToRecent']})}):undefined;
   const bridge=bridgeFactory(event=>controller?.acceptEvent(event));
   const sendEnabled=typeof allowLiveSend==='function'?allowLiveSend(bridge):allowLiveSend;
   controller=createIpcController({bridge,contexts,results:resultsFactory?resultsFactory(bridge):results,pickVideoScene,origin,allowLiveSend:sendEnabled,mapBridgeMessage,getAppStatus,
@@ -28,9 +36,11 @@ async function createEditorWindow({origin,html,projectRoot,contexts,results,resu
     try{const target=new URL(url);if(target.origin!==origin||target.pathname!=='/'||target.search)event.preventDefault();}catch{event.preventDefault();}
   });
   win.webContents.on('will-redirect',event=>event.preventDefault());
+  const fitZoom=()=>{if(!win.isDestroyed()){const [width,height]=win.getContentSize();win.webContents.setZoomFactor(uiZoomFactor(width,height));}};
+  win.on('resize',fitZoom);win.webContents.on('did-finish-load',fitZoom);
   const download=(event,item,contents)=>{
     if(contents!==win.webContents||item.getInitiatorOrigin()!==origin||!allowRequest(item.getURL(),origin)){event.preventDefault();return;}
-    item.setSaveDialogOptions({title:'Pankeki 파일 저장',defaultPath:path.join(app.getPath('downloads'),path.basename(item.getFilename()||'Pankeki-export')),
+    item.setSaveDialogOptions({title:'Save Pankeki file',defaultPath:path.join(app.getPath('downloads'),path.basename(item.getFilename()||'Pankeki-export')),
       properties:['createDirectory','showOverwriteConfirmation']});
   };
   isolated.on('will-download',download);
@@ -50,8 +60,8 @@ async function createEditorWindow({origin,html,projectRoot,contexts,results,resu
       const count=result?.unconfirmedSubmissions;
       if(Number.isSafeInteger(count)&&count>0){
         if(notifyUnconfirmedClose)await notifyUnconfirmedClose(count);
-        else await dialog.showMessageBox(win,{type:'warning',buttons:['내용을 확인하고 종료'],message:'일부 이미지 작업의 취소를 확인하지 못했습니다.',
-          detail:count+'개 제출의 취소가 확인되지 않았습니다. 앱을 종료해도 GPU 계산이 계속될 수 있습니다. 기존 서버와 다른 작업은 전역 중단하지 않습니다.'});
+        else await dialog.showMessageBox(win,{type:'warning',buttons:['Acknowledge and quit'],message:'Cancellation could not be confirmed for some image jobs.',
+          detail:count+' submitted jobs have unconfirmed cancellation. GPU work may continue after quitting. Existing servers and other jobs are not interrupted.'});
       }
       ipcMain.removeHandler('pankeki:invoke');isolated.removeListener('will-download',download);
       if(!win.isDestroyed())win.destroy();return result;
@@ -64,11 +74,11 @@ async function createEditorWindow({origin,html,projectRoot,contexts,results,resu
       let uiBusy=false;
       try{uiBusy=await win.webContents.executeJavaScript('Boolean(window.PankekiStudio?.getSummary?.().busy)');}catch{}
       const busy=controller.activeRequestId()!==null||uiBusy;
-      if(busy){const answer=await dialog.showMessageBox(win,{type:'question',buttons:['계속 작업','진행 중 작업을 중단하고 종료'],defaultId:0,cancelId:0,
-        message:'진행 중인 작업이 있습니다.',detail:'앱에서 시작한 작업과 연결을 정리한 뒤 종료합니다.'});if(answer.response===0)return;}
+      if(busy){const answer=await dialog.showMessageBox(win,{type:'question',buttons:['Keep working','Stop current work and quit'],defaultId:0,cancelId:0,
+        message:'Work is still in progress.',detail:'The app will finish closing its own jobs and connections before quitting.'});if(answer.response===0)return;}
       if(uiBusy)await win.webContents.executeJavaScript('window.PankekiStudio.cancel()');
       await close();
-    })().catch(()=>{if(!win.isDestroyed())void dialog.showMessageBox(win,{type:'error',message:'진행 중 작업이나 연결의 정리를 확인하지 못했습니다.',detail:'창을 유지했습니다. 다시 종료를 시도해 주세요.'});});
+    })().catch(()=>{if(!win.isDestroyed())void dialog.showMessageBox(win,{type:'error',message:'Could not confirm that current work and connections were closed.',detail:'The window was kept open. Try quitting again.'});});
   });
   try{await win.loadURL(origin+'/');return {window:win,bridge,controller,close};}
   catch(error){await close();throw error;}
@@ -79,11 +89,11 @@ async function createEditorWindow({origin,html,projectRoot,contexts,results,resu
 async function chooseProjectRoot(settingsDir){
   const {resolveRuntime,saveProjectRoot,REQUIRED}=require('./runtime-paths.cjs');
   for(let attempt=0;attempt<5;attempt++){
-    const ask=await dialog.showMessageBox({type:'info',buttons:['프로젝트 폴더 선택…','종료'],defaultId:0,cancelId:1,
-      message:attempt?'선택한 폴더에서 Pankeki 실행 환경을 찾지 못했어요.':'Pankeki 프로젝트 폴더를 찾을 수 없어요.',
-      detail:'Pankeki 소스와 실행 환경이 있는 폴더를 골라 주세요.\n필요한 항목: '+REQUIRED.join(', ')+'\n\n선택은 이 Mac에만 저장되며 PANKEKI_PROJECT_ROOT 환경 변수로도 지정할 수 있어요.'});
+    const ask=await dialog.showMessageBox({type:'info',buttons:['Choose project folder…','Quit'],defaultId:0,cancelId:1,
+      message:attempt?'The selected folder does not contain a Pankeki runtime.':'The Pankeki project folder could not be found.',
+      detail:'Choose the folder containing the Pankeki source and runtime.\nRequired: '+REQUIRED.join(', ')+'\n\nThis choice is saved only on this Mac. You can also set PANKEKI_PROJECT_ROOT.'});
     if(ask.response!==0)return null;
-    const picked=await dialog.showOpenDialog({title:'Pankeki 프로젝트 폴더',properties:['openDirectory'],buttonLabel:'이 폴더 사용'});
+    const picked=await dialog.showOpenDialog({title:'Pankeki project folder',properties:['openDirectory'],buttonLabel:'Use this folder'});
     if(picked.canceled||!picked.filePaths[0])continue;
     try{saveProjectRoot(settingsDir,picked.filePaths[0]);return resolveRuntime({projectRoot:picked.filePaths[0]});}catch{}
   }
@@ -115,7 +125,7 @@ async function boot() {
     if(editor&&!editor.window.isDestroyed()){editor.window.close();return;}
     stopping=true;
     void(async()=>{if(editor)await editor.close();if(contexts)await contexts.close();await backend.close();app.quit();})().catch(()=>{
-      stopping=false;void dialog.showMessageBox({type:'error',message:'앱이 시작한 프로세스의 종료를 확인하지 못했습니다.',detail:'앱은 종료된 것으로 표시하지 않았습니다. 다시 종료를 시도해 주세요.'});
+      stopping=false;void dialog.showMessageBox({type:'error',message:'Could not confirm that app-owned processes stopped.',detail:'The app has not marked them as stopped. Try quitting again.'});
     });
   });
   app.on('window-all-closed',()=>app.quit());
@@ -167,4 +177,4 @@ async function boot() {
   }
 }
 if(require.main===module)void boot();
-module.exports={createEditorWindow,boot};
+module.exports={createEditorWindow,boot,uiZoomFactor};

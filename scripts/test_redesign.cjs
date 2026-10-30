@@ -32,7 +32,7 @@ test('the new composer sends the selected background style through the actual ge
 test('an empty new composer is rejected before a model job is created',async()=>{
   const ui=page({autoJobs:true}); const api=redesign(ui);
   ui.element('prompt').value='   ';
-  await assert.rejects(()=>api.submitPrompt(ui.studio(),ui.element('prompt'),'character'),/설명/);
+  await assert.rejects(()=>api.submitPrompt(ui.studio(),ui.element('prompt'),'character'),/Describe/);
   assert.equal(ui.requests.length,0);
 });
 test('the new composer keeps the original and painted mask when submitting a partial edit',async()=>{
@@ -74,5 +74,5 @@ test('derived photo results show their real operation and output size without in
   const ui=page(),api=redesign(ui),project=ui.project('Photo source');
   project.versions.push({...project.versions[0],id:'resized',kind:'derived',request:null,derivation:{operation:'resize',outputWidth:640,outputHeight:960},label:'크기 조정 결과'});
   const before=JSON.stringify(project),entries=api.conversationEntries(project),result=entries[1];
-  assert.equal(result.id,'resized');assert.equal(result.operation,'resize');assert.equal(result.operationLabel,'크기 조정');assert.equal(result.model,'');assert.equal(result.width,640);assert.equal(result.height,960);assert.equal(result.prompt,'');assert.equal(JSON.stringify(project),before);
+  assert.equal(result.id,'resized');assert.equal(result.operation,'resize');assert.equal(result.operationLabel,'Resize');assert.equal(result.model,'');assert.equal(result.width,640);assert.equal(result.height,960);assert.equal(result.prompt,'');assert.equal(JSON.stringify(project),before);
 });

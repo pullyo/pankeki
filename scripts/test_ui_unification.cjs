@@ -96,7 +96,10 @@ function structuralDOM(ui) {
   doc.createElement = tag => { const node=create(tag);node.style.setProperty=function(name,value){this[name]=value;};return node; };
   doc.querySelectorAll = selector => doc.body.querySelectorAll(selector);
   doc.querySelector = selector => doc.querySelectorAll(selector)[0] || null;
-  doc.getElementById = id => descendants(doc.body).find(node=>node.id===id) || null;
+  doc.getElementById = id => {
+    const find = node => { for (const child of node.children) { if (!child.tagName) continue; if (child.id === id) return child; const found=find(child); if(found) return found; } return null; };
+    return find(doc.body);
+  };
   const template=readFileSync(path.join(__dirname,'../web/src/index.template.html'),'utf8');
   parse(doc.body,template.match(/<body[^>]*>([\s\S]*?)<\/body>/)[1].replace(/<script\b[\s\S]*?<\/script>/g,''));
   doc.body.dataset.studioScreen='home';
@@ -163,11 +166,11 @@ test('settings opened from recolor/export offers completion instead of a second 
   assert.equal(drawer.querySelector('.generate-dock').hidden,true,'original generation footer must be hidden');
   assert.equal(ui.element('candidateCount').closest('.generate-dock'),null,'candidate count remains an available setting');
   assert.equal(ui.element('candidateCount').closest('#pcModelPanel')?.id,'pcModelPanel');
-  assert.match(ui.doc.getElementById('pkSettingsTitle').textContent,/이미지 생성 설정/);
+  assert.match(ui.doc.getElementById('pkSettingsTitle').textContent,/Generate images Settings/);
   const done=drawer.querySelector('.pk-settings-done[data-pk-close]');assert(done,'explicit settings Done control');
-  assert.equal(done.type,'button');assert.equal(done.textContent,'설정 완료');
+  assert.equal(done.type,'button');assert.equal(done.textContent,'Done');
   await done.click();assert.equal(drawer.open,false);
-  ui.controller.settings('brief');assert.match(ui.doc.getElementById('pkSettingsTitle').textContent,/캐릭터 설정/);
+  ui.controller.settings('brief');assert.match(ui.doc.getElementById('pkSettingsTitle').textContent,/Character Settings/);
   await drawer.querySelector('.pk-dialog-heading [data-pk-close]').click();assert.equal(drawer.open,false);
   assert.equal(ui.studio().exportProject(),before);assert.equal(ui.requests.length,count);
 });
@@ -176,11 +179,11 @@ test('local profile opens independently and saves only a local display name',asy
   const ui=await mounted(),before=ui.studio().exportProject(),purpose=ui.element('profile').value,name=ui.element('name').value,writes=[];
   ui.sandbox.localStorage.setItem=(key,value)=>writes.push([key,value]);
   const avatar=ui.doc.querySelector('.pk-avatar');avatar.focus();await avatar.click();
-  const popup=ui.doc.getElementById('pcProfilePopover');assert(popup,'dedicated local profile');assert.equal(popup.hidden,false);assert.match(popup.textContent,/로컬 프로필/);assert.equal(ui.doc.getElementById('pkLibrary').open,undefined);
+  const popup=ui.doc.getElementById('pcProfilePopover');assert(popup,'dedicated local profile');assert.equal(popup.hidden,false);assert.match(popup.textContent,/Local profile/);assert.equal(ui.doc.getElementById('pkLibrary').open,undefined);
   const input=ui.doc.getElementById('pcLocalProfileName');input.value='내 작업실';await input.dispatchEvent(new ui.sandbox.Event('compositionstart'));await popup.querySelector('form').requestSubmit();assert.equal(writes.length,0,'IME confirmation is not profile save');await input.dispatchEvent(new ui.sandbox.Event('compositionend'));await popup.querySelector('form').requestSubmit();
   assert.deepEqual(writes,[['pankeki-local-profile-name','내 작업실']]);assert.equal(ui.element('name').value,name);assert.equal(ui.element('profile').value,purpose);assert.equal(ui.studio().exportProject(),before);
   await ui.doc.dispatchEvent(new ui.sandbox.Event('keydown',{key:'Escape',target:input}));assert.equal(popup.hidden,true);assert.equal(ui.doc.activeElement,avatar);
-  await avatar.click();await input.dispatchEvent(new ui.sandbox.Event('compositionstart'));await ui.doc.dispatchEvent(new ui.sandbox.Event('click',{target:ui.doc.body}));await avatar.click();ui.sandbox.localStorage.setItem=()=>{throw Error('storage unavailable');};input.value='저장 실패';await popup.querySelector('form').requestSubmit();assert.match(ui.doc.getElementById('pcLocalProfileStatus').textContent,/저장하지 못/);assert.equal(popup.querySelector('.pc-local-identity strong').textContent,'내 작업실');
+  await avatar.click();await input.dispatchEvent(new ui.sandbox.Event('compositionstart'));await ui.doc.dispatchEvent(new ui.sandbox.Event('click',{target:ui.doc.body}));await avatar.click();ui.sandbox.localStorage.setItem=()=>{throw Error('storage unavailable');};input.value='저장 실패';await popup.querySelector('form').requestSubmit();assert.match(ui.doc.getElementById('pcLocalProfileStatus').textContent,/Could not save/);assert.equal(popup.querySelector('.pc-local-identity strong').textContent,'내 작업실');
   await ui.doc.querySelector('[data-pk-action="notifications"]').click();assert.equal(popup.hidden,true);assert.equal(ui.doc.getElementById('pcNotifications').hidden,false);await ui.doc.dispatchEvent(new ui.sandbox.Event('click',{target:ui.doc.body}));assert.equal(ui.doc.getElementById('pcNotifications').hidden,true);
 });
 
@@ -228,30 +231,30 @@ test('compare hides composers and edit tools, blocks submissions, and restores e
   assert.equal(ui.doc.querySelector('.pk-categories').hidden,false);
 });
 
-test('all routes retain eleven sidebar items and compare activates the Design parent',async()=>{
+test('all routes retain eight sidebar items and image edit or compare activates image generation',async()=>{
   const ui=await mounted(),nav=ui.doc.querySelector('.pk-navigation');
-  const expected=['홈','프로젝트','이미지 생성','디자인','부위 편집','표정 · 동작','출력','갤러리','템플릿','모델 관리','설정'];
+  const expected=['Home','Projects','Generate images','Motion','Export','Gallery','Models','Settings'];
   for(const screen of ['home','projects','design','inpaint','compare','parts','motion','export']){
     ui.controller.go(screen);
     assert.deepEqual(nav.querySelectorAll('button').map(node=>node.getAttribute('aria-label')),expected);
     assert.equal(nav.querySelector('.pk-gallery-nav').hidden,false);
     const active=nav.querySelectorAll('[aria-current="page"]');assert.equal(active.length,1);
-    assert.equal(active[0].dataset.pkRoute,screen==='compare'?'inpaint':screen);
+    assert.equal(active[0].dataset.pkRoute,['inpaint','compare'].includes(screen)?'design':screen==='parts'?'motion':screen);
     assert.equal(active[0].classList.contains('active'),true);
   }
   assert.equal(ui.requests.length,0);
 });
 
-test('home keeps its brand hero and six recommendations while existing candidate gallery remains reachable',async()=>{
+test('home keeps its brand hero and four legacy templates while existing candidate gallery remains reachable',async()=>{
   const ui=await mounted({twoCandidates:true}),hero=ui.doc.querySelector('.pc-home-hero');
   ui.controller.go('home');
-  assert(hero,'brand composition instead of giant project card');assert.notEqual(hero.querySelector('img').src,RED);assert.match(hero.querySelector('h1').textContent,/상상하는 캐릭터/);
-  assert.equal(ui.doc.querySelector('.pk-home-templates').querySelectorAll('[data-pk-template]').length,6);
-  assert.match(ui.doc.getElementById('pcHomeProjectSummary').textContent,/일반 생성 기록/);assert.match(ui.doc.getElementById('pcHomeCandidateSummary').textContent,/현재 후보 2개/);assert.match(ui.doc.getElementById('pcProjectLibraryHeading').textContent,/프로젝트 목록/);
-  assert.equal(ui.doc.getElementById('pkSearch').placeholder,'프로젝트·현재 후보 검색…');assert.match(ui.doc.querySelector('label[for=pkSearch]').textContent,/프로젝트 이름과 현재 후보/);assert.match(ui.doc.querySelector('.pc-home-projects [data-pk-action=gallery]').textContent,/현재 후보 보기/);
+  assert(hero,'brand composition instead of giant project card');assert.notEqual(hero.querySelector('img').src,RED);assert.match(hero.querySelector('h1').textContent,/What would you like to create today/);
+  assert.equal(ui.doc.querySelector('.pk-home-templates').querySelectorAll('[data-pk-template]').length,4);
+  assert.match(ui.doc.getElementById('pcHomeProjectSummary').textContent,/Generation history/);assert.match(ui.doc.getElementById('pcHomeCandidateSummary').textContent,/2 current candidates/);assert.match(ui.doc.getElementById('pcProjectLibraryHeading').textContent,/Recent projects/);
+  assert.equal(ui.doc.getElementById('pkSearch').placeholder,'Search projects and candidates…');assert.match(ui.doc.querySelector('label[for=pkSearch]').textContent,/Search project names and current candidate/);assert.match(ui.doc.querySelector('.pk-navigation [data-pk-action=gallery]').textContent,/Gallery/);
   ui.doc.getElementById('pkSearch').value='Second candidate';await ui.doc.getElementById('pkSearch').dispatchEvent(new ui.sandbox.Event('input'));await ui.doc.querySelector('[data-pk-action="gallery"]').click();assert.equal(ui.doc.querySelector('.pk-gallery-dialog').open,true);assert.equal(ui.doc.activeElement.dataset.candidateId,undefined);await ui.doc.getElementById('gallery').querySelector('[data-candidate-id="second"] [data-action=view]').click();assert.equal(ui.doc.getElementById('workspace').dataset.candidateId,'second');
   ui.studio().resetProject();ui.controller.go('home');
-  assert.equal(ui.doc.querySelectorAll('.pc-home-recent-item').length,0);assert.equal(ui.doc.querySelector('.pk-home-templates').querySelectorAll('[data-pk-template]').length,6);
+  assert.equal(ui.doc.querySelectorAll('.pc-home-recent-item').length,0);assert.equal(ui.doc.querySelector('.pk-home-templates').querySelectorAll('[data-pk-template]').length,4);
   assert.equal(ui.requests.length,0);
 });
 
@@ -259,18 +262,18 @@ test('candidate gallery and image card accessibility distinguish same-name work 
   const ui=await mounted(),project=ui.project('Actual duplicates');project.versions[0].label='같은 후보';project.versions.push({...project.versions[0],id:'second',label:'같은 후보'},{...project.versions[0],id:'third',label:'같은 후보'});
   await ui.studio().importProject(project);ui.controller.go('home');
   const rows=ui.doc.getElementById('gallery').querySelectorAll('[data-action=view]');assert.equal(rows.length,3);assert.equal(new Set(rows.map(row=>row.getAttribute('aria-label'))).size,3);
-  for(const [id,number] of [['third',3],['second',2],['parent',1]]){const row=ui.doc.getElementById('gallery').querySelector(`[data-candidate-id="${id}"]`);assert(row,id);assert.match(row.textContent,new RegExp('후보 '+number));assert.match(row.querySelector('[data-action=view]').getAttribute('aria-label'),new RegExp('후보 '+number));}
+  for(const [id,number] of [['third',3],['second',2],['parent',1]]){const row=ui.doc.getElementById('gallery').querySelector(`[data-candidate-id="${id}"]`);assert(row,id);assert.match(row.textContent,new RegExp('Candidate '+number));assert.match(row.querySelector('[data-action=view]').getAttribute('aria-label'),new RegExp('Candidate '+number));}
   const search=ui.doc.getElementById('pkSearch');search.value='같은 후보';await search.dispatchEvent(new ui.sandbox.Event('input'));await ui.doc.querySelector('[data-pk-action="gallery"]').click();await ui.doc.getElementById('gallery').querySelector('[data-candidate-id="second"] [data-action=view]').click();assert.equal(ui.doc.getElementById('workspace').dataset.candidateId,'second');
   project.versions.push({...project.versions[0],id:'fourth'},{...project.versions[0],id:'fifth'});await ui.studio().importProject(project);ui.controller.go('home');
-  assert.equal(ui.doc.getElementById('gallery').querySelectorAll('[data-action=view]').length,5);assert.match(ui.doc.getElementById('gallery').querySelector('[data-candidate-id="fifth"] [data-action=view]').getAttribute('aria-label'),/후보 5/);
-  await ui.studio().importProject(ui.studio().exportProject());ui.controller.go('home');assert.match(ui.doc.getElementById('gallery').querySelector('[data-candidate-id="second"] [data-action=view]').getAttribute('aria-label'),/후보 2/);assert.match(ui.doc.querySelector('[data-pc-candidate="second"].pc-image-open').getAttribute('aria-label'),/후보 2/);assert.equal(ui.requests.length,0);
+  assert.equal(ui.doc.getElementById('gallery').querySelectorAll('[data-action=view]').length,5);assert.match(ui.doc.getElementById('gallery').querySelector('[data-candidate-id="fifth"] [data-action=view]').getAttribute('aria-label'),/Candidate 5/);
+  await ui.studio().importProject(ui.studio().exportProject());ui.controller.go('home');assert.match(ui.doc.getElementById('gallery').querySelector('[data-candidate-id="second"] [data-action=view]').getAttribute('aria-label'),/Candidate 2/);assert.match(ui.doc.querySelector('[data-pc-candidate="second"].pc-image-open').getAttribute('aria-label'),/Candidate 2/);assert.equal(ui.requests.length,0);
 });
 test('home audit storage labels real browser estimates as browser scope',async()=>{
   let estimates=0;const ui=await mounted({storageEstimate:async()=>{estimates++;return {usage:19600000,quota:1756300000000};}});ui.controller.go('home');
-  const text=ui.doc.getElementById('pkStorageText'),storage=ui.doc.querySelector('.pk-storage');assert.equal(text.textContent,'약 19.6 MB 사용');assert.doesNotMatch(text.textContent,/GB|한도/);assert.match(storage.getAttribute('title'),/1756\.3 GB 추정 한도/);assert.match(storage.getAttribute('aria-label'),/브라우저.*앱 전용 확보 공간이나 기기 전체 여유 공간을 뜻하지 않습니다/);assert.equal(ui.doc.getElementById('pkStorageBar').hidden,true);assert.equal(estimates,1);
+  const text=ui.doc.getElementById('pkStorageText'),storage=ui.doc.querySelector('.pk-storage');assert.equal(text.textContent,'About 19.6 MB used');assert.doesNotMatch(text.textContent,/GB|limit/);assert.match(storage.getAttribute('title'),/1756\.3 GB estimated quota/);assert.match(storage.getAttribute('aria-label'),/Browser.*not reserved app space or total free disk space/);assert.equal(ui.doc.getElementById('pkStorageBar').hidden,false);assert.equal(ui.doc.getElementById('pkStoragePercent').textContent,'0%');assert.equal(estimates,1);
 });
-test('home audit unavailable storage remains unknown',async()=>{const unavailable=await mounted({storageEstimate:async()=>{throw Error('unavailable');}});assert.equal(unavailable.doc.getElementById('pkStorageBar').hidden,true);assert.match(unavailable.doc.getElementById('pkStorageText').textContent,/확인할 수 없/);});
-test('home audit actual zero storage remains a valid measured number',async()=>{const empty=await mounted({storageEstimate:async()=>({usage:0,quota:1000000000})});assert.equal(empty.doc.getElementById('pkStorageBar').hidden,true);assert.equal(empty.doc.getElementById('pkStorageText').textContent,'약 0.0 MB 사용');assert.match(empty.doc.querySelector('.pk-storage').getAttribute('title'),/1\.0 GB 추정 한도/);});
+test('home audit unavailable storage remains unknown',async()=>{const unavailable=await mounted({storageEstimate:async()=>{throw Error('unavailable');}});assert.equal(unavailable.doc.getElementById('pkStorageBar').hidden,true);assert.match(unavailable.doc.getElementById('pkStorageText').textContent,/unavailable/);});
+test('home audit actual zero storage remains a valid measured number',async()=>{const empty=await mounted({storageEstimate:async()=>({usage:0,quota:1000000000})});assert.equal(empty.doc.getElementById('pkStorageBar').hidden,false);assert.equal(empty.doc.getElementById('pkStoragePercent').textContent,'0%');assert.equal(empty.doc.getElementById('pkStorageText').textContent,'About 0.0 MB used');assert.match(empty.doc.querySelector('.pk-storage').getAttribute('title'),/1\.0 GB estimated quota/);});
 
 test('project library host waits for restore decode and preserves legacy raw across superseded or failed boot',async()=>{
   const restored=page({holdRestore:true});restored.heldImages.add(RED);await until(()=>restored.restores.length===1,'legacy read pending');
@@ -300,11 +303,11 @@ test('sidebar projects navigates to the dedicated page without saving or replaci
   const nav=ui.doc.querySelector('.pk-navigation'),projects=nav.querySelector('[data-pk-route=projects]');projects.focus();await projects.click();
   assert.equal(ui.doc.body.dataset.studioScreen,'projects');assert.equal(ui.doc.querySelector('.pk-layout').dataset.screen,'projects');
   const page=ui.doc.querySelector('[data-studio-page=projects]');assert(page,'workflow owns a real projects page');assert.equal(page.hidden,false);
-  const heading=page.querySelector('[data-studio-heading=projects]');assert.equal(heading?.textContent,'프로젝트');
+  const heading=page.querySelector('[data-studio-heading=projects]');assert.equal(heading?.textContent,'Projects');
   assert.equal(ui.doc.querySelectorAll('dialog').some(node=>node.open),false,'projects entry has no popup');
   assert.equal(page.querySelectorAll('.pc-project-open').length,1);
-  const row=page.querySelector('.pc-project-open');assert.match(row.textContent,/Library A/);assert.match(row.textContent,/후보 1개/);assert.match(row.textContent,/\d{2}\D+\d{2}/,'actual modified time is presented');
-  assert.equal(row.querySelector('img')?.src,RED);assert.match(row.textContent,/사용 중/);
+  const row=page.querySelector('.pc-project-open');assert.match(row.textContent,/Library A/);assert.match(row.textContent,/1 candidate/);assert.match(row.textContent,/\d{2}\D+\d{2}/,'actual modified time is presented');
+  assert.equal(row.querySelector('img')?.src,RED);assert.match(row.textContent,/Current/);
   assert.equal(projects.getAttribute('aria-current'),'page');
   assert.equal(nav.querySelectorAll('[aria-current=page]').length,1);
   assert.equal(ui.doc.activeElement,heading,'focus enters the real project page heading');
@@ -328,7 +331,7 @@ test('sidebar projects isolates its search and opens actual stored projects with
   ui.controller.go('home');
   const search=ui.doc.getElementById('pkSearch');search.value='NO MATCH FOR STORED PROJECT';await search.dispatchEvent(new ui.sandbox.Event('input',{bubbles:true}));
   assert.equal(ui.doc.getElementById('pkRecentGrid').querySelectorAll('.pc-project-open').length,0,'home search can filter its own rows');
-  assert.match(ui.doc.getElementById('pkRecentGrid').querySelector('.pc-home-recent-empty').textContent,/검색/,'filtered results must not be described as an empty saved catalog');
+  assert.match(ui.doc.getElementById('pkRecentGrid').querySelector('.pc-home-recent-empty').textContent,/matching/,'filtered results must not be described as an empty saved catalog');
   const raw=ui.studio().exportProject(),saved=JSON.stringify(store.state);ui.controller.go('design');
   await ui.doc.querySelector('.pk-navigation [data-pk-route=projects]').click();
   assert.equal(ui.doc.body.dataset.studioScreen,'projects');const page=ui.doc.querySelector('[data-studio-page=projects]');assert.equal(page.hidden,false);
@@ -348,10 +351,10 @@ test('sidebar projects isolates its search and opens actual stored projects with
   const many=new CatalogStore(),Design=require('../web/src/profiles.js');
   many.state.records=Array.from({length:21},(_,i)=>({id:'stored-'+String(i+1).padStart(2,'0'),raw:JSON.stringify(Design.createProject({name:'Stored '+String(i+1).padStart(2,'0')},[],[])),createdAt:new Date(Date.UTC(2026,9,29,0,0,i)).toISOString(),updatedAt:'2026-10-29T00:01:00.000Z',favorite:false,recovered:false}));
   const large=await mounted({projectStore:many,initialProject:false});large.controller.go('home');
-  assert.equal(large.controller.projects.getState().items.length,21);assert.equal(large.doc.getElementById('pkRecentGrid').querySelectorAll('.pc-project-open').length,2);
-  await large.doc.getElementById('pcProjectNext').click();assert.equal(large.doc.getElementById('pcProjectPage').textContent,'2 / 11');assert.equal(large.doc.getElementById('pkRecentGrid').querySelectorAll('.pc-project-open').length,2,'home retains its2-per-page list');
+  assert.equal(large.controller.projects.getState().items.length,21);assert.equal(large.doc.getElementById('pkRecentGrid').querySelectorAll('.pc-project-open').length,4);
+  assert.equal(large.doc.getElementById('pcProjectPaging').hidden,true);assert.equal(large.doc.getElementById('pkRecentGrid').querySelectorAll('.pc-project-open').length,4,'home retains its four newest rows; the complete catalog remains reachable');
   await large.doc.querySelector('.pk-navigation [data-pk-route=projects]').click();const libraryPage=large.doc.querySelector('[data-studio-page=projects]');
-  assert.equal(libraryPage.querySelectorAll('.pc-project-open').length,20);const next=libraryPage.querySelector('[aria-label="다음 프로젝트 페이지"]');assert(next&&!next.disabled,'21st project has an accessible next page');await next.click();
+  assert.equal(libraryPage.querySelectorAll('.pc-project-open').length,20);const next=libraryPage.querySelector('[data-pk-project-page="next"]');assert(next&&!next.disabled,'21st project has an accessible next page');await next.click();
   const oldest=libraryPage.querySelectorAll('.pc-project-open');assert.equal(oldest.length,1);assert.equal(oldest[0].dataset.pkProjectId,'stored-01');await oldest[0].click();await large.controller.projects.flush();await settle();
   assert.equal(large.controller.projects.getState().activeId,'stored-01');assert.equal(large.studio().getSummary().name,'Stored 01');assert.equal(many.state.records.length,21);assert.equal(large.requests.length,0);
 });
@@ -360,10 +363,10 @@ test('sidebar projects distinguishes catalog loading, genuine empty storage and 
   let release;const gate=new Promise(resolve=>release=resolve),store=new CatalogStore();store.read=async()=>{await gate;return structuredClone(store.state);};
   const ui=await mounted({projectStore:store,initialProject:false,waitProjectReady:false});await ui.doc.querySelector('.pk-navigation [data-pk-route=projects]').click();
   assert.equal(ui.doc.body.dataset.studioScreen,'projects');const page=ui.doc.querySelector('[data-studio-page=projects]');assert.equal(page.hidden,false);
-  assert.match(page.querySelector('[role=status]').textContent,/확인|불러|준비/);assert.equal(page.querySelectorAll('.pc-project-open').length,0);
+  assert.match(page.querySelector('[role=status]').textContent,/Checking/);assert.equal(page.querySelectorAll('.pc-project-open').length,0);
   assert.doesNotMatch(ui.doc.getElementById('pcProjectName').textContent+' '+ui.doc.getElementById('pcHomeCandidateSummary').textContent,/자동\s*(보관|저장)/,'pending storage must not claim automatic preservation');
   release();await until(()=>ui.controller.projects.getState().initialized,'empty catalog initialized');
-  assert.equal(ui.controller.projects.getState().ready,true);assert.match(page.textContent,/저장된 프로젝트가 없/);assert.equal(store.state.records.length,0);
+  assert.equal(ui.controller.projects.getState().ready,true);assert.match(page.textContent,/No saved projects/);assert.equal(store.state.records.length,0);
   const failed=new CatalogStore();failed.read=async()=>{throw Error('Controlled catalog unavailable');};
   const broken=await mounted({projectStore:failed,initialProject:false});await broken.doc.querySelector('.pk-navigation [data-pk-route=projects]').click();
   const errorPage=broken.doc.querySelector('[data-studio-page=projects]');assert.equal(errorPage.hidden,false);assert.match(errorPage.querySelector('[role=alert]').textContent,/Controlled catalog unavailable/);
@@ -384,7 +387,7 @@ test('generation sidebar entry opens ordinary work without editing a stored proj
 
 test('generation file export keeps ordinary records while explicit project save copies them',async()=>{
  const store=new CatalogStore(),ui=await mounted({projectStore:store,initialProject:false}),library=ui.controller.projects;
- const save=()=>ui.doc.querySelectorAll('button').find(node=>node.getAttribute('aria-label')==='프로젝트로 저장'||node.textContent.trim()==='프로젝트로 저장');
+ const save=()=>ui.doc.querySelectorAll('button').find(node=>node.getAttribute('aria-label')==='Save as project'||node.textContent.trim()==='Save as project');
  assert(save(),'ordinary work exposes an explicit project-save control');
  ui.element('prompt').value='A synthetic ordinary image';ui.element('candidateCount').value='1';ui.element('useBrief').checked=false;
  assert.equal(await ui.studio().generate(),true);assert.equal(await library.saveCurrent(),true);const general=library.getState().activeId,raw=ui.studio().exportProject();
@@ -400,7 +403,17 @@ test('generation project save failure is visible beside the preserved ordinary w
  await ui.doc.querySelector('.pk-navigation [data-pk-route=design]').click();ui.element('prompt').value='A synthetic ordinary image';ui.element('candidateCount').value='1';ui.element('useBrief').checked=false;
  assert.equal(await ui.studio().generate(),true);await library.saveCurrent();const raw=ui.studio().exportProject(),id=library.getState().activeId,commit=store.commit.bind(store);
  store.commit=change=>change.put?.some(row=>row.kind==='project')?Promise.reject(Error('Controlled project save failure')):commit(change);
- const save=ui.doc.querySelectorAll('button').find(node=>node.getAttribute('aria-label')==='프로젝트로 저장'||node.textContent.trim()==='프로젝트로 저장');assert(save);await save.click();await library.flush();
+ const save=ui.doc.querySelectorAll('button').find(node=>node.getAttribute('aria-label')==='Save as project'||node.textContent.trim()==='Save as project');assert(save);await save.click();await library.flush();
  assert.equal(library.getState().activeKind,'generation');assert.equal(library.getState().activeId,id);assert.equal(library.getState().items.length,0);assert.equal(ui.studio().exportProject(),raw);
  const feedback=ui.doc.getElementById('pkComposerStatus');assert.match(feedback.textContent,/Controlled project save failure/);assert.equal(feedback.hidden,false);
+});
+
+// Keep the optimized fixture lookup equivalent to its original live document walk.
+test('structural DOM id lookup preserves duplicate order detach reparent and missing semantics',async()=>{
+ const ui=page();await settle();const doc=structuralDOM(ui),left=doc.createElement('div'),right=doc.createElement('div'),first=doc.createElement('span'),second=doc.createElement('span'),detached=doc.createElement('span');
+ first.id=second.id=detached.id='lookup-shared';doc.body.append(left,right);left.append(first);right.append(second);
+ assert.equal(doc.getElementById('lookup-shared'),first);first.remove();assert.equal(doc.getElementById('lookup-shared'),second);left.prepend(first);assert.equal(doc.getElementById('lookup-shared'),first);
+ right.prepend(first);assert.equal(doc.getElementById('lookup-shared'),first);left.prepend(second);assert.equal(doc.getElementById('lookup-shared'),second);
+ second.id='lookup-renamed';assert.equal(doc.getElementById('lookup-shared'),first);assert.equal(doc.getElementById('lookup-renamed'),second);left.remove();assert.equal(doc.getElementById('lookup-renamed'),null);
+ doc.body.id='lookup-body';assert.equal(doc.getElementById('lookup-body'),null,'preserve the prior fixture body exclusion');assert.equal(doc.getElementById('lookup-missing'),null);detached.id='lookup-detached';assert.equal(doc.getElementById('lookup-detached'),null);
 });

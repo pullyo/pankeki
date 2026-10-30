@@ -17,7 +17,7 @@ function resultWasSkipped(metrics) {
   const GAP = 40;
   const FONT = '"Malgun Gothic", "Apple SD Gothic Neo", sans-serif';
   const textOf = value => value == null ? '' : String(value);
-  const overflow = () => new RangeError('보드가 16MP 한도를 넘습니다. 내용이나 선택 이미지를 나누어 내보내세요.');
+  const overflow = () => new RangeError('The board exceeds the 16MP limit. Split the content or selected images into separate exports.');
 
   /**
    * Measure without drawing or changing the input. Only ctx.font is temporarily
@@ -32,7 +32,7 @@ function resultWasSkipped(metrics) {
     if (!ctx || typeof ctx.measureText !== 'function') throw new TypeError('Canvas 2D text measurement context is required.');
     if (!brief || typeof brief !== 'object') throw new TypeError('A character brief is required.');
     if (!Array.isArray(candidateInfos)) throw new TypeError('Selected candidates must be an array.');
-    if (candidateInfos.length > 2) throw new RangeError('보드에는 이미지를 최대 2개 선택할 수 있습니다.');
+    if (candidateInfos.length > 2) throw new RangeError('Select up to 2 images for the board.');
     const layout = { width: WIDTH, height: 0, text: [], images: [], swatches: [], frames: [], maxPixels: WIDTH * MAX_HEIGHT };
     const savedFont = ctx.font;
     const contentWidth = WIDTH - 2 * MARGIN;
@@ -62,7 +62,7 @@ function resultWasSkipped(metrics) {
             if (/\s/u.test(character)) wordBreak = line.length;
             continue;
           }
-          if (!line) throw new RangeError('한 글자가 보드 텍스트 영역보다 넓습니다.');
+          if (!line) throw new RangeError('A character is wider than the board text area.');
           if (wordBreak > 0) {
             push(line.slice(0, wordBreak));
             line = line.slice(wordBreak);
@@ -76,7 +76,7 @@ function resultWasSkipped(metrics) {
             line = '';
           }
           line += character;
-          if (ctx.measureText(line).width > width) throw new RangeError('한 글자가 보드 텍스트 영역보다 넓습니다.');
+          if (ctx.measureText(line).width > width) throw new RangeError('A character is wider than the board text area.');
           wordBreak = 0;
           for (const match of line.matchAll(/\s/gu)) wordBreak = match.index + match[0].length;
         }
@@ -97,12 +97,12 @@ function resultWasSkipped(metrics) {
 
     try {
       y = addText('brand', 'PANKEKI  /  CHARACTER BOARD', MARGIN, y, contentWidth, 22, 700, '#58706a') + 22;
-      y = addText('name', textOf(brief.name) || '이름 없는 캐릭터', MARGIN, y, contentWidth, 58, 700, '#172c31') + 12;
-      y = addText('profileLabel', textOf(brief.profileLabel) || '캐릭터 디자인', MARGIN, y, contentWidth, 27, 400, '#596772') + 32;
+      y = addText('name', textOf(brief.name) || 'Untitled character', MARGIN, y, contentWidth, 58, 700, '#172c31') + 12;
+      y = addText('profileLabel', textOf(brief.profileLabel) || 'Character design', MARGIN, y, contentWidth, 27, 400, '#596772') + 32;
 
       const colors = Array.isArray(brief.palette) ? brief.palette : [];
       const swatchWidth = (contentWidth - 2 * GAP) / 3;
-      y = addText('palette:heading', '컬러 가이드', MARGIN, y, contentWidth, 23, 700, '#536474') + 14;
+      y = addText('palette:heading', 'Color guide', MARGIN, y, contentWidth, 23, 700, '#536474') + 14;
       let paletteBottom = y;
       for (let index = 0; index < 3; index++) {
         const raw = textOf(colors[index]);
@@ -123,7 +123,7 @@ function resultWasSkipped(metrics) {
           const sourceWidth = Number(source.naturalWidth ?? source.width);
           const sourceHeight = Number(source.naturalHeight ?? source.height);
           if (!Number.isFinite(sourceWidth) || !Number.isFinite(sourceHeight) || sourceWidth <= 0 || sourceHeight <= 0) {
-            throw new RangeError('이미지 크기를 읽을 수 없습니다. 이미지 디코딩 후 다시 시도하세요.');
+            throw new RangeError('Cannot read image dimensions. Decode the image and try again.');
           }
           const frame = { index, x: MARGIN + index * (frameWidth + GAP), y, width: frameWidth, height: frameHeight };
           const scale = Math.min(frameWidth / sourceWidth, frameHeight / sourceHeight);
@@ -131,23 +131,23 @@ function resultWasSkipped(metrics) {
           const height = sourceHeight * scale;
           layout.frames.push(frame);
           layout.images.push({ index, x: frame.x + (frameWidth - width) / 2, y: frame.y + (frameHeight - height) / 2, width, height, frame });
-          let bottom = addText(`candidate:${index}:label`, textOf(candidate.label) || `후보 ${index + 1}`, frame.x, labelTop, frameWidth, 28, 700);
-          const kinds = { upload: '업로드 원본', uploaded: '업로드 원본', source: '원본', generated: '생성 후보', edited: '부분 수정' };
-          const kind = candidate.request?.edit_operation === 'recolor' ? resultWasSkipped(candidate.metrics) ? '변경 없음' : '색상 변경' : kinds[candidate.kind] || textOf(candidate.kind);
+          let bottom = addText(`candidate:${index}:label`, textOf(candidate.label) || `Candidate ${index + 1}`, frame.x, labelTop, frameWidth, 28, 700);
+          const kinds = { upload: 'Uploaded source', uploaded: 'Uploaded source', source: 'Source', generated: 'Generated candidate', edited: 'Masked edit' };
+          const kind = candidate.request?.edit_operation === 'recolor' ? resultWasSkipped(candidate.metrics) ? 'No change' : 'Recolor' : kinds[candidate.kind] || textOf(candidate.kind);
           if (candidate.kind) bottom = addText(`candidate:${index}:kind`, kind, frame.x, bottom + 8, frameWidth, 22, 400, '#596772');
           if (candidate.brief && candidate.brief.name && candidate.brief.name !== brief.name) {
-            bottom = addText(`candidate:${index}:name`, `생성 당시 이름: ${textOf(candidate.brief.name)}`, frame.x, bottom + 8, frameWidth, 22, 400, '#596772');
+            bottom = addText(`candidate:${index}:name`, `Name at generation: ${textOf(candidate.brief.name)}`, frame.x, bottom + 8, frameWidth, 22, 400, '#596772');
           }
           rowBottom = Math.max(rowBottom, bottom);
         });
         y = rowBottom + 52;
       }
 
-      section('brief', '캐릭터 설정', brief.brief);
-      section('appearance', '외형과 인상', brief.appearance);
-      section('detail', textOf(brief.detailLabel) || '디자인 디테일', brief.detail);
-      section('notes', '작업 메모', brief.notes);
-      y = addText('footer', 'Pankeki · 캐릭터 콘셉트 탐색과 공유를 위한 보드', MARGIN, y + 8, contentWidth, 21, 400, '#647580');
+      section('brief', 'Character brief', brief.brief);
+      section('appearance', 'Appearance', brief.appearance);
+      section('detail', textOf(brief.detailLabel) || 'Design details', brief.detail);
+      section('notes', 'Work notes', brief.notes);
+      y = addText('footer', 'Pankeki · A board for exploring and sharing character concepts', MARGIN, y + 8, contentWidth, 21, 400, '#647580');
       layout.height = Math.ceil(y + MARGIN);
       if (layout.height > MAX_HEIGHT) throw overflow();
       return layout;
@@ -165,10 +165,10 @@ function resultWasSkipped(metrics) {
   function drawCharacterBoard(canvas, brief, candidates) {
     if (!canvas || typeof canvas.getContext !== 'function') throw new TypeError('A Canvas is required.');
     const ctx = canvas.getContext('2d');
-    if (!ctx) throw new Error('Canvas 2D를 사용할 수 없습니다.');
+    if (!ctx) throw new Error('Canvas 2D is unavailable.');
     const layout = createBoardLayout(ctx, brief, candidates);
     for (const candidate of candidates) {
-      if (!candidate.image || typeof candidate.image !== 'object') throw new TypeError('보드에는 디코딩한 이미지 객체가 필요합니다.');
+      if (!candidate.image || typeof candidate.image !== 'object') throw new TypeError('The board requires decoded image objects.');
     }
     canvas.width = layout.width;
     canvas.height = layout.height;
@@ -208,6 +208,7 @@ function resultWasSkipped(metrics) {
 
   return { createBoardLayout, drawCharacterBoard };
 });
+const uiMessage = value => globalThis.PankekiUIStrings?.message(value) ?? String(value ?? '');
 const $ = id => document.getElementById(id);
 const Design = globalThis.CharacterDesign;
 const session = crypto.randomUUID();
@@ -238,11 +239,9 @@ let activeOperation = null;
 let photoActive = null, photoSequence = 0;
 const studioListeners = new Set();
 let motionController = null, motionDatabase = null, motionSaveTimer = null;
-let cubismWorkspace = null;
 let authoringV3 = null, authoringV3Selected = false, authoringV3Database = null, authoringV3Restore = null;
 let authoringV3Timer = null, authoringV3Queue = Promise.resolve(), authoringV3PersistenceEpoch = 0;
-function activeAuthoringV3Workspace() { return authoringV3Selected && ['motion','export'].includes(document.body.dataset.studioScreen) && !activeCubismWorkspace() ? authoringV3 : null; }
-function activeCubismWorkspace() { return document.body.dataset.studioScreen === 'motion' && cubismWorkspace?.getSummary().mode === 'cubism' ? cubismWorkspace : null; }
+function activeAuthoringV3Workspace() { return authoringV3Selected && ['motion','export'].includes(document.body.dataset.studioScreen) ? authoringV3 : null; }
 let motionSaveQueue = Promise.resolve(), motionPersistenceEpoch = 0;
 const canvas = $('source'), paint = $('paint'), context = paint.getContext('2d');
 const clone = value => JSON.parse(JSON.stringify(value));
@@ -269,11 +268,11 @@ function badge(label, state = '') {
 async function api(path, body) {
   const response = await fetch(path, body === undefined ? {} : {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body)});
   const value = await response.json();
-  if (!response.ok) throw Object.assign(Error(value.error || response.statusText),{status:response.status});
+  if (!response.ok) throw Object.assign(Error(uiMessage(value.error || response.statusText)),{status:response.status});
   return value;
 }
 function touch() {
-  if (importing) projectStatus('새 작업을 시작하여 진행 중인 프로젝트 불러오기를 중단했어요.');
+  if (importing) projectStatus('Starting a new project canceled the import in progress.');
   ++editEpoch; ++importRevision; importing = false;
 }
 function updateBrief() {
@@ -297,7 +296,7 @@ for (const id of ['profile', ...Object.values(briefFields), 'palette1','palette2
 $('presetExample').onclick = () => {
   const profile = $('profile').value;
   touch(); applyBrief(Design.sanitizeBrief({...Design.profiles[profile].example, profile, useBrief:true})); scheduleSave();
-  status('예시 설정을 적용했어요. 세부 내용을 바꿔 나만의 캐릭터로 만들어보세요.');
+  status('Example settings applied. Adjust the details to create your own character.');
 };
 function isRecolor() { return $('mode').value === 'inpaint' && $('editOperation').value === 'recolor'; }
 function syncColorInput(pickerId, textId, fromText = false) {
@@ -321,7 +320,7 @@ function applyEditRequest(request = {}) {
   if (recolor) $('feather').value = String(request.feather);
 }
 function renderView() {
-  if (photoActive && !photoCurrent(photoActive) && !photoActive.canceling) void photoCancel(photoActive.token).catch(()=>status('이미지 작업의 취소 응답을 확인하지 못했습니다. 다시 취소해주세요.',true));
+  if (photoActive && !photoCurrent(photoActive) && !photoActive.canceling) void photoCancel(photoActive.token).catch(()=>status('Could not confirm image task cancellation. Cancel again.',true));
   const recolor = isRecolor();
   $('generate').disabled = recolor ? busy || !sourceLoaded || maskLoading || importing || capabilitySnapshot?.source==='snapshot'&&!Design.capabilityOperation(capabilitySnapshot,'recolor').ready : !modelsReady || !selectedImageModel($('mode').value);
   $('imageModel').disabled = !modelsReady || imageModelSettingsBusy();
@@ -343,11 +342,11 @@ function renderView() {
   $('useResult').hidden = !showResult;
   const shown = showPreview ? $('preview') : showResult ? $('result') : null;
   $('canvasSize').textContent = showSource ? `${canvas.width} × ${canvas.height}` : shown?.naturalWidth ? `${shown.naturalWidth} × ${shown.naturalHeight}` : `${$('width').value} × ${$('height').value}`;
-  $('canvasHint').textContent = showSource ? '밝게 칠한 영역만 수정합니다. 선택 밖 영역은 원본을 보존해요.' : busy ? '후보를 순서대로 만들고 있어요. 미리보기는 최종 이미지와 다를 수 있어요.' : showResult ? '후보를 비교하고 선택한 디자인을 이어서 수정해보세요.' : '설정을 작성하거나 원본을 불러와 시작하세요.';
-  $('generateLabel').textContent = recolor ? busy ? '색상 적용 중' : '색상 적용' : busy ? '새 요청으로 다시 생성' : $('mode').value === 'inpaint' ? '선택 영역 수정' : '캐릭터 후보 생성';
+  $('canvasHint').textContent = showSource ? 'Only brightly painted areas are edited. Areas outside the selection are preserved.' : busy ? 'Generating candidates in sequence. Previews may differ from the final image.' : showResult ? 'Compare candidates and continue editing your chosen design.' : 'Enter a brief or import a source image to begin.';
+  $('generateLabel').textContent = recolor ? busy ? 'Applying color' : 'Apply color' : busy ? 'Generate with a new request' : $('mode').value === 'inpaint' ? 'Edit selected area' : 'Generate character candidates';
   $('cancel').hidden = !busy; $('cancel').disabled = !busy;
-  if ($('emptyHeading')) $('emptyHeading').textContent = $('mode').value === 'inpaint' ? '수정할 원본을 먼저 불러오세요.' : '아직 이름 없는 아이디어도 좋아요.';
-  if ($('emptyDescription')) $('emptyDescription').textContent = $('mode').value === 'inpaint' ? '이미지를 업로드하거나 후보의 ‘이어서 수정’을 선택한 뒤, 바꾸고 싶은 부분을 칠해주세요.' : '성격과 생김새를 적고 첫 후보를 만들어보세요. 기존 캐릭터를 불러와 다듬을 수도 있어요.';
+  if ($('emptyHeading')) $('emptyHeading').textContent = $('mode').value === 'inpaint' ? 'Import a source image to edit first.' : 'Start with an idea, even without a name.';
+  if ($('emptyDescription')) $('emptyDescription').textContent = $('mode').value === 'inpaint' ? 'Upload an image or choose Continue editing on a candidate, then paint the areas to change.' : 'Describe the personality and appearance to create your first candidate. You can also import and refine an existing character.';
   notifyStudio();
 }
 function setMode(value) {
@@ -371,10 +370,10 @@ function setMode(value) {
     const active = button.dataset.mode === value;
     button.classList.toggle('active', active); button.setAttribute('aria-pressed', String(active));
   });
-  $('modeTitle').textContent = editing ? '필요한 부분만 수정' : '캐릭터 후보 만들기';
-  $('modeDescription').textContent = editing ? '선택한 디자인에서 바꾸고 싶은 곳만 칠해주세요.' : '설정과 색을 바탕으로 디자인을 탐색해보세요.';
-  $('workspaceMode').textContent = editing ? '부분 수정' : '후보 생성';
-  $('canvasHeading').textContent = editing ? '선택한 캐릭터를 다듬어보세요.' : '나만의 캐릭터를 만들어보세요.';
+  $('modeTitle').textContent = editing ? 'Edit only what you need' : 'Create character candidates';
+  $('modeDescription').textContent = editing ? 'Paint only the areas to change in the selected design.' : 'Explore designs from your brief and colors.';
+  $('workspaceMode').textContent = editing ? 'Masked edit' : 'Candidate generation';
+  $('canvasHeading').textContent = editing ? 'Refine the selected character.' : 'Create your own character.';
   $('roiOptions').hidden = !editing; view = editing ? 'source' : 'result'; updateBrief(); renderView();
 }
 function clearMask() {
@@ -386,29 +385,29 @@ function stopBatch() {
 }
 async function cancel() {
   const recolor = activeOperation === 'recolor';
-  const pending = stopBatch(); badge('취소됨');
-  status(recolor ? '색상 변경을 취소했어요.' : '남은 후보 생성을 취소했어요. 이미 시작한 GPU 연산은 계속될 수 있습니다.'); await pending;
+  const pending = stopBatch(); badge('Canceled');
+  status(recolor ? 'Recolor canceled.' : 'Remaining candidate generation canceled. GPU work already started may continue.'); await pending;
 }
 async function decodeImage(url) {
   const image = new Image(); image.src = url; await image.decode();
   const width = image.naturalWidth || image.width, height = image.naturalHeight || image.height;
-  if (!width || !height || width * height > 16777216) throw Error('이미지는 최대 16MP까지 불러올 수 있습니다.');
+  if (!width || !height || width * height > 16777216) throw Error('Images up to 16MP can be imported.');
   return image;
 }
 async function readDataURL(url) {
   if (url.startsWith('data:')) {
-    if (url.length > MAX_IMAGE) throw Error('이미지는 Base64 저장 크기 16MiB 이하여야 합니다.');
+    if (url.length > MAX_IMAGE) throw Error('Base64 image data must be 16MiB or smaller.');
     return url;
   }
   const response = await fetch(url);
-  if (!response.ok) throw Error('원본 이미지를 불러오지 못했습니다.');
+  if (!response.ok) throw Error('Could not load the source image.');
   const blob = await response.blob();
-  if (blob.size > MAX_IMAGE * .75) throw Error('이미지 파일이 너무 큽니다. 저장 크기는 Base64 16MiB까지입니다.');
+  if (blob.size > MAX_IMAGE * .75) throw Error('The image file is too large. Base64 storage is limited to 16MiB.');
   const data = await new Promise((resolve,reject) => {
     const reader = new FileReader(); reader.onload = () => resolve(reader.result);
-    reader.onerror = () => reject(reader.error || Error('이미지 파일을 읽지 못했습니다.')); reader.readAsDataURL(blob);
+    reader.onerror = () => reject(reader.error || Error('Could not read the image file.')); reader.readAsDataURL(blob);
   });
-  if (typeof data !== 'string' || data.length > MAX_IMAGE) throw Error('이미지 저장 크기는 Base64 16MiB까지입니다.');
+  if (typeof data !== 'string' || data.length > MAX_IMAGE) throw Error('Base64 image storage is limited to 16MiB.');
   return data;
 }
 function commitSource(image,data,parentId) {
@@ -418,8 +417,8 @@ function commitSource(image,data,parentId) {
   sourceDataURL = data; sourceLoaded = true; sourceId = parentId;
 }
 async function loadSource(url,{parentId = null,record = false} = {}) {
-  if (record && project.versions.length >= 20) throw Error('후보는 최대 20개입니다. 프로젝트를 저장한 뒤 새 프로젝트를 시작해주세요.');
-  if (parentId && !project.versions.some(item => item.id === parentId)) throw Error('수정할 후보가 현재 프로젝트에 없습니다.');
+  if (record && project.versions.length >= 20) throw Error('Up to 20 candidates are supported. Save this project and start a new one.');
+  if (parentId && !project.versions.some(item => item.id === parentId)) throw Error('The candidate to edit is not in the current project.');
   motionController?.suspend();
   touch(); void stopBatch(); const token = ++sourceRevision, snapshot = readBrief();
   const previous = {sourceDataURL,sourceLoaded:sourceDataURL !== null,sourceId};
@@ -455,7 +454,7 @@ for (const id of ['width','height','seed','steps','cfg','denoise','halo','feathe
 for (const id of ['editOperation', 'sourceColorMode', 'colorTolerance']) {
   $(id).oninput = $(id).onchange = () => {
     touch();
-    if (id === 'editOperation' && isRecolor() && !busy) status('선택 영역에서 비슷한 색을 찾아 바꿉니다.');
+    if (id === 'editOperation' && isRecolor() && !busy) status('Replaces similar colors within the selected area.');
     renderView();
   };
 }
@@ -471,25 +470,25 @@ for (const [pickerId, textId] of [['targetColor', 'targetColorValue'], ['sourceC
 $('upload').onchange = async () => {
   const file = $('upload').files[0]; if (!file) return;
   const url = URL.createObjectURL(file);
-  try { if (await loadSource(url,{record:true})) { setMode('inpaint'); status('원본을 후보 목록에 보관했어요. 수정할 곳을 브러시로 칠해주세요.'); } }
-  catch (error) { status(error.message,true); }
+  try { if (await loadSource(url,{record:true})) { setMode('inpaint'); status('Source saved in the candidate list. Paint the areas to edit with the brush.'); } }
+  catch (error) { status(uiMessage(error.message),true); }
   finally { URL.revokeObjectURL(url); $('upload').value = ''; }
 };
 $('maskUpload').onchange = async () => {
   const file = $('maskUpload').files[0]; if (!file) return;
-  if (!sourceLoaded) { status('원본 이미지를 먼저 불러오세요.',true); $('maskUpload').value = ''; return; }
+  if (!sourceLoaded) { status('Import a source image first.',true); $('maskUpload').value = ''; return; }
   touch(); const token = ++maskRevision, sourceToken = sourceRevision;
   const url = URL.createObjectURL(file), isCurrent = () => token === maskRevision && sourceToken === sourceRevision;
   maskLoading = true; drawing = false;
   try {
     const image = await decodeImage(url); if (!isCurrent()) return;
-    if ((image.naturalWidth || image.width) !== paint.width || (image.naturalHeight || image.height) !== paint.height) throw Error('마스크와 원본의 크기가 같아야 합니다.');
+    if ((image.naturalWidth || image.width) !== paint.width || (image.naturalHeight || image.height) !== paint.height) throw Error('The mask and source must have matching dimensions.');
     context.fillStyle = 'black'; context.fillRect(0,0,paint.width,paint.height); context.drawImage(image,0,0);
-    status('마스크를 불러왔어요. 밝은 부분이 수정 영역입니다.');
-  } catch (error) { if (isCurrent()) status(error.message,true); }
+    status('Mask imported. Bright areas will be edited.');
+  } catch (error) { if (isCurrent()) status(uiMessage(error.message),true); }
   finally { if (isCurrent()) {maskLoading = false;renderView();} URL.revokeObjectURL(url); $('maskUpload').value = ''; }
 };
-$('clearMask').onclick = () => { touch(); clearMask(); status('수정 마스크를 지웠어요. 원본 이미지는 그대로입니다.'); renderView(); };
+$('clearMask').onclick = () => { touch(); clearMask(); status('Edit mask cleared. The source image is unchanged.'); renderView(); };
 $('brush').oninput = () => { $('brushValue').value = $('brush').value; };
 function chooseTool(erase) {
   $('erase').checked = erase;
@@ -511,37 +510,37 @@ paint.onpointerdown = event => {
 paint.onpointermove = event => { if (drawing) stroke(event,false); };
 paint.onpointerup = paint.onpointercancel = () => { drawing = false;notifyStudio('mask'); };
 function displayError(message) {
-  return String(message).includes('Pankeki source changed') ? '앱 코드가 갱신되었습니다. Pankeki 생성 서버를 다시 시작한 뒤 생성해주세요.' : message;
+  return String(message).includes('Pankeki source changed') ? 'App code changed. Restart the Pankeki generation server before generating.' : uiMessage(message);
 }
 function inpaintSnapshot() {
-  if (!sourceLoaded) throw Error('수정할 원본 이미지를 먼저 불러오세요.');
-  if (maskLoading) throw Error('마스크를 불러오는 중입니다. 잠시 후 다시 시도해주세요.');
+  if (!sourceLoaded) throw Error('Import the source image to edit first.');
+  if (maskLoading) throw Error('The mask is loading. Try again shortly.');
   return { source: sourceDataURL, mask: paint.toDataURL('image/png') };
 }
 function requestSnapshot(brief, mode = $('mode').value) {
-  if (mode === 'inpaint' && !['', 'regenerate', 'recolor'].includes($('editOperation').value)) throw Error('부분 수정 작업을 선택해주세요.');
+  if (mode === 'inpaint' && !['', 'regenerate', 'recolor'].includes($('editOperation').value)) throw Error('Select a masked edit operation.');
   if (mode === 'inpaint' && $('editOperation').value === 'recolor') {
     const inputs = inpaintSnapshot(), target = $('targetColorValue').value.trim();
-    if (typeof target !== 'string' || !/^#[0-9a-f]{6}$/i.test(target)) throw Error('목표 색상을 #RRGGBB 형식으로 선택해주세요.');
+    if (typeof target !== 'string' || !/^#[0-9a-f]{6}$/i.test(target)) throw Error('Select a target color in #RRGGBB format.');
     const sourceMode = $('sourceColorMode').value || 'auto';
-    if (!['auto', 'manual'].includes(sourceMode)) throw Error('원본 색상 선택 방법을 확인해주세요.');
+    if (!['auto', 'manual'].includes(sourceMode)) throw Error('Check the source color selection method.');
     const source = sourceMode === 'manual' ? $('sourceColorValue').value.trim() : null;
-    if (source !== null && (typeof source !== 'string' || !/^#[0-9a-f]{6}$/i.test(source))) throw Error('원본 색상을 #RRGGBB 형식으로 선택해주세요.');
+    if (source !== null && (typeof source !== 'string' || !/^#[0-9a-f]{6}$/i.test(source))) throw Error('Select a source color in #RRGGBB format.');
     const tolerance = Number($('colorTolerance').value), feather = Number($('feather').value);
-    if (!$('colorTolerance').value.trim() || !Number.isFinite(tolerance) || tolerance < 0 || tolerance > 90) throw Error('색상 범위는 0~90 사이로 선택해주세요.');
-    if (!$('feather').value.trim() || !Number.isSafeInteger(feather) || feather < 0 || feather > 64) throw Error('경계 부드럽게 값은 0~64 사이 정수로 입력해주세요.');
+    if (!$('colorTolerance').value.trim() || !Number.isFinite(tolerance) || tolerance < 0 || tolerance > 90) throw Error('Set the color tolerance from 0 to 90.');
+    if (!$('feather').value.trim() || !Number.isSafeInteger(feather) || feather < 0 || feather > 64) throw Error('Enter an integer from 0 to 64 for feathering.');
     return { mode: 'inpaint', edit_operation: 'recolor', target_color: target.toUpperCase(), source_color: source === null ? null : source.toUpperCase(), color_tolerance: tolerance, feather, ...inputs };
   }
   const model = selectedImageModel(mode);
-  if (!modelsReady || !model) throw Error(modelLoadError || (mode === 'inpaint' ? '사용 가능한 부분 수정 모델을 먼저 선택해주세요.' : '사용 가능한 이미지 생성 모델을 먼저 선택해주세요.'));
+  if (!modelsReady || !model) throw Error(modelLoadError || (mode === 'inpaint' ? 'Select an available masked edit model first.' : 'Select an available image generation model first.'));
   const request = {model_id:model.id,mode,prompt:Design.buildPrompt(brief,mode,model.id),negative:$('negative').value,cache:model.id==='sdxl-inpaint-v01'?false:$('cache').checked,roi:$('roi').checked,preview:$('previewOn').checked,sampler:$('sampler').value,scheduler:$('scheduler').value};
   const limits = {seed:[0,Number.MAX_SAFE_INTEGER,true],steps:[1,100,true],width:[64,2048,true],height:[64,2048,true],cfg:[0,30],denoise:[.01,1],halo:[0,512,true],feather:[0,64,true]};
   for (const [key,[min,max,integer]] of Object.entries(limits)) {
     const text = $(key).value, value = Number(text);
-    if (text.trim() === '' || !Number.isFinite(value) || value < min || value > max || integer && !Number.isSafeInteger(value)) throw Error(`${key}: ${min}~${max} 범위의 ${integer ? '정수' : '숫자'}를 입력해주세요.`);
+    if (text.trim() === '' || !Number.isFinite(value) || value < min || value > max || integer && !Number.isSafeInteger(value)) throw Error(`${key}: enter ${integer ? 'an integer' : 'a number'} from ${min} to ${max}.`);
     request[key] = value;
   }
-  if (request.width % 8 || request.height % 8) throw Error('이미지 크기는 8의 배수여야 합니다.');
+  if (request.width % 8 || request.height % 8) throw Error('Image dimensions must be multiples of 8.');
   if (request.mode === 'inpaint') {
     Object.assign(request, inpaintSnapshot());
   }
@@ -562,19 +561,19 @@ async function poll(id,token,index,count) {
     try { job = await api('/api/jobs/' + id); failures = 0; }
     catch (error) {
       if (token !== serial) return null;
-      if (++failures >= 5) throw Error('서버 연결을 확인해주세요. 결과 상태를 확인할 수 없어 후속 생성을 중단했습니다.');
-      status('연결을 다시 확인하고 있어요: ' + error.message,true);
+      if (++failures >= 5) throw Error('Check the server connection. Further generation stopped because the result status could not be verified.');
+      status('Rechecking connection: ' + uiMessage(error.message),true);
       await new Promise(resolve => setTimeout(resolve,500)); continue;
     }
     if (token !== serial) return null;
-    if (!job.is_current) throw Error('다른 요청이 시작되어 이 후보 생성을 중단했습니다.');
-    status(activeOperation === 'recolor' ? '색상을 바꾸고 있어요…' : `후보 ${index + 1}/${count} · ${job.state === 'queued' ? '생성 순서를 기다리고 있어요.' : '이미지를 만들고 있어요.'}`);
+    if (!job.is_current) throw Error('Candidate generation stopped because another request started.');
+    status(activeOperation === 'recolor' ? 'Recoloring…' : `Candidate ${index + 1}/${count} · ${job.state === 'queued' ? 'Waiting in the generation queue.' : 'Generating image.'}`);
     if (job.preview != null && job.preview !== lastPreview && !['succeeded','failed','canceled','uncertain','orphaned'].includes(job.state)) {
       lastPreview = job.preview; $('preview').src = '/api/previews/' + id + '?v=' + encodeURIComponent(lastPreview);
-      previewVisible = true; badge('미리보기','busy'); renderView();
+      previewVisible = true; badge('Preview','busy'); renderView();
     }
     if (job.state === 'succeeded') return job.result;
-    if (['failed','canceled','uncertain','orphaned'].includes(job.state)) throw Error(job.error || {failed:'생성 실패',canceled:'생성이 취소되었습니다.',uncertain:'생성 상태를 확인해야 합니다.',orphaned:'서버가 다시 시작되어 이전 작업을 자동 재제출하지 않았습니다. 결과 상태를 확인해주세요.'}[job.state]);
+    if (['failed','canceled','uncertain','orphaned'].includes(job.state)) throw Error(uiMessage(job.error) || {failed:'Generation failed',canceled:'Generation canceled.',uncertain:'Generation status needs verification.',orphaned:'The server restarted, so the previous task was not resubmitted automatically. Check the result status.'}[job.state]);
     await new Promise(resolve => setTimeout(resolve,250));
   }
   return null;
@@ -582,18 +581,18 @@ async function poll(id,token,index,count) {
 async function generate() {
   let token, completed = 0;
   try {
-    if (photoActive) throw Error('사진 도구 작업을 적용하거나 취소한 뒤 생성해주세요.');
+    if (photoActive) throw Error('Apply or cancel the photo edit before generating.');
     const recolor = isRecolor();
     if (!recolor) await modelCatalogReady;
-    if (importing) throw Error('프로젝트를 불러오는 중입니다. 잠시 후 생성해주세요.');
+    if (importing) throw Error('Project import in progress. Generate shortly.');
     const brief = readBrief(), count = recolor ? 1 : Number($('candidateCount').value);
     const snapshot = requestSnapshot(brief), requests = recolor ? [snapshot] : Design.makeRequests(snapshot,count);
-    if (project.versions.length + count > 20) throw Error('후보는 최대 20개입니다. 프로젝트를 저장하고 새 프로젝트를 시작하거나 후보 수를 줄여주세요.');
+    if (project.versions.length + count > 20) throw Error('Up to 20 candidates are supported. Save and start a new project, or reduce the candidate count.');
     const parentId = requests[0].mode === 'inpaint' ? sourceId : null;
-    touch(); void stopBatch(); token = ++serial; busy = true; activeOperation = recolor ? 'recolor' : 'regenerate'; view = 'result'; badge(recolor ? '색상 변경 중' : '생성 중','busy'); renderView();
+    touch(); void stopBatch(); token = ++serial; busy = true; activeOperation = recolor ? 'recolor' : 'regenerate'; view = 'result'; badge(recolor ? 'Recoloring' : 'Generating','busy'); renderView();
     for (let index = 0; index < requests.length; index++) {
       if (token !== serial) return false;
-      status(recolor ? '색상 변경을 준비하고 있어요…' : `후보 ${index + 1}/${count} 생성을 준비하고 있어요…`);
+      status(recolor ? 'Preparing recolor…' : `Preparing candidate ${index + 1}/${count}…`);
       const request = requests[index], job = await api('/api/jobs',{session,request:{...request,trace_id:crypto.randomUUID()}});
       if (token !== serial) { await api('/api/jobs/' + job.job_id + '/cancel',{}).catch(() => null); return false; }
       current = job.job_id;
@@ -612,26 +611,26 @@ async function generate() {
       const reused = project.versions.slice(-completed).filter(item => item.metrics.cache === 'hit').length;
       const copied = project.versions.slice(-completed).filter(item => item.metrics.cache === 'empty-mask-skip').length;
       const unchanged = recolor && resultWasSkipped(project.versions.at(-1).metrics);
-      badge(unchanged ? '변경 없음' : copied === completed ? '원본 복사 · 수정 영역 없음' : recolor ? '색상 적용 완료' : '후보 준비 완료');
-      status(recolor ? unchanged ? '선택 영역과 기준 색을 확인해 주세요. 변경 없는 후보를 보관했어요.' : '색상을 적용했어요. 후보 1개를 보관했어요.' : `${completed}개 후보를 준비했어요.${reused ? ` 이 중 ${reused}개는 동일 완료 결과를 재사용했습니다.` : ''}${copied ? ` ${copied}개는 수정 영역이 없어 원본 복사로 처리했으며 추론을 실행하지 않았습니다.` : ''} 비교할 후보를 선택해주세요.`);
+      badge(unchanged ? 'No change' : copied === completed ? 'Source copy · No edit area' : recolor ? 'Color applied' : 'Candidates ready');
+      status(recolor ? unchanged ? 'Check the selection and source color. A candidate with no changes was saved.' : 'Color applied. Saved 1 candidate.' : `${completed} candidates ready.${reused ? ` ${reused} reused a matching completed result.` : ''}${copied ? ` ${copied} were source copies with no edit area; inference was not run.` : ''} Select candidates to compare.`);
     }
     return true;
   } catch (error) {
     if (token === undefined || token === serial) {
-      status((completed ? `${completed}개 후보는 보관했습니다. ` : '') + displayError(error.message),true);
-      if (token !== undefined) badge(activeOperation === 'recolor' ? '색상 변경 중단' : '생성 중단','failure');
+      status((completed ? `${completed} candidates were saved. ` : '') + displayError(uiMessage(error.message)),true);
+      if (token !== undefined) badge(activeOperation === 'recolor' ? 'Recolor stopped' : 'Generation stopped','failure');
     }
     return false;
   } finally { if (token !== undefined && token === serial) { current = null; busy = false; activeOperation = null; previewVisible = false; renderView(); } }
 }
 function kindLabel(item) {
-  if(item.request?.mode==='img2img')return '참조 이미지로 구도 변경';
-  if (item.kind === 'upload') return '업로드 원본';
-  if (item.kind === 'derived') return {markup:'마크업',resize:'크기 조정','background-remove':'배경 제거',erase:'객체 지우기'}[item.derivation.operation];
-  if (item.request?.edit_operation === 'recolor' && resultWasSkipped(item.metrics)) return '변경 없음';
-  if (item.metrics.cache === 'empty-mask-skip') return '원본 복사 · 수정 영역 없음';
-  if (item.request?.edit_operation === 'recolor') return '색상 변경';
-  return item.kind === 'generated' ? (item.metrics.cache === 'hit' ? '생성 결과 · 재사용' : '생성 결과') : '불러온 이미지';
+  if(item.request?.mode==='img2img')return 'Recompose with reference image';
+  if (item.kind === 'upload') return 'Uploaded source';
+  if (item.kind === 'derived') return {markup:'Markup',resize:'Resize','background-remove':'Remove background',erase:'Erase object'}[item.derivation.operation];
+  if (item.request?.edit_operation === 'recolor' && resultWasSkipped(item.metrics)) return 'No change';
+  if (item.metrics.cache === 'empty-mask-skip') return 'Source copy · No edit area';
+  if (item.request?.edit_operation === 'recolor') return 'Recolor';
+  return item.kind === 'generated' ? (item.metrics.cache === 'hit' ? 'Generated result · Reused' : 'Generated result') : 'Imported image';
 }
 function showCandidate(item) {
   latestId = item.id; latestUrl = item.image; $('result').src = item.image;
@@ -644,11 +643,11 @@ function recordSelection(id,action) {
   project = Design.createProject(readBrief(),project.versions,history); touch(); scheduleSave();
 }
 async function editCandidate(item) {
-  if (project.selectionHistory.length >= 1000) throw Error('선택 기록이 1,000개에 도달했습니다. 저장한 뒤 새 프로젝트를 시작해주세요.');
+  if (project.selectionHistory.length >= 1000) throw Error('Selection history reached 1,000 entries. Save and start a new project.');
   if (await loadSource(item.image,{parentId:item.id})) {
     applyEditRequest(item.request);
     recordSelection(item.id,'edit'); setMode('inpaint'); renderGallery();
-    status('선택한 후보를 수정 원본으로 사용합니다. 바꿀 곳을 칠하고 추가 지시를 입력해주세요.');
+    status('Using the selected candidate as the edit source. Paint the areas to change and add instructions.');
   }
 }
 function element(tag,text,className) {
@@ -657,7 +656,7 @@ function element(tag,text,className) {
 }
 function button(text,action) {
   const node = element('button',text); node.type = 'button';
-  node.onclick = async () => { try { await action(); } catch (error) { status(error.message,true); } }; return node;
+  node.onclick = async () => { try { await action(); } catch (error) { status(uiMessage(error.message),true); } }; return node;
 }
 function renderGallery() {
   const focused = document.activeElement, focusedAction = focused?.dataset?.action;
@@ -666,30 +665,30 @@ function renderGallery() {
   const focusedId = focusedCard?.dataset?.candidateId;
   let focusTarget = null;
   $('gallery').replaceChildren(); $('galleryEmpty').hidden = project.versions.length > 0;
-  $('selectionCount').textContent = `${selectedIds.length}/2 선택 · ${project.versions.length}/20 보관`;
+  $('selectionCount').textContent = `${selectedIds.length}/2 selected · ${project.versions.length}/20 saved`;
   $('compareSelected').disabled = selectedIds.length !== 2;
   for (const [index,item] of project.versions.entries()) {
     const card = element('article',undefined,'candidate-card'); card.dataset.candidateId = item.id;
     card.classList.toggle('selected',selectedIds.includes(item.id)); card.classList.toggle('active',latestId === item.id);
-    const title=`후보 ${index+1} · ${item.label}`;
+    const title=`Candidate ${index+1} · ${item.label}`;
     const image = element('img'); image.src = item.image; image.alt = title; image.loading = 'lazy';
     const info = element('div',undefined,'candidate-info');
-    info.append(element('strong',title),element('span',kindLabel(item)),element('span',Design.profiles[item.brief.profile].label),element('small',new Date(item.createdAt).toLocaleString()));
+    info.append(element('strong',title),element('span',kindLabel(item)),element('span',Design.profiles[item.brief.profile].label),element('small',new Date(item.createdAt).toLocaleString('en-US')));
     if (item.kind === 'generated' && item.request.model_id) info.append(element('small',`${modelLabels[item.request.model_id] || item.request.model_id} · ${item.request.steps} steps · CFG ${item.request.cfg}`));
-    if (item.parentId) info.append(element('small','수정 원본: ' + (project.versions.find(v => v.id === item.parentId)?.label || item.parentId)));
+    if (item.parentId) info.append(element('small','Edit source: ' + (project.versions.find(v => v.id === item.parentId)?.label || item.parentId)));
     const actions = element('div',undefined,'candidate-actions');
-    const select = button(selectedIds.includes(item.id) ? '비교 선택 해제' : '비교 선택',() => {
+    const select = button(selectedIds.includes(item.id) ? 'Remove from comparison' : 'Add to comparison',() => {
       if (selectedIds.includes(item.id)) { selectedIds = selectedIds.filter(id => id !== item.id); touch(); }
       else {
-        if (selectedIds.length >= 2) throw Error('비교는 두 후보까지 선택할 수 있어요. 선택을 하나 해제해주세요.');
+        if (selectedIds.length >= 2) throw Error('Compare up to two candidates. Deselect one first.');
         recordSelection(item.id,'compare'); selectedIds.push(item.id);
       }
       $('comparePanel').hidden = true; renderGallery();
     });
     select.setAttribute('aria-pressed',String(selectedIds.includes(item.id)));
     const controls = {
-      view:button('크게 보기',() => { recordSelection(item.id,'view'); void stopBatch(); showCandidate(item); renderGallery(); }),
-      edit:button('이어서 수정',() => editCandidate(item)),
+      view:button('View larger',() => { recordSelection(item.id,'view'); void stopBatch(); showCandidate(item); renderGallery(); }),
+      edit:button('Continue editing',() => editCandidate(item)),
       compare:select
     };
     for (const [action,control] of Object.entries(controls)) {
@@ -701,11 +700,11 @@ function renderGallery() {
     card.append(image,info,actions); $('gallery').append(card);
   }
   if (project.selectionHistory.length) {
-    const details = element('details',undefined,'selection-history'); details.append(element('summary',`선택 기록 ${project.selectionHistory.length}개`));
+    const details = element('details',undefined,'selection-history'); details.append(element('summary',`Selection history · ${project.selectionHistory.length}`));
     const list = element('ol');
     for (const entry of project.selectionHistory) {
       const item = project.versions.find(v => v.id === entry.candidateId);
-      list.append(element('li',`${item.label} · ${{view:'보기',edit:'수정 원본 선택',compare:'비교 선택'}[entry.action]} · ${new Date(entry.at).toLocaleString()}`));
+      list.append(element('li',`${item.label} · ${{view:'View',edit:'Select edit source',compare:'Add to comparison'}[entry.action]} · ${new Date(entry.at).toLocaleString('en-US')}`));
     }
     details.append(list); $('gallery').append(details);
   }
@@ -719,8 +718,8 @@ $('compareSelected').onclick = () => {
     const item = project.versions.find(v => v.id === id), figure = element('figure');
     const image = element('img'); image.src = item.image; image.alt = item.label;
     image.style.width = '100%'; image.style.height = 'auto'; image.style.objectFit = 'contain';
-    const settings = item.kind === 'derived' ? kindLabel(item) : item.request?.edit_operation === 'recolor' ? `바꿀 색 ${item.request.target_color}` : `seed ${item.request?.seed ?? '—'}`;
-    figure.append(image,element('figcaption',`${item.label} · ${kindLabel(item)} · ${settings}`),button('이 후보로 수정',() => editCandidate(item))); $('compareGrid').append(figure);
+    const settings = item.kind === 'derived' ? kindLabel(item) : item.request?.edit_operation === 'recolor' ? `Target color ${item.request.target_color}` : `seed ${item.request?.seed ?? '—'}`;
+    figure.append(image,element('figcaption',`${item.label} · ${kindLabel(item)} · ${settings}`),button('Edit this candidate',() => editCandidate(item))); $('compareGrid').append(figure);
   }
   $('comparePanel').hidden = false; $('comparePanel').setAttribute('tabindex','-1'); $('comparePanel').focus();
 };
@@ -750,63 +749,52 @@ function downloadImage(event) {
   try {
     const bytes = Uint8Array.from(atob(link.href.slice(prefix.length)), char => char.charCodeAt(0));
     downloadBlob(new Blob([bytes], {type:'image/png'}), link.download);
-  } catch (error) { status('이미지 저장 실패: ' + error.message, true); }
+  } catch (error) { status('Image save failed: ' + uiMessage(error.message), true); }
 }
 $('download').addEventListener('click', downloadImage);
 function safeName(brief = readBrief()) { return (brief.name || 'pankeki-character').replace(/[<>:"/\\|?*\u0000-\u001F]/g,'_').slice(0,80); }
 $('saveProject').onclick = async () => {
   try {
     const precise = activeAuthoringV3Workspace();
-    if (precise) { downloadBlob(new Blob([await precise.saveProject()],{type:'application/json'}),safeName() + '.rigging.v3.json'); projectStatus('정밀 리깅 작업을 저장했어요.'); return; }
-    const cubism = activeCubismWorkspace();
-    if (cubism) {
-      downloadBlob(new Blob([await cubism.saveProject()],{type:'application/json'}),safeName() + '.cubism-session.json');
-      projectStatus('Live2D 세션을 저장했어요. 다시 열 때 같은 모델 폴더를 선택해주세요.'); return;
-    }
+    if (precise) { downloadBlob(new Blob([await precise.saveProject()],{type:'application/json'}),safeName() + '.rigging.v3.json'); projectStatus('Precision rigging project saved.'); return; }
     const motion = motionController?.getSummary();
     if (motion && (motion.isMotionProject || motion.dirty || motion.partCount > 0)) {
       downloadBlob(new Blob([await motionController.saveProject()],{type:'application/json'}),safeName() + '.motion.v2.json');
-      projectStatus('움직임 v2 프로젝트를 저장했어요. 재개 시 이전 undo는 복원되지 않습니다.'); return;
+      projectStatus('Motion v2 project saved. Previous undo history is not restored when reopening.'); return;
     }
     const raw=exportProject();
     await persistCurrentProject(raw);
     const catalog=projectActions?await projectActions.saveCurrent():true;
-    if(catalog===false)throw Error('앱 목록의 프로젝트 저장을 완료하지 못했습니다. 현재 작업은 유지됩니다.');
+    if(catalog===false)throw Error('Could not save the project to the app list. Your current work is preserved.');
     downloadBlob(new Blob([raw],{type:'application/json'}),safeName() + '.pankeki.json');
-    projectStatus(catalog==='unavailable'?'프로젝트 파일을 내보냈어요. 앱 목록 저장소를 사용할 수 없어 목록에는 저장하지 못했어요.':'프로젝트 파일을 내보냈어요. 브리프·후보 이미지·선택 기록이 포함됩니다.',catalog==='unavailable');
+    projectStatus(catalog==='unavailable'?'Project file exported. App list storage is unavailable, so the project was not saved to the list.':'Project file exported with its brief, candidate images, and selection history.',catalog==='unavailable');
   }
-  catch (error) { projectStatus('저장 실패: ' + error.message,true); }
+  catch (error) { projectStatus('Save failed: ' + uiMessage(error.message),true); }
 };
 async function importProject(raw,{restore = false} = {}) {
   let token;
   try {
-    if (typeof raw === 'string' && (raw.length > MAX_FILE || new TextEncoder().encode(raw).length > MAX_FILE)) throw Error('프로젝트 파일은 최대 64MiB까지입니다.');
+    if (typeof raw === 'string' && (raw.length > MAX_FILE || new TextEncoder().encode(raw).length > MAX_FILE)) throw Error('Project files must be 64MiB or smaller.');
     const incoming = typeof raw === 'string' ? JSON.parse(raw) : raw;
     const formatField = Object.getOwnPropertyDescriptor(incoming || {},'format');
-    if (formatField && !Object.hasOwn(formatField,'value')) throw Error('프로젝트 필드에 접근자를 사용할 수 없습니다.');
-    if (formatField?.value === 'pankeki-cubism-session') {
-      if (!cubismWorkspace) throw Error('Live2D 화면을 사용할 수 없습니다.');
-      notifyStudio('cubism-import');
-      cubismWorkspace.setMode('cubism');
-      globalThis.PankekiWorkflowController?.go('motion');
-      return await cubismWorkspace.restoreSession(raw);
-    }
+    if (formatField && !Object.hasOwn(formatField,'value')) throw Error('Project fields cannot use accessors.');
+    if (formatField?.value === 'pankeki-cubism-session') throw Error('Live2D session files are no longer supported.');
     const versionField = Object.getOwnPropertyDescriptor(incoming || {},'version');
-    if (versionField && !Object.hasOwn(versionField,'value')) throw Error('프로젝트 필드에 접근자를 사용할 수 없습니다.');
+    if (versionField && !Object.hasOwn(versionField,'value')) throw Error('Project fields cannot use accessors.');
     const version = versionField?.value;
     if (version === 3 && formatField?.value === 'pankeki-authoring') return await openAuthoringV3(raw);
     if (version === 2) {
-      if (!motionController) throw Error('움직임 편집기를 사용할 수 없습니다.');
-      if (!restore && hasWork() && !confirm('현재 프로젝트를 움직임 v2 파일로 교체할까요? 필요한 작업은 먼저 저장해주세요.')) return false;
+      if (!motionController) throw Error('Motion editor unavailable.');
+      if (!restore && hasWork() && !confirm('Replace the current project with a motion v2 file? Save any work you need first.')) return false;
       if (authoringV3Selected && authoringV3?.getSummary().loaded) { const rawV3=await authoringV3.snapshotProject(), db=await authoringV3Database; if(db) await storage(db,true,rawV3); authoringV3Restore=Promise.resolve(rawV3); }
       void stopBatch(); ++sourceRevision; ++maskRevision; ++importRevision; ++motionPersistenceEpoch;
       motionController.suspend();
       const loaded = await motionController.loadDocument(raw);
-      if (loaded) { authoringV3Selected=false; document.body.dataset.nativeAuthoring='v2'; ++authoringV3PersistenceEpoch; clearTimeout(authoringV3Timer); authoringV3?.suspend?.(); cubismWorkspace?.setMode('native'); projectStatus('움직임 v2를 불러왔어요. 이전 undo는 복원되지 않습니다.'); notifyStudio('motion-import'); scheduleMotionSave(); }
+      if (loaded) { authoringV3Selected=false; document.body.dataset.nativeAuthoring='v2'; ++authoringV3PersistenceEpoch; clearTimeout(authoringV3Timer); authoringV3?.suspend?.(); projectStatus('Motion v2 loaded. Previous undo history is not restored.'); notifyStudio('motion-import'); scheduleMotionSave(); }
       return loaded;
     }
     const next = Design.parseProject(raw);
-    if (!restore && hasWork() && !confirm('현재 작업을 불러온 작업으로 교체할까요? 저장하지 않은 작업은 사라집니다. 필요하면 취소하고 프로젝트 파일을 먼저 저장해주세요.')) return false;
+    if (!restore && hasWork() && !confirm('Replace the current work with the imported project? Unsaved work will be lost. Cancel and save a project file first if needed.')) return false;
     if (!restore) { touch(); generationSettingsTouched = true; }
     // The legacy confirmation also authorizes replacing the active motion scene.
     if (!restore) { ++motionPersistenceEpoch; motionController?.suspend(); }
@@ -815,7 +803,7 @@ async function importProject(raw,{restore = false} = {}) {
     // Keep committed images and masks untouched until every imported image passes.
     void stopBatch(); ++sourceRevision; ++maskRevision; maskLoading = false; drawing = false;
     sourceLoaded = sourceDataURL !== null; renderView();
-    projectStatus('불러온 작업의 이미지 파일을 확인하고 있어요…');
+    projectStatus('Checking images in the imported project…');
     const active = () => token === importRevision && epoch === editEpoch;
     const chosenId = next.selectionHistory.at(-1)?.candidateId;
     const item = next.versions.find(v => v.id === chosenId) || next.versions.at(-1);
@@ -828,7 +816,7 @@ async function importProject(raw,{restore = false} = {}) {
     }
     for(const candidate of next.versions.filter(value=>value.kind==='derived')){
       const d=candidate.derivation,decoded=decodedCandidates.get(candidate.id),parent=next.versions.find(value=>value.id===d.sourceId),source=decodedCandidates.get(d.sourceId);
-      if(decoded.width!==d.outputWidth||decoded.height!==d.outputHeight||source.width!==d.inputWidth||source.height!==d.inputHeight||await photoSha(parent.image)!==d.sourceSha256)throw Error('파생 이미지의 원본 해시 또는 실제 크기가 문서와 다릅니다.');
+      if(decoded.width!==d.outputWidth||decoded.height!==d.outputHeight||source.width!==d.inputWidth||source.height!==d.inputHeight||await photoSha(parent.image)!==d.sourceSha256)throw Error('The derived image source hash or actual dimensions do not match the document.');
       if(!active())return false;
     }
     if (!active()) return false;
@@ -837,25 +825,25 @@ async function importProject(raw,{restore = false} = {}) {
     project = next; applyBrief(next.brief); $('comparePanel').hidden = true; $('download').hidden = true;
     applyEditRequest(item?.request);
     if (item) { commitSource(chosenImage,item.image,item.id); showCandidate(item); }
-    else { clearMask(); $('result').removeAttribute('src'); badge('준비'); }
+    else { clearMask(); $('result').removeAttribute('src'); badge('Ready'); }
     setMode('txt2img'); renderGallery(); ++editEpoch;
-    projectStatus(restore ? '이전 작업을 자동 복원했어요. 편집 마스크는 다시 칠해주세요.' : '작업을 불러왔어요. 편집 마스크는 다시 칠해주세요.');
+    projectStatus(restore ? 'Previous work restored automatically. Repaint the edit mask.' : 'Project loaded. Repaint the edit mask.');
     if (!restore) { await persistCurrentProject(exportProject()); void replaceMotionWithLegacy(); }
     notifyStudio(restore ? 'restore' : 'import'); return true;
-  } catch (error) { if (token === undefined || token === importRevision) projectStatus('불러오기 실패: ' + error.message,true); return false; }
+  } catch (error) { if (token === undefined || token === importRevision) projectStatus('Import failed: ' + uiMessage(error.message),true); return false; }
   finally { if (token === importRevision) { importing = false; renderView(); } }
 }
 $('loadProject').onchange = async () => {
   const file = $('loadProject').files[0]; if (!file) return;
   touch(); const token = ++importRevision;
   try {
-    if (file.size > MAX_FILE) throw Error('프로젝트 파일은 최대 64MiB까지입니다.');
+    if (file.size > MAX_FILE) throw Error('Project files must be 64MiB or smaller.');
     const raw = await file.text(); if (token !== importRevision) return; await requestImportProject(raw);
-  } catch (error) { if (token === importRevision) projectStatus(error.message,true); }
+  } catch (error) { if (token === importRevision) projectStatus(uiMessage(error.message),true); }
   finally { $('loadProject').value = ''; }
 };
 function resetProject() {
-  if (hasWork() && !confirm('새 작업을 시작할까요? 저장하지 않은 작업은 사라집니다. 필요하면 취소하고 프로젝트 파일을 먼저 저장해주세요.')) return false;
+  if (hasWork() && !confirm('Start a new project? Unsaved work will be lost. Cancel and save a project file first if needed.')) return false;
   ++motionPersistenceEpoch; motionController?.suspend();
   touch(); void stopBatch(); ++sourceRevision; clearMask(); drawing = false;
   project = Design.createProject(Design.sanitizeBrief({}),[],[]);
@@ -863,7 +851,7 @@ function resetProject() {
   emptyBriefSnapshot = JSON.stringify(project.brief);
   sourceLoaded = false; sourceDataURL = null; sourceId = null; latestUrl = null; latestId = null; selectedIds = [];
   $('result').removeAttribute('src'); $('preview').removeAttribute('src'); $('download').hidden = true; $('comparePanel').hidden = true;
-  applyBrief(project.brief); setMode('txt2img'); renderGallery(); badge('준비'); scheduleSave(); void replaceMotionWithLegacy(); status('새 작업을 시작했어요.'); notifyStudio('reset'); return true;
+  applyBrief(project.brief); setMode('txt2img'); renderGallery(); badge('Ready'); scheduleSave(); void replaceMotionWithLegacy(); status('New project started.'); notifyStudio('reset'); return true;
 }
 function setProjectActions(actions) {
   if(!actions || !['importProject','newProject','saveCurrent'].every(name=>typeof actions[name]==='function'))throw TypeError('Project action handlers are required.');
@@ -875,15 +863,15 @@ async function requestNewProject() { return projectActions ? projectActions.newP
 const database = typeof indexedDB === 'undefined' ? Promise.resolve(null) : new Promise((resolve,reject) => {
   const request = indexedDB.open('pankeki-character-studio',1);
   request.onupgradeneeded = () => { if (!request.result.objectStoreNames.contains('projects')) request.result.createObjectStore('projects'); };
-  request.onsuccess = () => resolve(request.result); request.onerror = () => reject(request.error || Error('브라우저 저장소를 열지 못했습니다.'));
-  request.onblocked = () => reject(Error('다른 탭에서 저장소를 사용하고 있습니다. 다른 Pankeki 탭을 닫아주세요.'));
+  request.onsuccess = () => resolve(request.result); request.onerror = () => reject(request.error || Error('Could not open browser storage.'));
+  request.onblocked = () => reject(Error('Another tab is using storage. Close other Pankeki tabs.'));
 });
 function storage(db,write,value) {
   return new Promise((resolve,reject) => {
     const tx = db.transaction('projects',write ? 'readwrite' : 'readonly'), store = tx.objectStore('projects');
     const request = write ? store.put(value,'current') : store.get('current');
-    request.onerror = () => reject(request.error || Error('브라우저 저장에 실패했습니다.'));
-    tx.onerror = tx.onabort = () => reject(tx.error || Error('브라우저 저장에 실패했습니다.'));
+    request.onerror = () => reject(request.error || Error('Could not save to browser storage.'));
+    tx.onerror = tx.onabort = () => reject(tx.error || Error('Could not save to browser storage.'));
     if (write) tx.oncomplete = () => resolve(); else request.onsuccess = () => resolve(request.result);
   });
 }
@@ -892,12 +880,12 @@ function storage(db,write,value) {
 // skipUnchanged lets the catalog path reuse this queue's last committed write.
 function persistCurrentProject(raw=exportProject(),{skipUnchanged=false}={}) {
   clearTimeout(saveTimer);saveTimer=null;
-  if(activeCubismWorkspace()||activeAuthoringV3Workspace())return Promise.resolve(false);
+  if(activeAuthoringV3Workspace())return Promise.resolve(false);
   if(!validatedProject(raw))Design.parseProject(raw);
   const task=saveQueue.catch(()=>null).then(async()=>{
-    if(activeCubismWorkspace()||activeAuthoringV3Workspace())throw Error('다른 형식의 작업이 시작되어 이미지 프로젝트 저장을 중단했습니다.');
+    if(activeAuthoringV3Workspace())throw Error('Image project saving stopped because work in another format started.');
     const db=await database;
-    if(!db)throw Error('브라우저 저장소를 사용할 수 없습니다.');
+    if(!db)throw Error('Browser storage unavailable.');
     if(skipUnchanged&&persistedRaw!==null&&raw===persistedRaw)return true;
     persistedRaw=null;await storage(db,true,raw);persistedRaw=raw;
     return true;
@@ -908,14 +896,14 @@ function persistCurrentProject(raw=exportProject(),{skipUnchanged=false}={}) {
 // The catalog defers its own save while this debounce is pending; always hand it back.
 function runScheduledSave() {
   const handOff=()=>{try{projectActions?.autosaved?.();}catch(error){console.error('Pankeki catalog autosave hook failed',error);}};
-  if(activeCubismWorkspace()||activeAuthoringV3Workspace())return handOff();
-  let raw;try{raw=exportProject();}catch(error){projectStatus(error.message,true);return handOff();}
+  if(activeAuthoringV3Workspace())return handOff();
+  let raw;try{raw=exportProject();}catch(error){projectStatus(uiMessage(error.message),true);return handOff();}
   const epoch=editEpoch;
-  void persistCurrentProject(raw).then(()=>{if(epoch===editEpoch)projectStatus('이 브라우저에 자동 저장했어요. 프로젝트 파일로도 보관할 수 있습니다.');}).catch(error=>projectStatus('자동 저장 실패: '+error.message+' 현재 작업은 화면에 유지됩니다.',true)).finally(handOff);
+  void persistCurrentProject(raw).then(()=>{if(epoch===editEpoch)projectStatus('Autosaved in this browser. You can also save a project file.');}).catch(error=>projectStatus('Autosave failed: '+uiMessage(error.message)+' Your current work remains on screen.',true)).finally(handOff);
 }
 function scheduleSave(delay=200) {
   clearTimeout(saveTimer);saveTimer=null;
-  if(activeCubismWorkspace()||activeAuthoringV3Workspace())return;
+  if(activeAuthoringV3Workspace())return;
   saveTimer=setTimeout(()=>{saveTimer=null;runScheduledSave();},delay);
 }
 // A pending debounce is written now when the page may be discarded.
@@ -927,30 +915,30 @@ async function restoreSaved() {
   let legacyRead=false,legacyRaw=null;
   try {
     const db = await database;
-    if (!db) { projectStatus('자동 저장을 사용할 수 없습니다. 프로젝트 파일로 저장해주세요.'); return Object.freeze({ok:false,restored:false,reason:'unavailable',legacyRead,legacyRaw,stage:'read'}); }
+    if (!db) { projectStatus('Autosave unavailable. Save a project file.'); return Object.freeze({ok:false,restored:false,reason:'unavailable',legacyRead,legacyRaw,stage:'read'}); }
     const raw = await storage(db,false);
     legacyRead=true;legacyRaw=raw==null?null:typeof raw==='string'?raw:JSON.stringify(raw);
     if (epoch !== editEpoch || revision !== importRevision) return Object.freeze({ok:true,restored:false,reason:'superseded',legacyRead,legacyRaw,stage:'read'});
     if (raw) { const restored=await importProject(raw,{restore:true}),superseded=!restored&&epoch!==editEpoch;return Object.freeze({ok:restored===true||superseded,restored:restored===true,reason:restored?'restored':superseded?'superseded':'error',legacyRead,legacyRaw,stage:'import'}); }
-    projectStatus('후보와 설정을 이 브라우저에 자동 저장합니다. 마스크는 프로젝트 파일에 포함되지 않습니다.');
+    projectStatus('Candidates and settings are autosaved in this browser. Masks are not included in project files.');
     return Object.freeze({ok:true,restored:false,reason:'empty',legacyRead,legacyRaw,stage:'read'});
-  } catch (error) { if (epoch === editEpoch) projectStatus('자동 복원 실패: ' + error.message + ' 프로젝트 파일로 불러올 수 있어요.',true);return Object.freeze({ok:false,restored:false,reason:'error',legacyRead,legacyRaw,stage:legacyRead?'import':'read'}); }
+  } catch (error) { if (epoch === editEpoch) projectStatus('Auto-restore failed: ' + uiMessage(error.message) + ' You can import a project file.',true);return Object.freeze({ok:false,restored:false,reason:'error',legacyRead,legacyRaw,stage:legacyRead?'import':'read'}); }
 }
 $('newProject').onclick = requestNewProject; $('generate').onclick = generate; $('cancel').onclick = cancel;
 $('useResult').onclick = async () => {
   const item = project.versions.find(v => v.id === latestId); if (!item) return;
-  try { await editCandidate(item); } catch (error) { status(error.message,true); }
+  try { await editCandidate(item); } catch (error) { status(uiMessage(error.message),true); }
 };
 $('clearCache').onclick = async () => {
-  try { await api('/api/cache/clear',{}); status('동일 결과 재사용 캐시를 비웠어요. 프로젝트의 후보 이미지는 유지됩니다.'); }
-  catch (error) { status(error.message,true); }
+  try { await api('/api/cache/clear',{}); status('Cleared the result reuse cache. Project candidate images are preserved.'); }
+  catch (error) { status(uiMessage(error.message),true); }
 };
 $('exportBoard').onclick = async () => {
   const snapshot = clone(project), epoch = editEpoch;
   const fallbackId = view === 'source' && sourceId ? sourceId : latestId || sourceId;
   const ids = selectedIds.length ? [...selectedIds] : fallbackId ? [fallbackId] : [];
   try {
-    if (!ids.length) throw Error('보드에 담을 후보를 먼저 생성하거나 선택해주세요.');
+    if (!ids.length) throw Error('Generate or select candidates for the board first.');
     const candidates = [];
     for (const id of ids) {
       const item = snapshot.versions.find(v => v.id === id);
@@ -958,10 +946,10 @@ $('exportBoard').onclick = async () => {
     }
     const output = document.createElement('canvas'), profile = Design.profiles[snapshot.brief.profile];
     CharacterBoard.drawCharacterBoard(output,{...snapshot.brief,profileLabel:profile.label,detailLabel:profile.detailLabel},candidates);
-    const blob = await new Promise((resolve,reject) => output.toBlob(value => value ? resolve(value) : reject(Error('PNG 파일을 만들지 못했습니다.')),'image/png'));
+    const blob = await new Promise((resolve,reject) => output.toBlob(value => value ? resolve(value) : reject(Error('Could not create a PNG file.')),'image/png'));
     downloadBlob(blob,safeName(snapshot.brief) + '-board.png');
-    if (epoch === editEpoch) projectStatus('캐릭터 보드 PNG를 내보냈어요.');
-  } catch (error) { if (epoch === editEpoch) projectStatus('보드 저장 실패: ' + error.message,true); }
+    if (epoch === editEpoch) projectStatus('Character board PNG exported.');
+  } catch (error) { if (epoch === editEpoch) projectStatus('Board save failed: ' + uiMessage(error.message),true); }
 };
 $('helpButton').onclick = () => $('helpDialog').showModal(); $('closeHelp').onclick = () => $('helpDialog').close();
 $('helpDialog').onclick = event => {
@@ -975,7 +963,7 @@ function getSummary() {
     projectStatus:$('projectStatus').textContent,modelsReady,editEpoch,sourceRevision,importing,maskLoading,drawing,photoTools:photoState()});
 }
 function notifyStudio(reason = 'state') {
-  if (['reset','import','restore','motion-import','v3-import','cubism-import'].includes(reason)) {
+  if (['reset','import','restore','motion-import','v3-import'].includes(reason)) {
     ++desktopProjectGeneration; desktopRequests.clear(); desktopAppliedJobs.clear();
   }
   motionController?.refreshSources();
@@ -1039,10 +1027,10 @@ function recomposeBase(item) {
   return {item,basePrompt};
 }
 function desktopAutomaticContext({visibleCandidateId=null,referenceCandidateId=visibleCandidateId,generationStyle=null}={}) {
-  if(importing||maskLoading||drawing)throw Error('이미지나 마스크 입력을 마친 뒤 다시 보내주세요.');
-  if(visibleCandidateId!==null&&(typeof visibleCandidateId!=='string'||!project.versions.some(item=>item.id===visibleCandidateId)))throw Error('현재 보이는 이미지를 다시 확인해주세요.');
+  if(importing||maskLoading||drawing)throw Error('Finish the image or mask input before sending again.');
+  if(visibleCandidateId!==null&&(typeof visibleCandidateId!=='string'||!project.versions.some(item=>item.id===visibleCandidateId)))throw Error('Check the currently visible image again.');
   if(generationStyle!==null){
-    if(!generationStyle||Object.keys(generationStyle).some(key=>!['id','prompt'].includes(key))||!['character','illustration','background','concept','portrait','chibi','other'].includes(generationStyle.id)||typeof generationStyle.prompt!=='string'||generationStyle.prompt.length>512||/\b(?:https?|file|data):|(?:^|\s)\/(?:Users|Volumes|private|var|tmp)\//i.test(generationStyle.prompt))throw Error('선택 스타일을 확인해주세요.');
+    if(!generationStyle||Object.keys(generationStyle).some(key=>!['id','prompt'].includes(key))||!['character','illustration','background','concept','portrait','chibi','other'].includes(generationStyle.id)||typeof generationStyle.prompt!=='string'||generationStyle.prompt.length>512||/\b(?:https?|file|data):|(?:^|\s)\/(?:Users|Volumes|private|var|tmp)\//i.test(generationStyle.prompt))throw Error('Check the selected style.');
     generationStyle=Object.freeze({id:generationStyle.id,prompt:generationStyle.prompt});
   }
   const state=desktopState(),sourceCandidateId=sourceLoaded?sourceId:null;
@@ -1085,19 +1073,19 @@ function desktopAutomaticContext({visibleCandidateId=null,referenceCandidateId=v
   desktopAutomaticCaptures.set(output,{stateSourceRevision:state.sourceRevision,referenceId:reference?.id||null,referenceImage:reference?.image||null});return Object.freeze(output);
 }
 function desktopContext({intent='chat',includeEditAssets=false,visibleCandidateId=null,referenceCandidateId=visibleCandidateId,generationStyle=null}={}) {
-  if(photoActive)throw Error('사진 도구 작업을 적용하거나 취소한 뒤 대화를 보내주세요.');
+  if(photoActive)throw Error('Apply or cancel the photo edit before sending a message.');
   if(intent==='auto')return desktopAutomaticContext({visibleCandidateId,referenceCandidateId,generationStyle});
-  if (!['chat','generate','edit'].includes(intent)) throw Error('대화 또는 이미지 작업을 선택해주세요.');
-  if (importing || maskLoading || drawing) throw Error('이미지나 마스크 입력을 마친 뒤 다시 보내주세요.');
+  if (!['chat','generate','edit'].includes(intent)) throw Error('Choose a conversation or image task.');
+  if (importing || maskLoading || drawing) throw Error('Finish the image or mask input before sending again.');
   const state=desktopState(), output={version:1,intent,...state,
     generation:{modelId:$('imageModel').value,width:Number($('width').value),height:Number($('height').value)}};
   if (intent==='edit') {
-    if (!sourceLoaded) throw Error('수정할 원본 이미지를 먼저 불러오세요.');
-    if (!includeEditAssets) throw Error('선택 원본과 마스크 사용에 동의해주세요.');
+    if (!sourceLoaded) throw Error('Import the source image to edit first.');
+    if (!includeEditAssets) throw Error('Allow use of the selected source and mask.');
     const pixels=context.getImageData(0,0,paint.width,paint.height).data;
     let selected=false;
     for(let index=0;index<pixels.length;index+=4)if(Math.round(.299*pixels[index]+.587*pixels[index+1]+.114*pixels[index+2])>0){selected=true;break;}
-    if (!selected) throw Error('브러시로 수정할 영역을 칠하거나 마스크를 불러와주세요.');
+    if (!selected) throw Error('Paint the edit area with the brush or import a mask.');
     output.source={dataUrl:sourceDataURL.startsWith('data:image/png;')?sourceDataURL:canvas.toDataURL('image/png'),width:canvas.width,height:canvas.height};
     output.mask={dataUrl:paint.toDataURL('image/png'),width:paint.width,height:paint.height};
   }
@@ -1107,10 +1095,10 @@ async function desktopPrepareSource(captured) {
   const reference=desktopAutomaticCaptures.get(captured);
   if(!reference||!captured.source)return captured.source;
   const current=()=>{const state=desktopState();return state.projectId===captured.projectId&&state.sourceRevision===reference.stateSourceRevision&&state.maskRevision===captured.maskRevision&&state.revision===captured.revision&&project.versions.some(item=>item.id===reference.referenceId&&item.image===reference.referenceImage);};
-  if(!current())throw Error('참조 이미지가 바뀌었어요. 다시 보내주세요.');
+  if(!current())throw Error('The reference image changed. Send again.');
   if(captured.source.dataUrl.startsWith('data:image/png;'))return captured.source;
   const image=await decodeImage(captured.source.dataUrl);
-  if(!current())throw Error('참조 이미지가 바뀌었어요. 다시 보내주세요.');
+  if(!current())throw Error('The reference image changed. Send again.');
   const surface=document.createElement('canvas');surface.width=image.naturalWidth;surface.height=image.naturalHeight;
   surface.getContext('2d').drawImage(image,0,0);
   return Object.freeze({dataUrl:surface.toDataURL('image/png'),width:surface.width,height:surface.height});
@@ -1121,10 +1109,10 @@ function desktopCurrent(entry) {
     now.projectId===entry.projectId&&now.sourceRevision===(entry.stateSourceRevision||entry.sourceRevision)&&(!entry.referenceId||project.versions.some(item=>item.id===entry.referenceId&&item.image===entry.referenceImage))&&now.maskRevision===entry.maskRevision&&editEpoch===entry.liveRevision;
 }
 function desktopFormatMessage({text,intent,context:captured}={}) {
-  if(typeof text!=='string'||!text.trim()||text.length>4000||!['chat','generate','edit','auto'].includes(intent))throw Error('작업 설명과 선택을 확인해주세요.');
+  if(typeof text!=='string'||!text.trim()||text.length>4000||!['chat','generate','edit','auto'].includes(intent))throw Error('Check the task description and selection.');
   const now=desktopState();
-  if(!captured||captured.intent!==intent||captured.projectId!==now.projectId||(desktopAutomaticCaptures.get(captured)?.stateSourceRevision||captured.sourceRevision)!==now.sourceRevision||importing||maskLoading||drawing)throw Error('원본이나 마스크 상태가 바뀌었어요. 다시 선택해주세요.');
-  if(intent==='auto'){if(!desktopAutomaticCaptures.has(captured))throw Error('자동 요청 문맥을 다시 준비해주세요.');return '[Pankeki action: auto]\n'+text;}
+  if(!captured||captured.intent!==intent||captured.projectId!==now.projectId||(desktopAutomaticCaptures.get(captured)?.stateSourceRevision||captured.sourceRevision)!==now.sourceRevision||importing||maskLoading||drawing)throw Error('The source or mask changed. Select again.');
+  if(intent==='auto'){if(!desktopAutomaticCaptures.has(captured))throw Error('Prepare the automatic request context again.');return '[Pankeki action: auto]\n'+text;}
   if(intent==='chat')return '[Pankeki action: chat]\n이 요청은 대화만 합니다. 이미지 생성·수정 도구를 실행하지 마세요.\n'+text;
   const brief=Design.sanitizeBrief({...readBrief(),prompt:text,useBrief:false});
   const request=requestSnapshot(brief,intent==='edit'?'inpaint':'txt2img');
@@ -1135,11 +1123,11 @@ function desktopFormatMessage({text,intent,context:captured}={}) {
   const safe={};
   for(const key of allowed)if(Object.hasOwn(normalized,key)){
     const value=normalized[key];
-    if(value!==null&&!['string','number','boolean'].includes(typeof value)||typeof value==='string'&&/data:image\/|file:\/\/|(?:^|\s)\/(?:Users|Volumes|private|var|tmp)\//i.test(value))throw Error('이미지 작업에는 검증된 안전 설정만 전달할 수 있어요.');
+    if(value!==null&&!['string','number','boolean'].includes(typeof value)||typeof value==='string'&&/data:image\/|file:\/\/|(?:^|\s)\/(?:Users|Volumes|private|var|tmp)\//i.test(value))throw Error('Only validated settings can be passed to image tasks.');
     safe[key]=value;
   }
   const message='[Pankeki action: '+intent+']\n[Pankeki settings: '+JSON.stringify(safe)+']\n'+text;
-  if(message.length>8000)throw Error('전달할 작업 설명과 설정을 8000자 이내로 줄여주세요.');
+  if(message.length>8000)throw Error('Keep the task description and settings within 8000 characters.');
   return message;
 }
 // provider: the chat model's display name, used only in labels and status text.
@@ -1171,7 +1159,7 @@ async function desktopReceive(event) {
   if(event.type==='job'){
     if(!['queued','running','canceling','succeeded','failed','canceled','uncertain','orphaned'].includes(data.state))return declined('state');
     if(entry.automatic&&entry.jobs.size&&!entry.jobs.has(data.jobId))return declined('job');
-    entry.jobs.add(data.jobId);status(entry.provider+(data.state==='queued'?' 이미지 작업이 순서를 기다리고 있어요.':data.state==='running'?' 이미지 작업을 진행하고 있어요.':' 이미지 작업: '+data.state));
+    entry.jobs.add(data.jobId);status(entry.provider+(data.state==='queued'?' image task is queued.':data.state==='running'?' image task is running.':' image task: '+data.state));
     return {accepted:true};
   }
   if(event.type!=='result'||!entry.jobs.has(data.jobId)||desktopAppliedJobs.has(data.jobId))return declined('job');
@@ -1197,18 +1185,18 @@ async function desktopReceive(event) {
     project=Design.createProject(readBrief(),[...project.versions,item],project.selectionHistory);
     desktopAppliedJobs.add(data.jobId);++editEpoch;entry.liveRevision=editEpoch;
     showCandidate(item);renderGallery();scheduleSave();
-    badge(resultWasSkipped(metrics)?'변경 없음':entry.provider+' 후보 준비 완료');
-    status(resultWasSkipped(metrics)?'변경 없는 후보를 보관했어요.':entry.provider+' 작업 결과를 후보에 추가했어요.');
+    badge(resultWasSkipped(metrics)?'No change':entry.provider+' candidate ready');
+    status(resultWasSkipped(metrics)?'Saved a candidate with no changes.':entry.provider+' result added to candidates.');
     return {accepted:true,candidateId:item.id};
   }catch(error){return declined('invalid-result');}
 }
 // UI-only local image operations. No provider tools, paths or native capability changes.
 function photoBytes(data) {
-  if(typeof data!=='string'||data.length>MAX_IMAGE||!/^data:image\/(png|jpeg|webp);base64,/.test(data))throw Error('저장 가능한 원본 이미지가 필요합니다.');
+  if(typeof data!=='string'||data.length>MAX_IMAGE||!/^data:image\/(png|jpeg|webp);base64,/.test(data))throw Error('A source image that can be saved is required.');
   return Uint8Array.from(atob(data.slice(data.indexOf(',')+1)),char=>char.charCodeAt(0));
 }
 async function photoSha(data) {
-  if(!crypto.subtle)throw Error('이미지 무결성 검증을 사용할 수 없습니다.');
+  if(!crypto.subtle)throw Error('Image integrity verification unavailable.');
   return Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',photoBytes(data))),v=>v.toString(16).padStart(2,'0')).join('');
 }
 function photoCurrent(op) {
@@ -1219,15 +1207,15 @@ function photoState() {
 }
 function photoRequire(token,tool) {
   const op=photoActive;
-  if(!op||op.token!==token||!photoCurrent(op)||tool&&op.tool!==tool)throw Error('이미지 작업의 원본이나 프로젝트가 바뀌었습니다. 다시 선택해주세요.');
+  if(!op||op.token!==token||!photoCurrent(op)||tool&&op.tool!==tool)throw Error('The image task source or project changed. Select again.');
   return op;
 }
 async function photoBegin(candidateId,tool) {
-  if(!['markup','comments','background-remove','erase','resize'].includes(tool))throw Error('지원하지 않는 이미지 도구입니다.');
-  const capability=Design.capabilityOperation(capabilitySnapshot,tool);if(capabilitySnapshot?.source==='snapshot'&&!capability.ready)throw Error(capability.reason||'이 기능은 아직 준비되지 않았습니다.');
-  if(photoActive||photoState().locked)throw Error('진행 중인 작업을 마친 뒤 이미지 도구를 열어주세요.');
+  if(!['markup','comments','background-remove','erase','resize'].includes(tool))throw Error('Unsupported image tool.');
+  const capability=Design.capabilityOperation(capabilitySnapshot,tool);if(capabilitySnapshot?.source==='snapshot'&&!capability.ready)throw Error(uiMessage(capability.reason)||'This feature is not ready yet.');
+  if(photoActive||photoState().locked)throw Error('Finish the current task before opening image tools.');
   const item=project.versions.find(value=>value.id===candidateId);
-  if(!item)throw Error('현재 프로젝트에서 이미지를 명시적으로 선택해주세요.');
+  if(!item)throw Error('Select an image in the current project.');
   const op={token:crypto.randomUUID(),sequence:++photoSequence,candidateId,tool,original:item.image,brief:clone(item.brief),generation:desktopProjectGeneration,sourceRevision,canceled:false,applying:false};
   if(tool==='erase'){
     const edit=desktopAutomaticContext({visibleCandidateId:candidateId}).automatic.edit;
@@ -1236,7 +1224,7 @@ async function photoBegin(candidateId,tool) {
   photoActive=op;renderView();
   try {
     const image=await decodeImage(item.image);op.sourceSha256=await photoSha(item.image);
-    if(!photoCurrent(op))throw Error('이미지 선택이 변경되었습니다.');
+    if(!photoCurrent(op))throw Error('The image selection changed.');
     op.width=image.naturalWidth;op.height=image.naturalHeight;op.png=item.image;
     if(!item.image.startsWith('data:image/png;base64,')){
       const copy=document.createElement('canvas');copy.width=op.width;copy.height=op.height;copy.getContext('2d').drawImage(image,0,0);op.png=copy.toDataURL('image/png');photoBytes(op.png);
@@ -1262,84 +1250,84 @@ async function photoCancel(token) {
   return op.cancelPromise;
 }
 function photoListComments(candidateId) {
-  const item=project.versions.find(value=>value.id===candidateId);if(!item)throw Error('현재 프로젝트의 이미지가 아닙니다.');
+  const item=project.versions.find(value=>value.id===candidateId);if(!item)throw Error('This image is not in the current project.');
   return clone(item.annotations||[]);
 }
 function photoWriteComments(op,notes) {
-  if(op.applying||photoState().locked)throw Error('진행 중인 작업이 끝난 뒤 주석을 저장해주세요.');
+  if(op.applying||photoState().locked)throw Error('Save annotations after the current task finishes.');
   const versions=project.versions.map(item=>item.id===op.candidateId?{...item,annotations:notes}:item);
   const next=Design.createProject(readBrief(),versions,project.selectionHistory);
   project=next;touch();scheduleSave();renderGallery();notifyStudio('annotation');
 }
 function photoSaveComment(token,input) {
   const op=photoRequire(token,'comments');
-  if(!input||Object.keys(input).some(key=>!['id','x','y','text'].includes(key)))throw Error('주석 입력을 확인해주세요.');
+  if(!input||Object.keys(input).some(key=>!['id','x','y','text'].includes(key)))throw Error('Check the annotation input.');
   const notes=photoListComments(op.candidateId),index=input.id===undefined?-1:notes.findIndex(note=>note.id===input.id);
-  if(input.id!==undefined&&index<0)throw Error('수정할 주석이 없습니다.');
+  if(input.id!==undefined&&index<0)throw Error('No annotation to edit.');
   const now=new Date().toISOString(),note={id:index<0?crypto.randomUUID():notes[index].id,x:input.x,y:input.y,text:input.text,createdAt:index<0?now:notes[index].createdAt,...(index>=0?{updatedAt:now}:{})};
   if(index<0)notes.push(note);else notes[index]=note;
   photoWriteComments(op,notes);return clone(note);
 }
 function photoDeleteComment(token,id) {
   const op=photoRequire(token,'comments'),notes=photoListComments(op.candidateId);
-  if(!notes.some(note=>note.id===id))throw Error('삭제할 주석이 없습니다.');
+  if(!notes.some(note=>note.id===id))throw Error('No annotation to delete.');
   photoWriteComments(op,notes.filter(note=>note.id!==id));return true;
 }
 async function photoMask(op,data) {
-  if(typeof data!=='string'||!data.startsWith('data:image/png;base64,'))throw Error('선택 영역 PNG 마스크가 필요합니다.');
+  if(typeof data!=='string'||!data.startsWith('data:image/png;base64,'))throw Error('A PNG selection mask is required.');
   photoBytes(data);const image=await decodeImage(data);
-  if(image.naturalWidth!==op.width||image.naturalHeight!==op.height)throw Error('마스크 크기는 원본과 같아야 합니다.');
+  if(image.naturalWidth!==op.width||image.naturalHeight!==op.height)throw Error('Mask dimensions must match the source.');
   const copy=document.createElement('canvas');copy.width=op.width;copy.height=op.height;const ctx=copy.getContext('2d');ctx.fillStyle='black';ctx.fillRect(0,0,op.width,op.height);ctx.drawImage(image,0,0);
   const pixels=ctx.getImageData(0,0,op.width,op.height).data;
-  if(!pixels.some((_,i)=>i%4===0&&pixels[i+3]>0&&Math.round(.299*pixels[i]+.587*pixels[i+1]+.114*pixels[i+2])>0))throw Error('지울 대상을 마스크로 선택해주세요.');
+  if(!pixels.some((_,i)=>i%4===0&&pixels[i+3]>0&&Math.round(.299*pixels[i]+.587*pixels[i+1]+.114*pixels[i+2])>0))throw Error('Select the object to erase with a mask.');
   return copy.toDataURL('image/png');
 }
 function photoApply(token,options={}) {
   let op;try{op=photoRequire(token);}catch(error){return Promise.reject(error);}
   if(op.work)return op.work;
-  if(op.tool==='comments')return Promise.reject(Error('주석은 주석 저장 기능으로 저장해주세요.'));
-  if(photoState().locked)return Promise.reject(Error('진행 중인 작업을 마친 뒤 적용해주세요.'));
-  try{options=clone(options);}catch{return Promise.reject(Error('이미지 작업 입력은 JSON 값이어야 합니다.'));}
+  if(op.tool==='comments')return Promise.reject(Error('Use Save comment to save annotations.'));
+  if(photoState().locked)return Promise.reject(Error('Finish the current task before applying.'));
+  try{options=clone(options);}catch{return Promise.reject(Error('Image task input must be JSON values.'));}
   op.applying=true;renderView();
   op.work=(async()=>{
     let image,metadata,request=null,metrics={},jobId=null,execution;
-    if(project.versions.length>=20)throw Error('후보는 최대 20개입니다. 프로젝트를 저장하고 새 프로젝트에서 이어주세요.');
+    if(project.versions.length>=20)throw Error('Up to 20 candidates are supported. Save this project and continue in a new one.');
     if(op.tool==='erase'){
-      if(!options||Object.keys(options).some(key=>key!=='maskPng'))throw Error('지우기 입력을 확인해주세요.');
+      if(!options||Object.keys(options).some(key=>key!=='maskPng'))throw Error('Check the erase input.');
       const mask=await photoMask(op,options.maskPng);photoRequire(token);
-      if(!op.editSettings)throw Error('설정에서 사용 가능한 부분 수정 모델과 수치를 먼저 선택해주세요.');
+      if(!op.editSettings)throw Error('Select an available masked edit model and its settings first.');
       request={...op.editSettings,mode:'inpaint',edit_operation:'regenerate',source:op.png,mask,prompt:'Remove the selected object and naturally fill the selected area with the surrounding background. Keep everything outside the mask unchanged.',negative:'',width:512,height:512};
       let submitted;op.submission=new Promise(resolve=>{submitted=resolve;});op.manualToken=++serial;busy=true;activeOperation='photo-erase';renderView();
       let job;try{job=await api('/api/jobs',{session,request:{...request,trace_id:op.token}});op.jobId=job.job_id;}finally{submitted();}
-      if(!photoCurrent(op)){await photoCancelJob(op);throw Error('취소되었거나 원본이 변경되었습니다.');}
+      if(!photoCurrent(op)){await photoCancelJob(op);throw Error('Canceled or source changed.');}
       current=op.jobId;const result=await poll(op.jobId,op.manualToken,0,1);
-      if(!result||!photoCurrent(op))throw Error('취소되었거나 원본이 변경되었습니다.');
+      if(!result||!photoCurrent(op))throw Error('Canceled or source changed.');
       image={png:await readDataURL(result.image_url),width:op.width,height:op.height};image.sha256=await photoSha(image.png);
       execution=Design.executionFromResult(result,image.png);
       metadata={algorithm:'configured-inpaint',algorithmVersion:'1',parameters:{maskSha256:await photoSha(mask)}};metrics=summaryMetrics(result.metrics);jobId=op.jobId;
     }else{
       const source={png:op.png,sha256:await photoSha(op.png),width:op.width,height:op.height};photoRequire(token);
       const body=JSON.stringify({version:1,operationId:op.token,operation:op.tool,...(capabilitySnapshot?.source==='snapshot'?{trace_id:op.token}:{}),source,options});
-      if(body.length>32*1024*1024)throw Error('이미지 작업 요청은 32MiB 이하여야 합니다.');
+      if(body.length>32*1024*1024)throw Error('Image task requests must be 32MiB or smaller.');
       if(typeof AbortController==='function')op.controller=new AbortController();
       const response=await fetch('/api/image-ops',{method:'POST',headers:{'Content-Type':'application/json'},body,signal:op.controller?.signal});
       let result=await response.json();
       if(response.status===202&&result.code==='in-progress'){
-        if(result.operationId!==op.token||!(/^[a-f0-9]{32}$/).test(result.job_id||''))throw Error('이미지 작업 식별자가 올바르지 않습니다.');
+        if(result.operationId!==op.token||!(/^[a-f0-9]{32}$/).test(result.job_id||''))throw Error('Invalid image task ID.');
         op.jobId=result.job_id;
-        if(!photoCurrent(op)){await photoCancelJob(op);throw Error('취소되었거나 원본이 변경되었습니다.');}
+        if(!photoCurrent(op)){await photoCancelJob(op);throw Error('Canceled or source changed.');}
         op.manualToken=++serial;current=op.jobId;busy=true;activeOperation='photo-'+op.tool;renderView();
         result=await poll(op.jobId,op.manualToken,0,1);photoRequire(token);
       }
-      if(!response.ok||!result?.ok)throw Object.assign(Error(result.error||'이미지 처리에 실패했습니다.'),{code:result.code});
-      if(result.operationId!==op.token||result.operation!==op.tool)throw Error('다른 이미지 작업의 결과입니다.');
+      if(!response.ok||!result?.ok)throw Object.assign(Error(uiMessage(result.error)||'Image processing failed.'),{code:result.code});
+      if(result.operationId!==op.token||result.operation!==op.tool)throw Error('This result belongs to another image task.');
       ({image,metadata}=result);execution=Design.executionFromResult(result,image?.png);
     }
     photoRequire(token);
-    if(!image||!metadata||typeof image.png!=='string'||!image.png.startsWith('data:image/png;base64,')||await photoSha(image.png)!==image.sha256)throw Error('결과 PNG 무결성 검증에 실패했습니다.');
+    if(!image||!metadata||typeof image.png!=='string'||!image.png.startsWith('data:image/png;base64,')||await photoSha(image.png)!==image.sha256)throw Error('Result PNG integrity verification failed.');
     const decoded=await decodeImage(image.png);photoRequire(token);
-    if(decoded.naturalWidth!==image.width||decoded.naturalHeight!==image.height)throw Error('결과 PNG 크기가 표시된 크기와 다릅니다.');
-    if(op.tool!=='resize'&&(image.width!==op.width||image.height!==op.height))throw Error('결과 크기는 원본과 같아야 합니다.');
+    if(decoded.naturalWidth!==image.width||decoded.naturalHeight!==image.height)throw Error('Result PNG dimensions differ from the reported dimensions.');
+    if(op.tool!=='resize'&&(image.width!==op.width||image.height!==op.height))throw Error('Result dimensions must match the source.');
     const derivation={operation:op.tool,sourceId:op.candidateId,sourceSha256:op.sourceSha256,inputWidth:op.width,inputHeight:op.height,outputWidth:image.width,outputHeight:image.height,algorithm:metadata.algorithm,algorithmVersion:metadata.algorithmVersion,parameters:metadata.parameters||{},...(jobId?{jobId}:{})};
     const item={id:crypto.randomUUID(),createdAt:new Date().toISOString(),label:{markup:'마크업','background-remove':'배경 제거',erase:'객체 지우기',resize:'크기 조정'}[op.tool],image:image.png,kind:'derived',brief:op.brief,request,parentId:op.candidateId,metrics,derivation,...(execution?{execution}:{})};
     const next=Design.createProject(readBrief(),[...project.versions,item],project.selectionHistory);photoRequire(token);
@@ -1352,20 +1340,20 @@ function photoApply(token,options={}) {
 }
 async function photoPreparePinnedEdit(token,input) {
   const op=photoRequire(token,'comments');
-  if(photoState().locked||op.applying||op.canceling)throw Error('진행 중인 작업을 마친 뒤 핀 범위를 준비해주세요.');
-  if(!input||Object.keys(input).some(key=>!['x','y','radius'].includes(key))||['x','y','radius'].some(key=>!Object.hasOwn(Object.getOwnPropertyDescriptor(input,key)||{},'value')||typeof input[key]!=='number'||!Number.isFinite(input[key]))||input.x<0||input.x>1||input.y<0||input.y>1||input.radius<.02||input.radius>.4)throw Error('핀 위치와 주변 범위를 다시 확인해주세요.');
+  if(photoState().locked||op.applying||op.canceling)throw Error('Finish the current task before preparing the pin area.');
+  if(!input||Object.keys(input).some(key=>!['x','y','radius'].includes(key))||['x','y','radius'].some(key=>!Object.hasOwn(Object.getOwnPropertyDescriptor(input,key)||{},'value')||typeof input[key]!=='number'||!Number.isFinite(input[key]))||input.x<0||input.x>1||input.y<0||input.y>1||input.radius<.02||input.radius>.4)throw Error('Check the pin location and surrounding area again.');
   const point={x:input.x,y:input.y,radius:input.radius},generation=desktopProjectGeneration,revision=sourceRevision,mask=maskRevision,sequence=photoSequence;
   op.applying=true;renderView();
   try {
     const image=await decodeImage(op.png);
-    if(!photoCurrent(op)||sourceRevision!==revision||maskRevision!==mask||photoSequence!==sequence)throw Error('핀의 이미지나 수정 범위가 바뀌었어요. 다시 선택해주세요.');
+    if(!photoCurrent(op)||sourceRevision!==revision||maskRevision!==mask||photoSequence!==sequence)throw Error('The pin image or edit area changed. Select again.');
     const prepared=document.createElement('canvas');prepared.width=op.width;prepared.height=op.height;
     const preparedContext=prepared.getContext('2d');preparedContext.fillStyle='black';preparedContext.fillRect(0,0,op.width,op.height);preparedContext.fillStyle='white';preparedContext.beginPath();preparedContext.arc(point.x*op.width,point.y*op.height,point.radius*Math.min(op.width,op.height),0,Math.PI*2);preparedContext.fill();
     await photoCancel(token);
-    if(photoActive!==null||photoSequence!==sequence||desktopProjectGeneration!==generation||sourceRevision!==revision||maskRevision!==mask||photoState().locked||!project.versions.some(item=>item.id===op.candidateId&&item.image===op.original))throw Error('핀의 이미지나 작업이 바뀌었어요. 다시 선택해주세요.');
+    if(photoActive!==null||photoSequence!==sequence||desktopProjectGeneration!==generation||sourceRevision!==revision||maskRevision!==mask||photoState().locked||!project.versions.some(item=>item.id===op.candidateId&&item.image===op.original))throw Error('The pin image or task changed. Select again.');
     // Decoding and validation finish before this synchronous source/mask commit.
     touch();++sourceRevision;drawing=false;commitSource(image,op.png,op.candidateId);context.drawImage(prepared,0,0);++maskRevision;setMode('inpaint');
-    status('핀 주변 원형 범위로 기존 수정 마스크를 바꿨어요. 아래에서 AI에 요청해주세요.');
+    status('Replaced the edit mask with a circle around the pin. Send an AI request below.');
     return Object.freeze({candidateId:op.candidateId,...point,width:op.width,height:op.height,sourceRevision:desktopState().sourceRevision});
   } finally {if(photoActive===op)op.applying=false;renderView();}
 }
@@ -1374,7 +1362,7 @@ const desktopChat=Object.freeze({getState:desktopState,captureContext:desktopCon
   endRequest:({requestId}={})=>{const removed=desktopRequests.delete(requestId);if(removed)renderView();return removed;}});
 globalThis.PankekiStudio = Object.freeze({generate,cancel,loadSource,importProject,exportProject,resetProject,requestImportProject,requestNewProject,setProjectActions,persistCurrentProject,validatedProject,flushScheduledSave,savePending:()=>saveTimer!==null,get ready(){return initialRestore;},getSummary,subscribe,downloadImage,desktopChat,photoTools,getImageModelSettings,setImageModelSettings,
   getAuthoringMode:() => authoringV3Selected ? 'v3' : 'v2',
-  snapshotProject:async () => activeAuthoringV3Workspace() ? activeAuthoringV3Workspace().snapshotProject() : activeCubismWorkspace() ? activeCubismWorkspace().snapshotProject() : motionController?.getSummary().isMotionProject ? motionController.snapshotProject() : exportProject(),
+  snapshotProject:async () => activeAuthoringV3Workspace() ? activeAuthoringV3Workspace().snapshotProject() : motionController?.getSummary().isMotionProject ? motionController.snapshotProject() : exportProject(),
   setMode:mode => { if (!['txt2img','inpaint'].includes(mode)) throw Error('Unsupported workspace mode'); touch(); setMode(mode); },
   getState:() => clone({project,sourceDataURL,sourceLoaded,latestUrl,selectedIds,sourceId,serial,busy,sourceRevision,maskRevision,maskLoading,importing})});
 // Motion uses its own database/key. A v1 restore never overwrites a v2 scene.
@@ -1384,19 +1372,19 @@ function mountMotionWorkspace() {
     const request = indexedDB.open('pankeki-motion-studio-v2',1);
     request.onupgradeneeded = () => { if (!request.result.objectStoreNames.contains('projects')) request.result.createObjectStore('projects'); };
     request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error || Error('움직임 저장소를 열지 못했습니다.'));
-    request.onblocked = () => reject(Error('다른 탭이 움직임 저장소를 사용하고 있습니다.'));
+    request.onerror = () => reject(request.error || Error('Could not open motion storage.'));
+    request.onblocked = () => reject(Error('Another tab is using motion storage.'));
   });
   motionController = globalThis.PankekiMotion.mount(document,{
     renderer:globalThis.PankekiRenderer,exporter:globalThis.PankekiExport,
     getSourceCandidates:() => project.versions.map(c => ({id:c.id,label:c.label})),
     getSourceDocument:async candidateId => {
       const candidate = project.versions.find(c => c.id === candidateId);
-      if (!candidate) throw Error('현재 프로젝트의 후보를 선택해주세요.');
+      if (!candidate) throw Error('Select a candidate from the current project.');
       return JSON.stringify(Design.createProject(readBrief(),project.versions,[...project.selectionHistory,{candidateId,action:'edit',at:new Date().toISOString()}].slice(-1000)));
     },
-    onError:error => projectStatus('움직임 작업 실패: ' + error.message,true,'motion'),
-    onSuccess:() => { if (projectStatusOwner==='motion') projectStatus('움직임 입력과 작업을 확인했어요.'); },
+    onError:error => projectStatus('Motion task failed: ' + uiMessage(error.message),true,'motion'),
+    onSuccess:() => { if (projectStatusOwner==='motion') projectStatus('Motion input and project verified.'); },
     onChange:() => scheduleMotionSave()
   });
   globalThis.PankekiMotionController = motionController;
@@ -1406,33 +1394,33 @@ function mountMotionWorkspace() {
     const db = await motionDatabase, raw = db ? await storage(db,false) : null;
     if (persistenceEpoch !== motionPersistenceEpoch || controllerGeneration !== motionController.getSummary().generation || motionController.getSummary().dirty || motionController.getSummary().partCount > 0) return;
     await motionController.loadDocument(raw || exportProject());
-    if (raw) projectStatus('움직임 v2를 자동 복원했어요. 이전 undo는 복원되지 않습니다.');
-  }).catch(error => projectStatus('움직임 자동 복원 실패: ' + error.message,true));
+    if (raw) projectStatus('Motion v2 restored automatically. Previous undo history is not restored.');
+  }).catch(error => projectStatus('Motion auto-restore failed: ' + uiMessage(error.message),true));
   return motionController;
 }
 function scheduleMotionSave() {
-  if (!motionController || activeCubismWorkspace() || activeAuthoringV3Workspace()) return;
+  if (!motionController || activeAuthoringV3Workspace()) return;
   clearTimeout(motionSaveTimer);
   const persistenceEpoch = motionPersistenceEpoch;
   motionSaveTimer = setTimeout(() => {
     motionSaveQueue = motionSaveQueue.then(async () => {
-      if (activeCubismWorkspace() || activeAuthoringV3Workspace()) return;
+      if (activeAuthoringV3Workspace()) return;
       const summary = motionController.getSummary(), db = await motionDatabase;
-      if (persistenceEpoch !== motionPersistenceEpoch || !db || activeAuthoringV3Workspace() || activeCubismWorkspace()) return;
+      if (persistenceEpoch !== motionPersistenceEpoch || !db || activeAuthoringV3Workspace()) return;
       if (summary.isMotionProject || summary.dirty || summary.partCount > 0) {
         const raw = await motionController.snapshotProject();
-        if (persistenceEpoch === motionPersistenceEpoch && !activeAuthoringV3Workspace() && !activeCubismWorkspace()) await storage(db,true,raw);
+        if (persistenceEpoch === motionPersistenceEpoch && !activeAuthoringV3Workspace()) await storage(db,true,raw);
       } else await new Promise((resolve,reject) => {
         const tx = db.transaction('projects','readwrite'); tx.objectStore('projects').delete('current');
-        tx.oncomplete = resolve; tx.onerror = tx.onabort = () => reject(tx.error || Error('움직임 저장소 초기화 실패'));
+        tx.oncomplete = resolve; tx.onerror = tx.onabort = () => reject(tx.error || Error('Could not initialize motion storage'));
       });
-    }).catch(error => projectStatus('움직임 자동 저장 실패: ' + error.message + ' v2 파일로 저장해주세요.',true));
+    }).catch(error => projectStatus('Motion autosave failed: ' + uiMessage(error.message) + ' Save a v2 file.',true));
   },200);
 }
 async function replaceMotionWithLegacy() {
   if (!motionController) return;
   try { await motionController.loadDocument(exportProject()); }
-  catch (error) { projectStatus('움직임 프로젝트 교체 실패: ' + error.message,true); }
+  catch (error) { projectStatus('Motion project replacement failed: ' + uiMessage(error.message),true); }
 }
 // Availability is an explicit composition gate, never inferred from package bytes.
 // Task 3 must supply a reviewed official adapter before enabling load/restore.
@@ -1441,61 +1429,26 @@ function bindAuthoringPageRestore() {
   if(authoringPageRestoreBound)return; authoringPageRestoreBound=true;
   globalThis.addEventListener?.('pageshow',event => { if(event.persisted) { const workflow=globalThis.PankekiWorkflowController; workflow?.go(workflow.getScreen(),{focus:false}); } });
 }
-function mountCubismWorkspace() {
-  if (cubismWorkspace || !globalThis.PankekiCubismWorkspace || !globalThis.PankekiCubismController || !$('cubismWorkspace')) return cubismWorkspace;
-  const availability = Object.freeze({ready:false,reason:'SDK_OR_USAGE_EVIDENCE_MISSING'});
-  const clock = {now:() => performance.now(),request:callback => requestAnimationFrame(callback),cancel:id => cancelAnimationFrame(id),setTimeout:(callback,ms) => setTimeout(callback,ms),clearTimeout:id => clearTimeout(id)};
-  const controller = globalThis.PankekiCubismController.createController({clock,
-    runtimeFactory:async ({signal}) => {
-      if (signal.aborted) throw Object.assign(Error('Load aborted'),{code:'ABORTED'});
-      throw Object.assign(Error('Official Cubism runtime is unavailable'),{code:'SDK_UNAVAILABLE'});
-    },onState:() => cubismWorkspace?.refresh()});
-  const cubismDatabase = typeof indexedDB === 'undefined' ? Promise.resolve(null) : new Promise((resolve,reject) => {
-    const request = indexedDB.open('pankeki-cubism-studio-v1',1);
-    request.onupgradeneeded = () => { if (!request.result.objectStoreNames.contains('sessions')) request.result.createObjectStore('sessions'); };
-    request.onsuccess = () => resolve(request.result); request.onerror = () => reject(request.error || Error('세션 저장소를 열지 못했습니다.'));
-    request.onblocked = () => reject(Error('다른 탭이 세션 저장소를 사용하고 있습니다.'));
-  });
-  async function sessionStorage(write,value) {
-    const db = await cubismDatabase;
-    if (!db) { if (write) throw Error('세션 자동 저장을 사용할 수 없습니다.'); return null; }
-    return new Promise((resolve,reject) => {
-      const tx = db.transaction('sessions',write ? 'readwrite' : 'readonly'),store = tx.objectStore('sessions');
-      const request = write ? store.put(value,'current') : store.get('current');
-      request.onerror = () => reject(request.error || Error('세션 저장 실패'));
-      tx.onerror = tx.onabort = () => reject(tx.error || Error('세션 저장 실패'));
-      if (write) tx.oncomplete = () => resolve(); else request.onsuccess = () => resolve(request.result);
-    });
-  }
-  cubismWorkspace = globalThis.PankekiCubismWorkspace.mount(document,{controller,readPackage:globalThis.PankekiCubismPackage.readPackage,availability,
-    storage:{read:() => sessionStorage(false),write:raw => sessionStorage(true,raw)},
-    onModeChange:() => { const workflow = globalThis.PankekiWorkflowController; if (workflow) workflow.go(workflow.getScreen(),{focus:false}); },
-    onError:error => projectStatus('Live2D: ' + error.message,true)});
-  globalThis.PankekiCubismWorkspaceController = cubismWorkspace;
-  globalThis.addEventListener?.('pagehide',event => { if(event.persisted) cubismWorkspace?.suspend({resetPlayback:true}); else cubismWorkspace?.destroy(); motionController?.suspend(); });
-  bindAuthoringPageRestore();
-  return cubismWorkspace;
-}
 function mountAuthoringV3Workspace() {
   if (authoringV3 || !globalThis.PankekiAuthoringV3 || !globalThis.PankekiDocumentV3 || !globalThis.PankekiRendererV3 || !$('v3Workspace')) return authoringV3;
   authoringV3Database = typeof indexedDB === 'undefined' ? Promise.resolve(null) : new Promise((resolve,reject) => {
     const request = indexedDB.open('pankeki-authoring-v3',1);
     request.onupgradeneeded = () => { if (!request.result.objectStoreNames.contains('projects')) request.result.createObjectStore('projects'); };
-    request.onsuccess = () => resolve(request.result); request.onerror = () => reject(request.error || Error('리깅 저장소를 열지 못했습니다.'));
-    request.onblocked = () => reject(Error('다른 탭이 리깅 저장소를 사용하고 있습니다.'));
+    request.onsuccess = () => resolve(request.result); request.onerror = () => reject(request.error || Error('Could not open rigging storage.'));
+    request.onblocked = () => reject(Error('Another tab is using rigging storage.'));
   });
   authoringV3 = globalThis.PankekiAuthoringV3.mount(document,{renderer:globalThis.PankekiRendererV3,exporter:globalThis.PankekiExportV3,
-    onError:error => projectStatus('정밀 리깅: ' + error.message,true),onChange:() => scheduleAuthoringV3Save()});
+    onError:error => projectStatus('Precision rigging: ' + uiMessage(error.message),true),onChange:() => scheduleAuthoringV3Save()});
   globalThis.PankekiAuthoringV3Controller = authoringV3;
   // Read a candidate only. A late DB read never installs a document by itself.
-  authoringV3Restore = authoringV3Database.then(db => db ? storage(db,false) : null).catch(error => { projectStatus(error.message,true); return null; });
-  const action = fn => () => Promise.resolve().then(fn).catch(error => projectStatus('정밀 리깅: ' + error.message,true));
+  authoringV3Restore = authoringV3Database.then(db => db ? storage(db,false) : null).catch(error => { projectStatus(uiMessage(error.message),true); return null; });
+  const action = fn => () => Promise.resolve().then(fn).catch(error => projectStatus('Precision rigging: ' + uiMessage(error.message),true));
   $('v3ExportPng')?.addEventListener('click',action(() => authoringV3.exportPosePng()));
   $('v3ExportZip')?.addEventListener('click',action(() => authoringV3.exportFrames()));
   $('v3Mode')?.addEventListener('click',action(() => setAuthoringV3Mode(true)));
-  for (const id of ['motionNativeMode','cubismBack']) $(id)?.addEventListener('click',action(() => setAuthoringV3Mode(false)));
+  $('motionNativeMode')?.addEventListener('click',action(() => setAuthoringV3Mode(false)));
   $('v3CopyFromMotion')?.addEventListener('click',action(async () => {
-    if (!motionController) throw Error('기본 제작에서 부위와 메시를 먼저 준비해주세요.');
+    if (!motionController) throw Error('Prepare parts and meshes in basic authoring first.');
     const raw = await motionController.snapshotProject();
     const documentV3 = await globalThis.PankekiDocumentV3.upgradeV2(raw);
     await openAuthoringV3(documentV3);
@@ -1503,7 +1456,7 @@ function mountAuthoringV3Workspace() {
   $('v3Open')?.addEventListener('click',() => $('v3OpenFile')?.click());
   $('v3OpenFile')?.addEventListener('change',action(async () => {
     const file = $('v3OpenFile').files?.[0]; if (!file) return;
-    try { if (file.size > MAX_FILE) throw Error('리깅 작업은 최대 64MiB입니다.'); await openAuthoringV3(await file.text()); }
+    try { if (file.size > MAX_FILE) throw Error('Rigging projects must be 64MiB or smaller.'); await openAuthoringV3(await file.text()); }
     finally { $('v3OpenFile').value = ''; }
   }));
   globalThis.addEventListener?.('pagehide',event => { clearTimeout(authoringV3Timer); ++authoringV3PersistenceEpoch; if(event.persisted) authoringV3.suspend(); else authoringV3.destroy(); });
@@ -1514,7 +1467,6 @@ async function setAuthoringV3Mode(selected) {
   if (!authoringV3) return;
   if (!selected && authoringV3.getSummary().loaded) await authoringV3.snapshotProject();
   authoringV3Selected = selected; document.body.dataset.nativeAuthoring = selected ? 'v3' : 'v2';
-  if (selected) cubismWorkspace?.setMode('native');
   const workflow = globalThis.PankekiWorkflowController;
   workflow?.go(workflow.getScreen(),{focus:false});
   if (selected && !authoringV3.getSummary().loaded) {
@@ -1524,12 +1476,12 @@ async function setAuthoringV3Mode(selected) {
   scheduleAuthoringV3Save();
 }
 async function openAuthoringV3(raw) {
-  if (!authoringV3) throw Error('정밀 리깅 편집기를 사용할 수 없습니다.');
+  if (!authoringV3) throw Error('Precision rigging editor unavailable.');
   notifyStudio('v3-import');
   if (authoringV3.getSummary().loaded) await authoringV3.snapshotProject();
   ++authoringV3PersistenceEpoch;
   const loaded = await authoringV3.loadDocument(raw);
-  if (loaded) { await setAuthoringV3Mode(true); globalThis.PankekiWorkflowController?.go('motion'); scheduleAuthoringV3Save(); projectStatus('정밀 리깅 작업을 열었어요. 기본 제작 원본은 보존됩니다.'); }
+  if (loaded) { await setAuthoringV3Mode(true); globalThis.PankekiWorkflowController?.go('motion'); scheduleAuthoringV3Save(); projectStatus('Precision rigging project opened. The basic authoring source is preserved.'); }
   return loaded;
 }
 function scheduleAuthoringV3Save() {
@@ -1540,14 +1492,14 @@ function scheduleAuthoringV3Save() {
     authoringV3Queue = authoringV3Queue.catch(() => {}).then(async () => {
       if (!activeAuthoringV3Workspace() || epoch !== authoringV3PersistenceEpoch || generation !== authoringV3.getSummary().generation) return;
       const raw = await authoringV3.snapshotProject(), db = await authoringV3Database;
-      if (!db) throw Error('자동 저장을 사용할 수 없습니다. 작업 파일로 저장해주세요.');
+      if (!db) throw Error('Autosave unavailable. Save a project file.');
       if (!activeAuthoringV3Workspace() || epoch !== authoringV3PersistenceEpoch || generation !== authoringV3.getSummary().generation) return;
       await storage(db,true,raw);
-    }).catch(error => projectStatus('리깅 자동 저장 실패: ' + error.message,true));
+    }).catch(error => projectStatus('Rigging autosave failed: ' + uiMessage(error.message),true));
   },200);
 }
 try { generationSettings = readGenerationSettings(); } catch { /* Retain only complete generation controls during startup. */ }
-clearMask(); setMode('txt2img'); renderGallery(); const initialRestore=restoreSaved(); mountMotionWorkspace(); mountCubismWorkspace(); mountAuthoringV3Workspace();
+clearMask(); setMode('txt2img'); renderGallery(); const initialRestore=restoreSaved(); mountMotionWorkspace(); globalThis.addEventListener?.('pagehide',() => motionController?.suspend()); bindAuthoringPageRestore(); mountAuthoringV3Workspace();
 function modelsForMode(mode) {
   return mode === 'txt2img' ? imageModels : mode === 'inpaint' ? editImageModels : [];
 }
@@ -1560,14 +1512,14 @@ function imageModelSettingsBusy() {
 function imageModelSettingsError(code,message) { return Object.assign(Error(message),{code}); }
 function validateImageModelSelection(mode,id) {
   const model = typeof id === 'string' && modelsForMode(mode).find(item => item.id === id);
-  if (!model) throw imageModelSettingsError('IMAGE_MODEL_SETTINGS_INVALID',mode === 'txt2img' ? '사용 가능한 이미지 생성 모델을 선택해주세요.' : '사용 가능한 부분 수정 모델을 선택해주세요.');
-  if (model.available !== true) throw imageModelSettingsError('IMAGE_MODEL_UNAVAILABLE',model.label + ': ' + (model.reason||'미설치 또는 현재 사용할 수 없는 모델입니다.'));
+  if (!model) throw imageModelSettingsError('IMAGE_MODEL_SETTINGS_INVALID',mode === 'txt2img' ? 'Select an available image generation model.' : 'Select an available masked edit model.');
+  if (model.available !== true) throw imageModelSettingsError('IMAGE_MODEL_UNAVAILABLE',model.label + ': ' + (model.reason||'This model is not installed or is currently unavailable.'));
   return model.id;
 }
 function getImageModelSettings() {
   const section = mode => Object.freeze({selectedId:modelSelections[mode],
     models:Object.freeze(modelsForMode(mode).map(model => Object.freeze({id:model.id,label:model.label,available:model.available === true,
-      ...(model.available === true ? {} : {reason:model.reason||'미설치 또는 현재 사용할 수 없는 모델입니다.'})}))),
+      ...(model.available === true ? {} : {reason:model.reason||'This model is not installed or is currently unavailable.'})}))),
     ...(modelSelectionReasons[mode] ? {reason:modelSelectionReasons[mode]} : {})});
   return Object.freeze({ready:modelsReady,source:capabilitySnapshot?.source||'unavailable',revision:capabilitySnapshot?.revision||null,capabilityReason:capabilitySnapshot?.reason||null,busy:imageModelSettingsBusy(),error:modelLoadError,persistenceError:imageModelPersistenceError,
     generation:section('txt2img'),edit:section('inpaint')});
@@ -1614,13 +1566,13 @@ function persistImageModelSettings() {
     localStorage.setItem(imageModelStorageKey,JSON.stringify({version:1,generationModelId:modelSelections.txt2img,editModelId:modelSelections.inpaint,
       ...(generationSettings && modelSelections.txt2img ? {generationSettings} : {})}));
     imageModelPersistenceError = '';
-  } catch { imageModelPersistenceError = '이 기기에 이미지 모델과 생성 설정을 저장하지 못했어요. 현재 설정은 앱을 닫을 때까지 유지됩니다.'; }
+  } catch { imageModelPersistenceError = 'Could not save image model and generation settings on this device. Current settings remain until the app closes.'; }
 }
 function restoreImageModelSettings(initialId) {
   modelSelections.txt2img = initialId;
   let raw;
   try { raw = localStorage.getItem(imageModelStorageKey); }
-  catch { imageModelPersistenceError = '이 기기에 기억한 이미지 모델 선택을 읽지 못했어요. 모델 선택은 현재 앱에서 사용할 수 있습니다.'; return; }
+  catch { imageModelPersistenceError = 'Could not read saved image model selections on this device. Model selection is still available in this app session.'; return; }
   if (raw === null) return;
   let saved;
   try {
@@ -1629,23 +1581,23 @@ function restoreImageModelSettings(initialId) {
     if (!saved || Array.isArray(saved) || saved.version !== 1 || typeof saved.generationModelId !== 'string' || typeof saved.editModelId !== 'string' ||
         Object.keys(saved).some(key => !['version','generationModelId','editModelId','generationSettings'].includes(key))) throw Error('Invalid saved image settings');
   } catch {
-    for (const mode of ['txt2img','inpaint']) { modelSelections[mode] = ''; modelSelectionReasons[mode] = '저장된 이미지 모델 설정을 확인할 수 없어요. 모델을 다시 선택해주세요.'; }
+    for (const mode of ['txt2img','inpaint']) { modelSelections[mode] = ''; modelSelectionReasons[mode] = 'Could not verify saved image model settings. Select the models again.'; }
     return;
   }
   for (const [mode,key] of [['txt2img','generationModelId'],['inpaint','editModelId']]) {
     if (saved[key] === '' && mode === 'inpaint') { modelSelections[mode] = ''; continue; }
     try { modelSelections[mode] = validateImageModelSelection(mode,saved[key]); }
-    catch (error) { modelSelections[mode] = ''; modelSelectionReasons[mode] = '저장된 모델을 사용할 수 없어요. ' + error.message; }
+    catch (error) { modelSelections[mode] = ''; modelSelectionReasons[mode] = 'Saved model unavailable. ' + uiMessage(error.message); }
   }
   if (modelSelections.txt2img && Object.hasOwn(saved,'generationSettings')) {
     try { generationSettings = validateGenerationSettings(saved.generationSettings); } catch { generationSettings = null; }
   }
 }
 function setImageModelSettings(patch) {
-  if (!modelsReady) throw imageModelSettingsError('IMAGE_MODELS_NOT_READY',modelLoadError || '이미지 모델 목록을 확인한 뒤 다시 선택해주세요.');
-  if (imageModelSettingsBusy()) throw imageModelSettingsError('IMAGE_MODELS_BUSY','진행 중인 작업이 끝난 뒤 이미지 모델을 변경해주세요.');
+  if (!modelsReady) throw imageModelSettingsError('IMAGE_MODELS_NOT_READY',modelLoadError || 'Check the image model list and select again.');
+  if (imageModelSettingsBusy()) throw imageModelSettingsError('IMAGE_MODELS_BUSY','Change the image model after the current task finishes.');
   if (!patch || typeof patch !== 'object' || Array.isArray(patch) || Object.keys(patch).some(key => !['generationModelId','editModelId'].includes(key))) {
-    throw imageModelSettingsError('IMAGE_MODEL_SETTINGS_INVALID','생성 모델과 부분 수정 모델 설정을 확인해주세요.');
+    throw imageModelSettingsError('IMAGE_MODEL_SETTINGS_INVALID','Check generation and masked edit model settings.');
   }
   const changes = [];
   for (const [mode,key] of [['txt2img','generationModelId'],['inpaint','editModelId']]) {
@@ -1667,19 +1619,19 @@ function updateModelHelp() {
   }
   $('cache').disabled = dedicated;
   $('resetModelPreset').disabled = imageModelSettingsBusy() || !model;
-  $('imageModelHelp').textContent = (capabilitySnapshot?.reason?capabilitySnapshot.reason+' · ':'')+(model?.description || '사용할 모델을 직접 선택해주세요.');
-  $('imageModelNote').textContent = model ? model.id === 'animagine-xl-4.0-opt' ? `${model.label} · 생성 전용. 영어 comma-tag와 끝의 품질 태그를 권장합니다. 프리셋 버튼은 28 steps·CFG 5·Euler a와 추천 negative를 적용합니다. 추천 negative: ${model.recommended_negative || "없음"}. 결과 품질은 직접 확인해주세요.` : `${model.label} · 영어 설명 권장. 세부 특징·색상·부분 수정의 정확성은 결과 확인이 필요합니다.${dedicated?' 전용 수정은 cache를 사용하지 않으며 입력한 강도와 설정을 유지합니다.':''}` : '설치되어 사용 가능한 모델을 선택해야 실행할 수 있습니다.';
+  $('imageModelHelp').textContent = (capabilitySnapshot?.reason?uiMessage(capabilitySnapshot.reason)+' · ':'')+(uiMessage(model?.description) || 'Select a model to use.');
+  $('imageModelNote').textContent = model ? model.id === 'animagine-xl-4.0-opt' ? `${model.label} · Generation only. Use English comma-separated tags with quality tags at the end. The preset applies 28 steps, CFG 5, Euler a, and the recommended negative prompt: ${model.recommended_negative || "None"}. Check result quality yourself.` : `${model.label} · English descriptions recommended. Check results for detail, color, and masked edit accuracy.${dedicated?' Dedicated editing bypasses cache and preserves your strength and settings.':''}` : 'Select an installed, available model to run.';
 }
 function syncModelOptions(mode) {
   if (!modelsReady) return;
   $('imageModel').replaceChildren();
   if (mode === 'inpaint') {
     const placeholder = document.createElement('option'); placeholder.value = ''; placeholder.disabled = true;
-    placeholder.textContent = '부분 수정 모델 선택'; $('imageModel').appendChild(placeholder);
+    placeholder.textContent = 'Select masked edit model'; $('imageModel').appendChild(placeholder);
   }
   for (const model of modelsForMode(mode)) {
     const option = document.createElement('option'); option.value = model.id; option.disabled = !model.available;
-    option.textContent = model.label + (model.available ? '' : ' · '+(model.reason||'사용 불가')); option.title=model.reason||''; $('imageModel').appendChild(option);
+    option.textContent = model.label + (model.available ? '' : ' · '+(uiMessage(model.reason)||'Unavailable')); option.title=uiMessage(model.reason)||''; $('imageModel').appendChild(option);
   }
   $('imageModel').value = modelSelections[mode];
   $('imageModel').disabled = imageModelSettingsBusy();
@@ -1696,10 +1648,10 @@ function applyModelPreset(reset = false) {
 }
 $('imageModel').onchange = () => {
   try { setImageModelSettings({[$('mode').value === 'txt2img' ? 'generationModelId' : 'editModelId']:$('imageModel').value}); applyModelPreset(); persistImageModelSettings(); }
-  catch (error) { syncModelOptions($('mode').value); renderView(); status(error.message,true); }
+  catch (error) { syncModelOptions($('mode').value); renderView(); status(uiMessage(error.message),true); }
 };
 $('resetModelPreset').onclick = () => {
-  if (imageModelSettingsBusy()) { status('진행 중인 작업이 끝난 뒤 이미지 모델 설정을 변경해주세요.',true); return; }
+  if (imageModelSettingsBusy()) { status('Change image model settings after the current task finishes.',true); return; }
   touch(); if (imageMode === 'txt2img') generationSettingsTouched = true; applyModelPreset(true); persistImageModelSettings();
 };
 async function loadImageCapabilities() {
@@ -1738,11 +1690,11 @@ const modelCatalogReady = loadImageCapabilities().then(snapshot => {
   }
   persistImageModelSettings(); updateModelHelp(); renderView();
 }).catch(error => {
-  modelLoadError = '이미지 모델을 확인하지 못했습니다. 서버를 확인하고 새로고침해주세요. ' + error.message;
+  modelLoadError = 'Could not check image models. Check the server and refresh. ' + uiMessage(error.message);
   $('imageModelHelp').textContent = $('imageModelNote').textContent = modelLoadError;
   modelsReady = false; renderView();
 });
 api('/api/health').then(health => {
-  $('healthText').textContent = health.comfy ? 'ComfyUI 연결됨' : 'ComfyUI 연결 필요'; $('health').classList.toggle('offline',!health.comfy);
-  if (!health.comfy && editEpoch === 0) status(health.error || 'ComfyUI 서버를 먼저 시작해주세요.',true);
-}).catch(error => { $('healthText').textContent = '서버 연결 필요'; $('health').classList.add('offline'); if (editEpoch === 0) status('Pankeki 생성 서버의 연결을 확인해주세요. ' + error.message,true); });
+  $('healthText').textContent = health.comfy ? 'ComfyUI connected' : 'Connect ComfyUI'; $('health').classList.toggle('offline',!health.comfy);
+  if (!health.comfy && editEpoch === 0) status(uiMessage(health.error) || 'Start the ComfyUI server first.',true);
+}).catch(error => { $('healthText').textContent = 'Connect server'; $('health').classList.add('offline'); if (editEpoch === 0) status('Check the Pankeki generation server connection. ' + uiMessage(error.message),true); });

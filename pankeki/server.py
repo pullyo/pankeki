@@ -117,56 +117,6 @@ def perform_image_op(operation, raw, options, *, cancel_check=None):
     return result.png, {'algorithm':algorithm,'algorithmVersion':str(imageops.SCHEMA_VERSION),'parameters':parameters}
 
 
-# Delivery integrity only. No SDK is acquired or approved by this route.
-def cubism_asset(root, url_path):
-    prefix = '/vendor/cubism/'
-    if not url_path.startswith(prefix):
-        return None
-    name = url_path[len(prefix):]
-    fixed = {'live2dcubismcore.js', 'pankeki-cubism-framework.js'}
-    def allowed(value):
-        return value in fixed or (isinstance(value, str) and re.fullmatch(r'Shaders/(?:[A-Za-z0-9_-]+/)*[A-Za-z0-9_-]+\.(?:frag|vert|glsl)', value) is not None)
-    if name != 'runtime-manifest.json' and not allowed(name):
-        return None
-    base = root / 'web' / 'vendor' / 'cubism'
-    def read(relative, limit=32 * 1024 * 1024):
-        path = base / relative
-        cursor = root
-        for part in path.relative_to(root).parts:
-            cursor = cursor / part
-            if cursor.is_symlink():
-                raise ValueError('Symlink delivery rejected')
-        if not path.is_file() or path.stat().st_size > limit:
-            raise ValueError('Missing or oversized runtime file')
-        return path.read_bytes()
-    try:
-        raw = read('runtime-manifest.json', 1024 * 1024)
-        manifest = json.loads(raw)
-        if not isinstance(manifest, dict) or manifest.get('format') != 'pankeki-cubism-runtime' or type(manifest.get('version')) is not int or manifest['version'] != 1:
-            return None
-        files, sdk = manifest.get('files'), manifest.get('sdk')
-        if not isinstance(files, dict) or not isinstance(sdk, dict) or not fixed.issubset(files) or len(files) > 256:
-            return None
-        if any(not allowed(key) or not isinstance(value, str) or not re.fullmatch('[0-9a-f]{64}', value) for key, value in files.items()):
-            return None
-        if not isinstance(sdk.get('coreVersion'), str) or not sdk['coreVersion'].strip() or not isinstance(sdk.get('frameworkCommit'), str) or not re.fullmatch('[0-9a-f]{40}', sdk['frameworkCommit']):
-            return None
-        if sdk.get('coreHash') != files['live2dcubismcore.js'] or sdk.get('bundleHash') != files['pankeki-cubism-framework.js']:
-            return None
-        # A manifest or shader is unavailable when the required pair is missing/tampered.
-        for required in fixed:
-            if hashlib.sha256(read(required)).hexdigest() != files[required]:
-                return None
-        if name == 'runtime-manifest.json':
-            return raw, 'application/json; charset=utf-8'
-        if name not in files:
-            return None
-        data = read(name, 1024 * 1024 if name.startswith('Shaders/') else 32 * 1024 * 1024)
-        if hashlib.sha256(data).hexdigest() != files[name]:
-            return None
-        return data, 'application/javascript; charset=utf-8' if name.endswith('.js') else 'text/plain; charset=utf-8'
-    except (OSError, ValueError, TypeError, UnicodeError, RecursionError):
-        return None
 
 
 def font_asset(root, url_path):
@@ -289,13 +239,18 @@ def make_server(root, port=8190, comfy_url='http://127.0.0.1:8188', config=None)
                     if font is None:
                         return self.send(404, {'error': 'Font unavailable'})
                     return self.send(200, font, 'font/woff2', 'public, max-age=31536000, immutable')
-                if path.startswith('/vendor/cubism/'):
-                    asset = cubism_asset(root, path)
-                    return self.send(200, *asset) if asset else self.send(404, {'error': 'Runtime file unavailable'})
                 if path == '/api/video/status':
                     return self.send(200,video_manager.runtime.status() if video_manager else {
                         'ready':False,'reason':'로컬 영상 생성은 Apple Silicon Mac에서 지원합니다.',
                         'model':None,'defaults':{'width':384,'height':256,'frames':49,'fps':24,'steps':8},'blender_available':False})
+                reference = re.fullmatch(r'/api/video/references/([0-9a-f-]{36})/source\.png',path)
+                if reference and video_manager is not None:
+                    metadata = video_manager.runtime.read_reference(reference[1])
+                    source = video_manager.runtime.directory/'references'/reference[1]/'source.png'
+                    data = source.read_bytes()
+                    if hashlib.sha256(data).hexdigest() != metadata['sha256']:
+                        raise ValueError('참조 이미지가 변경되었습니다.')
+                    return self.send(200,data,'image/png')
                 match = re.fullmatch(r'/api/video/(jobs|results)/([0-9a-f]{32})',path)
                 if match and video_manager is not None:
                     return self.send(200,video_manager.get(match[2]) if match[1]=='jobs' else video_manager.result(match[2]))
@@ -365,6 +320,10 @@ def make_server(root, port=8190, comfy_url='http://127.0.0.1:8188', config=None)
                 body = json.loads(raw_body)
                 if not isinstance(body, dict):
                     raise ValueError('Expected JSON object')
+                if self.path == '/api/video/references':
+                    if video_manager is None:
+                        return self.send(503,{'error':'로컬 영상 생성은 Apple Silicon Mac에서 지원합니다.'})
+                    return self.send(201,video_manager.runtime.create_reference(body))
                 if self.path == '/api/video/jobs':
                     if video_manager is None:
                         return self.send(503,{'error':'로컬 영상 생성은 Apple Silicon Mac에서 지원합니다.'})
