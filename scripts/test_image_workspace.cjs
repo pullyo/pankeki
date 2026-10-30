@@ -80,7 +80,7 @@ test('reference workspace opens an actual header rail stage and candidate strip 
 test('photo workspace keeps its tool footer outside the image and retains explicit viewing gallery and settings access',async()=>{
  const ui=await withImage();try{
   assert.equal(ui.doc.body.classList.contains('pankeki-photo-tools'),true);const footer=ui.doc.getElementById('pcPhotoTools'),viewport=ui.doc.getElementById('canvasViewport');assert(footer,'dedicated photo tool footer');assert.equal(viewport.contains(footer),false);assert.equal(footer.closest('.canvas-card')===viewport.closest('.canvas-card'),true);assert.deepEqual(Array.from(footer.querySelectorAll('[data-ppe-tool]'),node=>node.dataset.ppeTool),['markup','comments','background-remove','erase','resize']);
-  assert.equal(ui.doc.querySelector('.pc-image-workspace').dataset.pcEditor,'closed');await loaded(ui);assert.equal(ui.doc.querySelector('.pc-image-workspace').dataset.pcEditor,'open');assert.equal(ui.doc.getElementById('workspace').dataset.candidateId,'parent');assert.equal(ui.doc.querySelector('.pk-navigation').querySelectorAll('button').length,10);
+  assert.equal(ui.doc.querySelector('.pc-image-workspace').dataset.pcEditor,'closed');await loaded(ui);assert.equal(ui.doc.querySelector('.pc-image-workspace').dataset.pcEditor,'open');assert.equal(ui.doc.getElementById('workspace').dataset.candidateId,'parent');assert.equal(ui.doc.querySelector('.pk-navigation').querySelectorAll('button').length,9);
   await ui.doc.getElementById('pkGalleryOpen').click();assert.equal(ui.doc.querySelector('.pk-gallery-dialog').open,true);ui.doc.querySelector('.pk-gallery-dialog').close();await ui.doc.getElementById('pcResolution').click();assert.equal(ui.doc.getElementById('pkSettings').open,true);
  }finally{ui.view.destroy();}
 });
@@ -195,7 +195,7 @@ test('automatic view F with a prepared source and mask G stages only the referen
 
 test('generation has one conversation/composer and the original right image workspace with truthful empty state',async()=>{
  const ui=await mounted();assert(ui.doc.querySelector('.pc-image-workspace'));assert.equal(ui.doc.querySelectorAll('#pcPrompt').length,1);assert.equal(ui.doc.getElementById('desktopChatPanel'),null);assert(ui.doc.getElementById('pcCanvasTitle'));assert.equal(ui.doc.getElementById('pcCanvasFit').disabled,true);assert.equal(ui.doc.getElementById('pcCanvasEdit').disabled,true);
- assert.equal(ui.doc.querySelector('.pk-brand img').src,ui.doc.querySelector('.app-header .brand-logo').src);assert.equal(ui.doc.querySelector('.pk-navigation').querySelectorAll('button').length,10);assert.equal(ui.requests.length,0);ui.view.destroy();
+ assert.equal(ui.doc.querySelector('.pk-brand img').src,ui.doc.querySelector('.app-header .brand-logo').src);assert.equal(ui.doc.querySelector('.pk-navigation').querySelectorAll('button').length,9);assert.equal(ui.requests.length,0);ui.view.destroy();
 });
 test('candidate image and big-view controls activate the original canvas without opening a second viewer',async()=>{
  const ui=await withImage(),before=ui.studio().exportProject();await ui.doc.querySelector('.pc-image-open').click();assert.equal(ui.doc.querySelector('.pc-image-workspace').dataset.pcPane,'canvas');assert.equal(ui.doc.activeElement,ui.doc.getElementById('workspace'));assert.equal(ui.element('result').src,RED);assert.equal(ui.doc.querySelector('.pc-image-viewer'),null);

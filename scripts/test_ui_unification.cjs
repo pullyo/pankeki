@@ -231,9 +231,9 @@ test('compare hides composers and edit tools, blocks submissions, and restores e
   assert.equal(ui.doc.querySelector('.pk-categories').hidden,false);
 });
 
-test('all routes retain ten sidebar items and image edit or compare activates image generation',async()=>{
+test('all routes retain nine sidebar items and image edit or compare activates image generation',async()=>{
   const ui=await mounted(),nav=ui.doc.querySelector('.pk-navigation');
-  const expected=['홈','프로젝트','이미지 생성','부위 편집','표정 · 동작','출력','갤러리','템플릿','모델 관리','설정'];
+  const expected=['홈','프로젝트','이미지 생성','부위 편집','표정 · 동작','출력','갤러리','모델 관리','설정'];
   for(const screen of ['home','projects','design','inpaint','compare','parts','motion','export']){
     ui.controller.go(screen);
     assert.deepEqual(nav.querySelectorAll('button').map(node=>node.getAttribute('aria-label')),expected);

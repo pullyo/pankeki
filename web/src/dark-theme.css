@@ -53,7 +53,7 @@ body.pankeki-pc[data-theme="dark"] :is(.pk-primary,.pk-send,.pc-save-as-project)
 /* Reference Home: four truthful images, compact center and the same form. */
 body.pankeki-pc[data-theme="dark"] .pk-layout[data-screen=home]{grid-template-columns:208px minmax(0,1fr)}
 body.pankeki-pc[data-theme="dark"] .pk-layout[data-screen=home] .pk-surface{background:#151413}
-body.pankeki-pc[data-theme="dark"] .pk-layout[data-screen=home] .pk-surface::before{inset:-8px;z-index:-2;background-image:linear-gradient(90deg,#140c0766,#140c07b8 38%,#140c07c7 62%,#140c0794),var(--pc-home-room-background,none);background-position:center;background-size:cover;filter:brightness(.5) saturate(1.1) blur(3px)}
+body.pankeki-pc[data-theme="dark"] .pk-layout[data-screen=home] .pk-surface::before{inset:-8px;z-index:-2;background-image:linear-gradient(180deg,#140c0700 0%,#140c0700 45%,#140c07e0 80%),linear-gradient(90deg,#140c0766,#140c07b8 38%,#140c07c7 62%,#140c0794),var(--pc-home-room-background,none);background-position:center,center,22% 0%;background-size:cover,cover,auto 165%;background-repeat:no-repeat;filter:brightness(.5) saturate(1.1) blur(3px)}
 body.pankeki-pc[data-theme="dark"] .pk-layout[data-screen=home] .pk-surface::after{inset:0;transform:none;opacity:1;background-image:radial-gradient(ellipse at center,#15141300 10%,#15141366 80%);pointer-events:none}
 body.pankeki-pc[data-theme="dark"] .pk-layout[data-screen=home] .pk-header{display:flex!important;position:absolute;z-index:20;top:20px;right:24px;left:auto;width:auto;height:44px;min-height:44px;padding:0;gap:0;background:transparent;border:0}
 body.pankeki-pc[data-theme="dark"] .pk-layout[data-screen=home] .pk-header>:not(.pk-header-home-actions){display:none!important}
@@ -180,3 +180,8 @@ body.pankeki-pc[data-theme="dark"] .pc-profile-popover form button{background:va
  body.pankeki-pc[data-theme="dark"] .pc-home-composer .pk-composer{grid-template-columns:88px minmax(0,1fr) auto}
 }
 @media(prefers-reduced-motion:reduce){body.pankeki-pc[data-theme="dark"] *,body.pankeki-pc[data-theme="dark"] *::before,body.pankeki-pc[data-theme="dark"] *::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+
+/* Default local profile shows the existing pancake cat; a saved name shows its initial. */
+body.pankeki-pc[data-theme="dark"] .pk-layout[data-screen] .pk-avatar[data-pc-default-avatar="true"]{background:#f6e7d8 var(--pc-avatar-cat) no-repeat;background-size:640% auto;background-position:31% 79%;overflow:hidden}
+body.pankeki-pc[data-theme="dark"] .pk-layout[data-screen] .pk-avatar[data-pc-default-avatar="true"] #pcProfileInitial{visibility:hidden}
+body.pankeki-pc[data-theme="dark"] .pc-template-starts{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}

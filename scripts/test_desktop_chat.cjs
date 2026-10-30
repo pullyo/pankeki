@@ -375,7 +375,7 @@ test('central desktop chat preserves navigation/logo and displays model HTML lit
   await ui.doc.getElementById('pkPromptForm').requestSubmit();const ref=ipc.calls.send[0];assert(ref);
   await ipc.emit({...ref,type:'message-delta',payload:{text:'<img src=x onerror=evil()>'}});
   const reply=ui.doc.querySelector('.desktop-chat-reply');assert.equal(reply.querySelector('img'),null);assert.match(reply.textContent,/<img src=x/);
-  assert.deepEqual(nav.querySelectorAll('button').map(node=>node.getAttribute('aria-label')),before);assert.equal(before.length,10);assert.equal(ui.doc.querySelector('.pk-brand img').src,logo);
+  assert.deepEqual(nav.querySelectorAll('button').map(node=>node.getAttribute('aria-label')),before);assert.equal(before.length,9);assert.equal(ui.doc.querySelector('.pk-brand img').src,logo);
   view.destroy();assert.equal(ui.doc.getElementById('desktopChatIntent'),null);assert.equal(ui.requests.length,0);
 });
 
