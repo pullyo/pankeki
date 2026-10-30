@@ -8,6 +8,16 @@
 
 Korean is the primary UI language. Built for the Comfy.org Open Source Higgsfield challenge.
 
+## Competition judges: start here (October 30, 2026)
+
+> **Source of truth:** `main` still contains the **October 20 historical app**, despite its updated README and October 30 illustration. Review the [current macOS source branch](https://github.com/pullyo/pankeki/tree/mac-release-20261028), or the [pinned contest candidate commit](https://github.com/pullyo/pankeki/tree/016eb5e11672aef22d410fac33d6e248d13535bc), and follow the [macOS setup guide](https://github.com/pullyo/pankeki/blob/mac-release-20261028/README.macos.ko.md). **Do not clone `main` to evaluate the current desktop app.**
+
+- **Candidate:** Apple Silicon macOS + local ComfyUI API (HTTP/WebSocket). A single-Mac validation history is recorded, **not a guarantee of installation on another Mac or fresh GPU validation for this exact Git commit**.
+- **Models shipped via setup (downloaded, not bundled):** SDXL 1.0 Base, Animagine XL 4.0 Opt, SDXL Inpainting 0.1 UNet. The optional Codex/Claude desktop chat calls external model providers and is **not an offline/open-weights chat workflow**.
+- **Not the contest candidate:** [Windows experiment](https://github.com/pullyo/pankeki/tree/windows-port-20261029), including unverified home-screen changes; its Mac-host tests and cross-build are **not** native Windows/GPU proof.
+- **License and limitations:** Pankeki code [MIT](LICENSE); model/ComfyUI/asset terms [separate](THIRD_PARTY.md). Live2D/Cubism playback is unavailable; local Blender video is experimental.
+- [Submission answer and demo review checklist](docs/CONTEST-SUBMISSION-20261030.md) (review draft; public video, social post and form submission must be confirmed separately).
+
 ![Pankeki home screen](docs/images/pankeki-home-20261030.jpg)
 
 *Pankeki home screen — user-provided image received on October 30, 2026.*

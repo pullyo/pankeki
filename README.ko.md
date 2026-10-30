@@ -8,6 +8,16 @@
 
 주 UI 언어는 한국어입니다. Comfy.org Open Source Higgsfield 챌린지를 목표로 개발하고 있습니다.
 
+## 대회 심사자용 바로가기 (2026-10-30)
+
+> **앱 코드 기준:** `main`의 코드는 README와 10월 30일 소개 이미지가 갱신됐어도 **10월 20일 체크포인트**입니다. 현재 앱은 [macOS 브랜치](https://github.com/pullyo/pankeki/tree/mac-release-20261028) 또는 [고정 후보 커밋](https://github.com/pullyo/pankeki/tree/016eb5e11672aef22d410fac33d6e248d13535bc)으로 확인하고 [macOS 설치 안내](https://github.com/pullyo/pankeki/blob/mac-release-20261028/README.macos.ko.md)를 따르세요. **현재 앱을 평가할 때 `main`을 그대로 clone하면 안 됩니다.**
+
+- **출품 후보:** Apple Silicon macOS + 로컬 ComfyUI HTTP/WebSocket API. 한 대의 Mac 검증 기록이 있지만, 다른 Mac에서의 설치 성공이나 **위 커밋에 대한 신규 GPU 검증을 보장하지 않습니다.**
+- **모델:** SDXL 1.0 Base, Animagine XL 4.0 Opt, SDXL Inpainting 0.1 UNet. 설치 때 별도 다운로드합니다. 선택적 Codex/Claude 대화는 외부 비공개 모델을 사용할 수 있으므로 완전 오프라인·공개 가중치 채팅이 아닙니다.
+- **Windows는 출품 검증본과 구분:** [시험 포팅](https://github.com/pullyo/pankeki/tree/windows-port-20261029)의 Mac 호스트 검사와 교차 빌드는 Windows 실기/GPU 검증이 아니며 미완성 홈 화면 변경도 포함합니다.
+- **라이선스와 제한:** Pankeki 자체 코드 [MIT](LICENSE), ComfyUI·모델·자산은 [별도 조건](THIRD_PARTY.md). Live2D/Cubism 재생 미지원, Blender 로컬 영상은 실험 기능입니다.
+- [제출 항목·데모 점검표](docs/CONTEST-SUBMISSION-20261030.md) (검토 초안이며 영상·소셜·실제 제출 여부는 별도로 확인).
+
 ![Pankeki 홈 화면](docs/images/pankeki-home-20261030.jpg)
 
 *Pankeki 홈 화면 — 2026년 10월 30일 사용자 제공 이미지.*
