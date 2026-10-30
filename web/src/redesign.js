@@ -450,8 +450,8 @@
         else {
           turn.querySelector('.pc-message-author strong').textContent=[message.provider||'AI',message.modelLabel].filter(Boolean).join(' · ');
           // An image result speaks for itself: show only the Pankeki card, not the chat model's header and reply.
-          // While an image request runs, hide it too; a failure clears activeRequestId so its explanation shows.
-          const imageOnly=(message.candidateIds||[]).length>0||state.activeRequestId===message.requestId&&['generate','edit'].includes(state.resolvedIntent);turn.classList.toggle('pc-ai-image-only',imageOnly);turn.querySelector('.pc-message-author').hidden=imageOnly;
+          // While an image request runs, or before the request type is known, hide it too; a failure clears activeRequestId so its explanation shows.
+          const imageOnly=(message.candidateIds||[]).length>0||state.activeRequestId===message.requestId&&(!state.resolvedIntent||['generate','edit'].includes(state.resolvedIntent));turn.classList.toggle('pc-ai-image-only',imageOnly);turn.querySelector('.pc-message-author').hidden=imageOnly;
           const reply=turn.querySelector('.desktop-chat-reply');reply.hidden=imageOnly;if(reply.dataset.rendered!==message.text){reply.dataset.rendered=message.text;desktopBinding.renderMarkdown(doc,reply,message.text);}
           for(const id of message.candidateIds||[]){const card=Array.from(history.querySelectorAll('.pc-turn')).find(node=>node.dataset.candidateId===id);if(card){const request=card.querySelector('.pc-request');if(request)request.hidden=true;const results=turn.querySelector('.pc-ai-results');if(card.parentNode!==results)results.append(card);}}
         }

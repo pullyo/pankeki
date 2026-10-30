@@ -257,7 +257,7 @@
         request={requestId:makeId(),projectId:context.projectId,context,presentation:presentation?{referenceCandidateId:presentation.referenceCandidateId,selectionEpoch:presentation.selectionEpoch}:null,resolvedIntent:intent==='auto'?null:intent,text:text.trim(),seq:-1,jobs:new Map(),turnDone:false,expectedImage:false};
         if(!adapter.beginRequest({requestId:request.requestId,context,provider:providerName(state)}).accepted)throw Error('The source or document changed. Review your input.');
         request.reply={role:'assistant',requestId:request.requestId,text:'',contextEpoch:state.contextEpoch,provider:providerName(state),modelLabel:state.modelOptions.options.find(item=>item.id===state.codex.modelId)?.displayName||state.codex.modelId};active=request;
-        state.activeRequestId=request.requestId;state.submittedTargetId=presentation?.referenceCandidateId||presentation?.visibleCandidateId||null;state.resolvedIntent=null;state.phase='preparing';state.notice='Preparing message…';
+        state.activeRequestId=request.requestId;state.submittedTargetId=presentation?.referenceCandidateId||presentation?.visibleCandidateId||null;state.resolvedIntent=request.resolvedIntent;state.phase='preparing';state.notice='Preparing message…';
         state.messages.push({role:'user',requestId:request.requestId,text:text.trim(),contextEpoch:state.contextEpoch},request.reply);publish();
         const outbound={sourceRevision:context.sourceRevision};
         if(intent==='edit'||intent==='auto'&&(context.source||context.mask)){

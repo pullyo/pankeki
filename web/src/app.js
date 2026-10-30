@@ -1403,11 +1403,14 @@ function scheduleMotionSave() {
   clearTimeout(motionSaveTimer);
   const persistenceEpoch = motionPersistenceEpoch;
   motionSaveTimer = setTimeout(() => {
+    // Saving pauses playback to commit the pose; while playing, retry after it stops.
+    if (motionController.getSummary().playing) { scheduleMotionSave(); return; }
     motionSaveQueue = motionSaveQueue.then(async () => {
       if (activeAuthoringV3Workspace()) return;
       const summary = motionController.getSummary(), db = await motionDatabase;
       if (persistenceEpoch !== motionPersistenceEpoch || !db || activeAuthoringV3Workspace()) return;
       if (summary.isMotionProject || summary.dirty || summary.partCount > 0) {
+        if (motionController.getSummary().playing) { scheduleMotionSave(); return; }
         const raw = await motionController.snapshotProject();
         if (persistenceEpoch === motionPersistenceEpoch && !activeAuthoringV3Workspace()) await storage(db,true,raw);
       } else await new Promise((resolve,reject) => {

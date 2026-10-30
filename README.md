@@ -6,7 +6,7 @@
 
 [한국어](README.ko.md) · [Current macOS app](https://github.com/pullyo/pankeki/tree/mac-release-20261028) · [Experimental Windows port](https://github.com/pullyo/pankeki/tree/windows-port-20261029)
 
-Korean is the primary UI language. Built for the Comfy.org Open Source Higgsfield challenge.
+The app UI is in English. Built for the Comfy.org Open Source Higgsfield challenge.
 
 ![Pankeki home screen](docs/images/pankeki-home-20261030.jpg)
 

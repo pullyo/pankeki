@@ -6,7 +6,7 @@
 
 [English](README.md) · [현재 macOS 앱](https://github.com/pullyo/pankeki/tree/mac-release-20261028) · [Windows 시험 포팅](https://github.com/pullyo/pankeki/tree/windows-port-20261029)
 
-주 UI 언어는 한국어입니다. Comfy.org Open Source Higgsfield 챌린지를 목표로 개발하고 있습니다.
+앱 화면은 영어입니다. Comfy.org Open Source Higgsfield 챌린지를 목표로 개발하고 있습니다.
 
 ![Pankeki 홈 화면](docs/images/pankeki-home-20261030.jpg)
 
