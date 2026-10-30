@@ -4,6 +4,14 @@ const fs=require('node:fs');const path=require('node:path');const {randomUUID}=r
 const {isTrustedSender,makeCsp,allowRequest,createPermissionPolicy}=require('./security.cjs');
 const {createIpcController}=require('./ipc.cjs');
 
+// The UI is laid out for the 1672×941 reference. Larger windows zoom like Cmd+= so text, sidebar and art keep those
+// proportions instead of staying small in a wide, empty window. Smaller windows keep 1×; the cap avoids oversized UI.
+const UI_REFERENCE=[1672,941],UI_ZOOM_MAX=1.6;
+function uiZoomFactor(width,height){
+  const ratio=Math.min(width/UI_REFERENCE[0],height/UI_REFERENCE[1]);
+  if(!Number.isFinite(ratio)||ratio<=1)return 1;
+  return Math.round(Math.min(ratio,UI_ZOOM_MAX)*20)/20;
+}
 async function createEditorWindow({origin,html,projectRoot,contexts,results,resultsFactory,bridgeFactory,getAppStatus,allowLiveSend=false,verifyBackend=async()=>true,mapBridgeMessage,notifyUnconfirmedClose,
   partition='persist:pankeki-editor'}={}) {
   const isolated=session.fromPartition(partition);
@@ -28,6 +36,8 @@ async function createEditorWindow({origin,html,projectRoot,contexts,results,resu
     try{const target=new URL(url);if(target.origin!==origin||target.pathname!=='/'||target.search)event.preventDefault();}catch{event.preventDefault();}
   });
   win.webContents.on('will-redirect',event=>event.preventDefault());
+  const fitZoom=()=>{if(!win.isDestroyed()){const [width,height]=win.getContentSize();win.webContents.setZoomFactor(uiZoomFactor(width,height));}};
+  win.on('resize',fitZoom);win.webContents.on('did-finish-load',fitZoom);
   const download=(event,item,contents)=>{
     if(contents!==win.webContents||item.getInitiatorOrigin()!==origin||!allowRequest(item.getURL(),origin)){event.preventDefault();return;}
     item.setSaveDialogOptions({title:'Pankeki 파일 저장',defaultPath:path.join(app.getPath('downloads'),path.basename(item.getFilename()||'Pankeki-export')),
@@ -167,4 +177,4 @@ async function boot() {
   }
 }
 if(require.main===module)void boot();
-module.exports={createEditorWindow,boot};
+module.exports={createEditorWindow,boot,uiZoomFactor};
