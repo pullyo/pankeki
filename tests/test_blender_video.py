@@ -177,7 +177,7 @@ class BlenderVideoTests(unittest.TestCase):
     def test_resource_bounds_reject_before_creating_job(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)
-            for changes in ({'end': 241}, {'width': 1282}, {'fps': 0},
+            for changes in ({'end': 242}, {'width': 1282}, {'fps': 0},
                             {'start': 8, 'end': 2}, {'height': 289}, {'epoch': -1}):
                 with self.subTest(changes=changes), self.assertRaises(GuideError):
                     self.request(root, **changes).validate()

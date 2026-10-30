@@ -296,6 +296,14 @@ def make_server(root, port=8190, comfy_url='http://127.0.0.1:8188', config=None)
                     return self.send(200,video_manager.runtime.status() if video_manager else {
                         'ready':False,'reason':'로컬 영상 생성은 Apple Silicon Mac에서 지원합니다.',
                         'model':None,'defaults':{'width':384,'height':256,'frames':49,'fps':24,'steps':8},'blender_available':False})
+                reference = re.fullmatch(r'/api/video/references/([0-9a-f-]{36})/source\.png',path)
+                if reference and video_manager is not None:
+                    metadata = video_manager.runtime.read_reference(reference[1])
+                    source = video_manager.runtime.directory/'references'/reference[1]/'source.png'
+                    data = source.read_bytes()
+                    if hashlib.sha256(data).hexdigest() != metadata['sha256']:
+                        raise ValueError('참조 이미지가 변경되었습니다.')
+                    return self.send(200,data,'image/png')
                 match = re.fullmatch(r'/api/video/(jobs|results)/([0-9a-f]{32})',path)
                 if match and video_manager is not None:
                     return self.send(200,video_manager.get(match[2]) if match[1]=='jobs' else video_manager.result(match[2]))
@@ -365,6 +373,10 @@ def make_server(root, port=8190, comfy_url='http://127.0.0.1:8188', config=None)
                 body = json.loads(raw_body)
                 if not isinstance(body, dict):
                     raise ValueError('Expected JSON object')
+                if self.path == '/api/video/references':
+                    if video_manager is None:
+                        return self.send(503,{'error':'로컬 영상 생성은 Apple Silicon Mac에서 지원합니다.'})
+                    return self.send(201,video_manager.runtime.create_reference(body))
                 if self.path == '/api/video/jobs':
                     if video_manager is None:
                         return self.send(503,{'error':'로컬 영상 생성은 Apple Silicon Mac에서 지원합니다.'})

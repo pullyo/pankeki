@@ -337,9 +337,9 @@
     form.prepend(controls);
     const settings=doc.createElement('section');settings.className='pc-ai-model-settings';settings.id='desktopModelSettings';
     settings.innerHTML='<fieldset><legend>AI 대화</legend><label for="desktopChatProvider">AI 공급자</label><select id="desktopChatProvider"><option value="codex">Codex</option><option value="claude">Claude</option></select><label for="desktopChatModel">세부 모델</label><select id="desktopChatModel" disabled></select><p id="desktopChatModelHelp" class="hint" role="status"></p><button type="button" id="desktopChatModelsRefresh" class="text-button">모델 목록 다시 확인</button></fieldset><fieldset><legend>이미지 생성</legend><label for="desktopGenerationModel">생성 모델</label><select id="desktopGenerationModel" disabled></select><p id="desktopGenerationModelHelp" class="hint" role="status"></p></fieldset><fieldset><legend>선택 영역 수정</legend><label for="desktopEditModel">부분 수정 모델</label><select id="desktopEditModel" disabled></select><p id="desktopEditModelHelp" class="hint" role="status"></p></fieldset><p id="desktopImageSettingsHelp" class="hint" role="status"></p>';
-    const information=doc.createElement('details');information.id='desktopBuildInformation';information.className='pc-build-information';
+    const information=doc.createElement('details');information.id='desktopBuildInformation';information.dataset.pkSettingsSection='environment';information.className='pc-build-information';
     information.innerHTML='<summary>앱 정보 · 빌드 식별자</summary><p id="desktopBuildStatus" role="status"></p><dl id="desktopBuildIdentifiers"></dl><p class="hint">시작 시 식별자는 그때 관찰한 파일 바이트입니다. 개별 모듈의 실행이나 이미지 품질은 따로 확인해요.</p><button type="button" id="desktopBuildRefresh" class="text-button">식별자 다시 확인</button>';
-    settings.append(information);
+    const environmentSettings=modelPanel.querySelector('section[data-pk-settings-section="environment"]');(environmentSettings||settings).append(information);
     // The core picker stays in place for the shared adapter; only the three
     // model setting groups are exposed in the installed view. Keep preset reset
     // and numeric controls outside this hidden/inert presentation boundary.

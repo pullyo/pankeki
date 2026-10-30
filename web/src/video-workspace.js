@@ -13,6 +13,26 @@
   const validId=value=>typeof value==='string'&&/^[A-Za-z0-9_-]{1,128}$/.test(value);
   const text=(value,max=1200)=>typeof value==='string'?value.slice(0,max):'';
   const clone=value=>JSON.parse(JSON.stringify(value));
+  const PROFILE_NAMES=new Set(['preview','fullbody']);
+  const referenceId=value=>typeof value==='string'&&/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(value);
+  const referenceUrl=id=>'/api/video/references/'+id+'/source.png';
+  function thinReference(value){
+    if(!value||!referenceId(value.reference_id)||!Number.isSafeInteger(value.epoch)||!validId(value.project_id)||!validId(value.candidate_id)||!validId(value.source_revision)||!(/^[0-9a-f]{64}$/).test(value.sha256))return null;
+    return {reference_id:value.reference_id,project_id:value.project_id,epoch:value.epoch,candidate_id:value.candidate_id,source_revision:value.source_revision,sha256:value.sha256,width:value.width,height:value.height,name:text(value.name,120),preview_url:referenceUrl(value.reference_id)};
+  }
+  function thinBinding(value){
+    if(!value||!PROFILE_NAMES.has(value.profile)||Object.keys(value).some(key=>!['profile','reference_id','reference_sha256'].includes(key)))return null;
+    if(value.reference_id===null){if(value.reference_sha256!==null)return null;}
+    else if(!referenceId(value.reference_id)||!(/^[0-9a-f]{64}$/).test(value.reference_sha256))return null;
+    return Object.freeze({profile:value.profile,reference_id:value.reference_id,reference_sha256:value.reference_sha256});
+  }
+  function submissionBinding(payload,reference){
+    const id=payload.reference_id||null;
+    const sha=id&&reference?.reference_id===id&&reference.project_id===payload.project_id&&reference.epoch===payload.epoch?reference.sha256:null;
+    return thinBinding({profile:payload.profile||'preview',reference_id:id,reference_sha256:sha});
+  }
+  const legacyBinding=()=>thinBinding({profile:'preview',reference_id:null,reference_sha256:null});
+  const bindingMatches=(binding,payload)=>!!binding&&binding.profile===(payload.profile||'preview')&&binding.reference_id===(payload.reference_id||null);
   const fail=message=>{throw Error(message);};
   const assetUrl=(id,kind)=>'/api/video/assets/'+encodeURIComponent(id)+'/'+kind+'.mp4';
   function checkedAsset(url,id,kind){return url===assetUrl(id,kind)?url:null;}
@@ -22,26 +42,48 @@
     if(!response.ok)throw Object.assign(Error(text(data?.error?.message||data?.error||data?.message,300)||'영상 서버에 연결하지 못했어요.'),{status:response.status});
     return data;
   }
-  function createController({api=request,pickScene,storage,makeId=()=>root.crypto.randomUUID(),onChange=()=>{},schedule=(fn,ms)=>root.setTimeout(fn,ms),clearSchedule=id=>root.clearTimeout(id),pollMs=1200}={}){
+  function createController({api=request,pickScene,getSelectedReference,storage,makeId=()=>root.crypto.randomUUID(),onChange=()=>{},schedule=(fn,ms)=>root.setTimeout(fn,ms),clearSchedule=id=>root.clearTimeout(id),pollMs=1200}={}){
     let dead=false,generation=0,timer=null,polling=null,failures=0,cancelRequested=null;
-    const state={project_id:makeId(),epoch:0,scene:null,prompt:'',capabilities:null,checking:false,picking:false,submitting:false,pendingSubmission:null,canceling:false,job:null,result:null,guide_url:null,error:'',notice:'Blender에서 구도를 편집한 파일을 가져오세요.',storageError:''};
-    const snapshot=()=>clone({...state,busy:state.submitting||!!state.pendingSubmission||state.canceling||ACTIVE.has(state.job?.status)});
+    const state={project_id:makeId(),epoch:0,scene:null,prompt:'',profile:'preview',useReference:false,reference:null,referencePreviewUnavailable:false,selectingReference:false,capabilities:null,checking:false,picking:false,submitting:false,pendingSubmission:null,pendingBinding:null,canceling:false,job:null,result:null,guide_url:null,error:'',notice:'Blender에서 구도를 편집한 파일을 가져오세요.',storageError:''};
+    const snapshot=()=>clone({...state,busy:state.submitting||!!state.pendingSubmission||state.canceling||state.selectingReference||ACTIVE.has(state.job?.status)});
     function publish(){if(!dead)onChange(snapshot());}
     function persist(){
       if(!storage)return;
-      try{storage.setItem(STORAGE_KEY,JSON.stringify({schema:1,project_id:state.project_id,epoch:state.epoch,scene:state.scene,prompt:state.prompt,pendingSubmission:state.pendingSubmission,job:state.job?{id:state.job.id,project_id:state.project_id,epoch:state.epoch,cancel_requested:cancelRequested===state.job.id}:null}));state.storageError='';}
+      try{storage.setItem(STORAGE_KEY,JSON.stringify({schema:1,project_id:state.project_id,epoch:state.epoch,scene:state.scene,prompt:state.prompt,profile:state.profile,useReference:state.useReference,reference:state.reference,pendingSubmission:state.pendingSubmission,pendingBinding:state.pendingBinding,job:state.job?{id:state.job.id,project_id:state.project_id,epoch:state.epoch,cancel_requested:cancelRequested===state.job.id,binding:state.job.binding}:null}));state.storageError='';}
       catch{state.storageError='이 영상 작업을 앱에 기억하지 못했어요. 완료한 파일을 저장해주세요.';}
     }
     function current(token,project,epoch){return !dead&&token===generation&&project===state.project_id&&epoch===state.epoch;}
     function stopTimer(){if(timer!==null){clearSchedule(timer);timer=null;}}
     function queue(){stopTimer();if(!dead&&ACTIVE.has(state.job?.status))timer=schedule(()=>{timer=null;void refreshJob();},pollMs);}
-    function busy(){return state.submitting||!!state.pendingSubmission||state.canceling||state.picking||ACTIVE.has(state.job?.status);}
+    function busy(){return state.submitting||!!state.pendingSubmission||state.canceling||state.selectingReference||state.picking||ACTIVE.has(state.job?.status);}
     function setPrompt(value){if(busy())return false;state.prompt=text(value);persist();publish();return true;}
+    function setProfile(value){if(busy()||!PROFILE_NAMES.has(value))return false;state.profile=value;persist();publish();return true;}
+    function clearReference(){if(busy())return false;state.useReference=false;state.reference=null;persist();publish();return true;}
+    function referencePreviewFailed(id){if(state.reference?.reference_id!==id)return false;state.referencePreviewUnavailable=true;publish();return true;}
+    async function selectReference(){
+      if(dead||busy())return false;
+      if(!state.scene||typeof getSelectedReference!=='function'){state.error=!state.scene?'먼저 Blender 구도 파일을 가져와주세요.':'현재 선택한 이미지가 없어요. 이미지 후보를 선택해주세요.';publish();return false;}
+      const token=generation,project=state.project_id,epoch=state.epoch,scene=state.scene.scene_id;
+      state.selectingReference=true;state.error='';publish();
+      try{
+        // Snapshot on this explicit action, never later at Generate.
+        const selected=await getSelectedReference();
+        if(!current(token,project,epoch)||state.scene?.scene_id!==scene)return false;
+        if(!selected||!validId(selected.candidate_id)||!validId(selected.source_revision)||typeof selected.image!=='string'||!selected.image.startsWith('data:image/png;base64,'))fail('현재 선택한 PNG 후보를 확인해주세요.');
+        const response=await api('/api/video/references',{image:selected.image,project_id:project,epoch:epoch+1,candidate_id:selected.candidate_id,source_revision:selected.source_revision});
+        if(!current(token,project,epoch)||state.scene?.scene_id!==scene)return false;
+        if(response?.candidate_id!==selected.candidate_id||response?.source_revision!==selected.source_revision)fail('참조 이미지와 선택한 후보의 연결을 확인하지 못했어요.');
+        const reference=thinReference({...response,project_id:project,epoch:epoch+1,candidate_id:selected.candidate_id,source_revision:selected.source_revision,name:selected.name||selected.candidate_id});
+        if(!reference)fail('참조 이미지 저장 기록을 확인하지 못했어요. 다시 선택해주세요.');
+        state.reference=reference;state.referencePreviewUnavailable=false;state.useReference=true;persist();return true;
+      }catch(error){if(current(token,project,epoch))state.error=text(error.message,500);return false;}
+      finally{if(current(token,project,epoch)){state.selectingReference=false;publish();}}
+    }
     async function check(){
       if(dead||state.checking)return false;
       state.checking=true;publish();
       try{const value=await api('/api/video/status');if(dead)return false;
-        state.capabilities={ready:value?.ready===true,reason:text(value?.reason,500),model:{id:text(value?.model?.id,120),label:text(value?.model?.label,120)},defaults:{width:value?.defaults?.width,height:value?.defaults?.height,frames:value?.defaults?.frames,fps:value?.defaults?.fps,steps:value?.defaults?.steps},blender_available:value?.blender_available===true};
+        state.capabilities={ready:value?.ready===true,reason:text(value?.reason,500),model:{id:text(value?.model?.id,120),label:text(value?.model?.label,120)},profiles:value?.profiles&&typeof value.profiles==='object'?clone(value.profiles):null,defaults:{width:value?.defaults?.width,height:value?.defaults?.height,frames:value?.defaults?.frames,fps:value?.defaults?.fps,steps:value?.defaults?.steps},blender_available:value?.blender_available===true};
         if(!state.job&&!state.pendingSubmission)state.notice=state.capabilities.ready?'구도 파일을 가져오고 원하는 장면을 적어주세요.':state.capabilities.reason||'영상 생성 준비를 확인해주세요.';
         state.error='';return true;
       }catch(error){if(!dead)state.error=text(error.message,500);return false;}
@@ -53,36 +95,44 @@
       state.picking=true;state.error='';publish();const token=generation;let accepted=false;
       try{const value=await pickScene();if(dead||token!==generation)return false;if(!value||value.canceled)return false;
         if(!validId(value.scene_id)||!text(value.name,255))fail('선택한 Blender 파일을 확인하지 못했어요. 다시 가져와주세요.');
-        accepted=true;++state.epoch;++generation;stopTimer();cancelRequested=null;state.scene={scene_id:value.scene_id,name:text(value.name,255)};state.job=null;state.result=null;state.guide_url=null;state.notice='파일을 가져왔어요. 만들 장면을 간단히 적어주세요.';persist();return true;
+        accepted=true;++state.epoch;++generation;stopTimer();cancelRequested=null;state.scene={scene_id:value.scene_id,name:text(value.name,255)};state.reference=null;state.referencePreviewUnavailable=false;state.useReference=false;state.job=null;state.result=null;state.guide_url=null;state.notice='파일을 가져왔어요. 만들 장면을 간단히 적어주세요.';persist();return true;
       }catch(error){if(!dead&&token===generation)state.error=text(error.message,500);return false;}
       finally{if(!dead&&(token===generation||accepted&&token+1===generation)){state.picking=false;publish();}}
     }
     async function submit({recover=false}={}){
-      if(dead||state.submitting||state.canceling||state.picking||ACTIVE.has(state.job?.status)||!!state.pendingSubmission&&!recover)return false;
+      if(dead||state.submitting||state.canceling||state.selectingReference||state.picking||ACTIVE.has(state.job?.status)||!!state.pendingSubmission&&!recover)return false;
       if(!recover&&(!state.capabilities?.ready||!state.scene||!state.prompt.trim())){state.error=!state.capabilities?.ready?state.capabilities?.reason||'영상 생성 준비를 확인해주세요.':!state.scene?'Blender 구도 파일을 가져와주세요.':'어떤 장면을 만들지 적어주세요.';publish();return false;}
       if(recover&&!state.pendingSubmission)return false;
+      if(!recover&&state.useReference&&(!state.reference||state.reference.project_id!==state.project_id||state.reference.epoch!==state.epoch+1)){state.error='이번 영상에 사용할 현재 이미지 선택을 다시 눌러주세요.';publish();return false;}
+      if(!recover&&state.profile==='fullbody'&&!state.capabilities?.profiles?.fullbody){state.error='전신 영상 프로필의 준비 상태를 다시 확인해주세요.';publish();return false;}
       stopTimer();++generation;if(!recover)++state.epoch;const token=generation,project=state.project_id,epoch=state.epoch;
-      const payload=recover?state.pendingSubmission:{scene_id:state.scene.scene_id,project_id:project,epoch,prompt:state.prompt.trim(),seed:42};state.pendingSubmission=payload;
+      const payload=recover?state.pendingSubmission:{scene_id:state.scene.scene_id,project_id:project,epoch,prompt:state.prompt.trim(),seed:42,...(state.profile==='fullbody'?{profile:'fullbody'}:{}),...(state.useReference?{reference_id:state.reference.reference_id}:{})};
+      const binding=recover?state.pendingBinding:submissionBinding(payload,state.reference);
+      if(!bindingMatches(binding,payload)){state.error='이전 영상 요청의 프로필·참조 확인값을 찾지 못했어요. 기록을 확인해주세요.';publish();return false;}
+      state.pendingSubmission=payload;state.pendingBinding=binding;
       state.submitting=true;cancelRequested=null;state.result=null;state.guide_url=null;state.job=null;state.error='';state.notice='영상 작업을 요청하고 있어요.';persist();publish();
       try{const value=await api('/api/video/jobs',payload);
         if(!current(token,project,epoch)){if(validId(value?.id))void api('/api/video/jobs/'+encodeURIComponent(value.id)+'/cancel',{}).catch(()=>{});return false;}
         if(!validId(value?.id)||!ACTIVE.has(value.status)&&!TERMINAL.has(value.status))fail('영상 작업 번호를 확인하지 못했어요. 중복 요청 전 연결을 확인해주세요.');
-        state.pendingSubmission=null;state.job={id:value.id,status:value.status,phase:'queued',project_id:project,epoch};failures=0;persist();return true;
-      }catch(error){if(current(token,project,epoch)){if(Number.isInteger(error.status)&&error.status>=400&&error.status<500)state.pendingSubmission=null;state.error=text(error.message,500);state.notice=state.pendingSubmission?'요청 상태를 확인하지 못했어요. 연결 다시 확인을 눌러 같은 요청을 확인하세요.':'영상 요청을 시작하지 못했어요.';persist();}return false;}
+        state.pendingSubmission=null;state.pendingBinding=null;state.job={id:value.id,status:value.status,phase:'queued',project_id:project,epoch,binding};failures=0;persist();return true;
+      }catch(error){if(current(token,project,epoch)){if(Number.isInteger(error.status)&&error.status>=400&&error.status<500){state.pendingSubmission=null;state.pendingBinding=null;}state.error=text(error.message,500);state.notice=state.pendingSubmission?'요청 상태를 확인하지 못했어요. 연결 다시 확인을 눌러 같은 요청을 확인하세요.':'영상 요청을 시작하지 못했어요.';persist();}return false;}
       finally{if(current(token,project,epoch)){state.submitting=false;publish();if(state.job)void refreshJob();}}
     }
     async function refreshJob(){
       if(dead||!state.job||polling===generation)return false;
       stopTimer();const token=generation,project=state.project_id,epoch=state.epoch,id=state.job.id;polling=token;
+      const binding=state.job.binding||legacyBinding(),expectedProfile=binding.profile,expectedReference=binding.reference_id?{reference_id:binding.reference_id,sha256:binding.reference_sha256}:null;
       try{const value=await api('/api/video/jobs/'+encodeURIComponent(id));if(!current(token,project,epoch))return false;
         if(value?.id!==id||value.project_id!==project||value.epoch!==epoch||!ACTIVE.has(value.status)&&!TERMINAL.has(value.status))fail('이 영상 작업과 응답의 연결을 확인하지 못했어요.');
-        state.job={id,status:value.status,phase:text(value.phase,80),project_id:project,epoch,progress:Number.isFinite(value.progress)?Math.min(1,Math.max(0,value.progress)):null,elapsed_seconds:Number.isFinite(value.elapsed_seconds)?Math.max(0,value.elapsed_seconds):null,width:value.width,height:value.height,frames:value.frames,fps:value.fps};
+        if(value.profile!=null&&value.profile!==expectedProfile||expectedProfile==='fullbody'&&value.profile!=='fullbody'||expectedReference&&value.reference_id!==expectedReference.reference_id){state.result=null;fail('영상 프로필이나 참조 이미지와 응답의 연결을 확인하지 못했어요.');}
+        state.job={id,status:value.status,phase:text(value.phase,80),project_id:project,epoch,binding,progress:Number.isFinite(value.progress)?Math.min(1,Math.max(0,value.progress)):null,elapsed_seconds:Number.isFinite(value.elapsed_seconds)?Math.max(0,value.elapsed_seconds):null,width:value.width,height:value.height,frames:value.frames,fps:value.fps};
         state.guide_url=checkedAsset(value.guide_url,id,'guide');state.error='';failures=0;
         if(value.status==='succeeded'&&cancelRequested===id){state.result=null;state.notice='취소를 요청한 영상 결과는 표시하지 않아요.';}
         else if(value.status==='succeeded'){
           const result=await api('/api/video/results/'+encodeURIComponent(id));if(!current(token,project,epoch))return false;
           const url=checkedAsset(result?.url,id,'result');
           if(result?.ai_generated!==true||!url||result.project_id!==undefined&&result.project_id!==project||result.epoch!==undefined&&result.epoch!==epoch)fail('완료한 AI 영상 파일을 확인하지 못했어요. 연결을 다시 확인해주세요.');
+          if(result.profile!=null&&result.profile!==expectedProfile||expectedProfile==='fullbody'&&result.profile!=='fullbody'||expectedReference&&(result.reference?.reference_id!==expectedReference.reference_id||result.reference?.original_sha256!==expectedReference.sha256)){state.result=null;fail('완료 영상의 프로필이나 참조 이미지 확인값이 일치하지 않아요.');}
           state.result={url,filename:text(result.filename,180).replace(/[/\\\x00-\x1f]/g,'_')||'Pankeki-video.mp4'};state.notice='AI 영상이 완성됐어요. 재생한 뒤 파일로 저장하세요.';
         }else if(value.status==='canceled'){state.result=null;state.notice='영상 작업을 취소했어요.';}
         else if(['failed','orphaned','uncertain'].includes(value.status)){state.result=null;state.error=text(value?.error?.message||value.error,500)||'영상 작업을 완료하지 못했어요. 준비 상태를 확인하고 다시 시도해주세요.';state.notice=value.status==='orphaned'?'앱을 다시 여는 동안 이전 작업이 중단됐어요.':'영상 작업을 완료하지 못했어요.';}
@@ -101,23 +151,31 @@
     }
     function reset(){
       const previous=state.job;if(previous&&ACTIVE.has(previous.status))void api('/api/video/jobs/'+encodeURIComponent(previous.id)+'/cancel',{}).catch(()=>{});
-      ++generation;stopTimer();cancelRequested=null;state.project_id=makeId();state.epoch=0;state.scene=null;state.prompt='';state.job=null;state.pendingSubmission=null;state.result=null;state.guide_url=null;state.error='';state.submitting=false;state.canceling=false;state.picking=false;state.notice='새 프로젝트에서 사용할 Blender 파일을 가져오세요.';persist();publish();
+      ++generation;stopTimer();cancelRequested=null;state.project_id=makeId();state.epoch=0;state.scene=null;state.prompt='';state.profile='preview';state.useReference=false;state.reference=null;state.referencePreviewUnavailable=false;state.selectingReference=false;state.job=null;state.pendingSubmission=null;state.pendingBinding=null;state.result=null;state.guide_url=null;state.error='';state.submitting=false;state.canceling=false;state.picking=false;state.notice='새 프로젝트에서 사용할 Blender 파일을 가져오세요.';persist();publish();
     }
     async function restore(){
       let value;try{value=JSON.parse(storage?.getItem(STORAGE_KEY)||'null');}catch{state.storageError='이전 영상 작업 기록을 읽지 못했어요.';}
       if(value?.schema===1&&validId(value.project_id)&&Number.isSafeInteger(value.epoch)&&value.epoch>=0){
-        state.project_id=value.project_id;state.epoch=value.epoch;state.prompt=text(value.prompt);
+        state.project_id=value.project_id;state.epoch=value.epoch;state.prompt=text(value.prompt);state.profile=PROFILE_NAMES.has(value.profile)?value.profile:'preview';state.reference=thinReference(value.reference);state.useReference=value.useReference===true&&!!state.reference&&state.reference.project_id===value.project_id;
         if(validId(value.scene?.scene_id)&&text(value.scene?.name,255))state.scene={scene_id:value.scene.scene_id,name:text(value.scene.name,255)};
-        if(validId(value.job?.id)&&value.job.project_id===value.project_id&&value.job.epoch===value.epoch){state.job={id:value.job.id,status:'queued',phase:'restoring',project_id:value.project_id,epoch:value.epoch};if(value.job.cancel_requested===true)cancelRequested=value.job.id;}
-        else if(value.pendingSubmission&&validId(value.pendingSubmission.scene_id)&&value.pendingSubmission.project_id===value.project_id&&value.pendingSubmission.epoch===value.epoch&&typeof value.pendingSubmission.prompt==='string'&&value.pendingSubmission.prompt.length<=1200&&value.pendingSubmission.seed===42){state.pendingSubmission={scene_id:value.pendingSubmission.scene_id,project_id:value.project_id,epoch:value.epoch,prompt:value.pendingSubmission.prompt,seed:42};state.notice='이전 요청의 응답을 확인하지 못했어요. 연결 다시 확인을 눌러 확인하세요.';}
+        if(validId(value.job?.id)&&value.job.project_id===value.project_id&&value.job.epoch===value.epoch){
+          const binding=Object.hasOwn(value.job,'binding')?thinBinding(value.job.binding):legacyBinding();
+          if(binding){state.job={id:value.job.id,status:'queued',phase:'restoring',project_id:value.project_id,epoch:value.epoch,binding};if(value.job.cancel_requested===true)cancelRequested=value.job.id;}
+          else state.storageError='이전 영상 작업의 프로필·참조 확인값을 읽지 못했어요.';
+        }
+        else if(value.pendingSubmission&&validId(value.pendingSubmission.scene_id)&&value.pendingSubmission.project_id===value.project_id&&value.pendingSubmission.epoch===value.epoch&&typeof value.pendingSubmission.prompt==='string'&&value.pendingSubmission.prompt.length<=1200&&value.pendingSubmission.seed===42&&(!Object.hasOwn(value.pendingSubmission,'profile')||PROFILE_NAMES.has(value.pendingSubmission.profile))&&(!Object.hasOwn(value.pendingSubmission,'reference_id')||referenceId(value.pendingSubmission.reference_id))&&Object.keys(value.pendingSubmission).every(key=>['scene_id','project_id','epoch','prompt','seed','profile','reference_id'].includes(key))){state.pendingSubmission={scene_id:value.pendingSubmission.scene_id,project_id:value.project_id,epoch:value.epoch,prompt:value.pendingSubmission.prompt,seed:42,...(value.pendingSubmission.profile==='fullbody'?{profile:'fullbody'}:{}),...(referenceId(value.pendingSubmission.reference_id)?{reference_id:value.pendingSubmission.reference_id}:{})};const restoredBinding=Object.hasOwn(value,'pendingBinding')?thinBinding(value.pendingBinding):submissionBinding(state.pendingSubmission,state.reference);
+          state.pendingBinding=bindingMatches(restoredBinding,state.pendingSubmission)?restoredBinding:null;
+          if(!state.pendingBinding)state.storageError='이전 영상 요청의 프로필·참조 확인값을 읽지 못했어요.';
+          state.notice='이전 요청의 응답을 확인하지 못했어요. 연결 다시 확인을 눌러 확인하세요.';}
+        else if(value.pendingSubmission)state.storageError='이전 영상 요청 기록에 잘못된 값이 있어 복구하지 않았어요. 새 요청 전에 내용을 확인해주세요.';
       }
       publish();await check();if(state.job)await refreshJob();return snapshot();
     }
-    return Object.freeze({getState:snapshot,check,selectScene,setPrompt,submit,cancel,refreshJob,recoverSubmission:()=>submit({recover:true}),restore,reset,destroy(){dead=true;++generation;stopTimer();}});
+    return Object.freeze({getState:snapshot,check,selectScene,setPrompt,setProfile,selectReference,clearReference,referencePreviewFailed,submit,cancel,refreshJob,recoverSubmission:()=>submit({recover:true}),restore,reset,destroy(){dead=true;++generation;stopTimer();}});
   }
   function phaseLabel(job){
     if(job.status==='canceling')return '영상 작업을 중단하고 있어요.';
-    const labels={queued:'영상 생성 순서를 기다리고 있어요.',preparing:'영상 생성을 준비하고 있어요.',preparing_guide:'Blender에서 구도 가이드를 만들고 있어요.',waiting_gpu:'다른 이미지·영상 작업이 끝나기를 기다리고 있어요.',guide:'Blender에서 구도 가이드를 만들고 있어요.',blender:'Blender에서 구도 가이드를 만들고 있어요.',rendering:'Blender에서 구도 가이드를 만들고 있어요.',loading:'영상 모델을 불러오고 있어요.',model_loading:'영상 모델을 불러오고 있어요.',denoising:'AI가 영상을 만들고 있어요.',generating:'AI가 영상을 만들고 있어요.',sampling:'AI가 영상을 만들고 있어요.',encoding:'영상 파일을 저장하고 있어요.',verifying:'완성한 영상 파일을 확인하고 있어요.',restoring:'이전 영상 작업을 확인하고 있어요.'};
+    const labels={queued:'영상 생성 순서를 기다리고 있어요.',preparing:'영상 생성을 준비하고 있어요.',preparing_guide:'Blender에서 구도 가이드를 만들고 있어요.',checking_memory:'영상 생성에 필요한 메모리를 확인하고 있어요.',waiting_gpu:'다른 이미지·영상 작업이 끝나기를 기다리고 있어요.',guide:'Blender에서 구도 가이드를 만들고 있어요.',blender:'Blender에서 구도 가이드를 만들고 있어요.',rendering:'Blender에서 구도 가이드를 만들고 있어요.',loading:'영상 모델을 불러오고 있어요.',model_loading:'영상 모델을 불러오고 있어요.',denoising:'AI가 영상을 만들고 있어요.',generating:'AI가 영상을 만들고 있어요.',sampling:'AI가 영상을 만들고 있어요.',encoding:'영상 파일을 저장하고 있어요.',verifying:'완성한 영상 파일을 확인하고 있어요.',restoring:'이전 영상 작업을 확인하고 있어요.'};
     return labels[job.phase]||(job.status==='queued'?labels.queued:'영상 작업을 진행하고 있어요.');
   }
   function mount(doc,studio){
@@ -127,18 +185,36 @@
     const write=(id,value)=>{if(find(id))find(id).textContent=value;};
     function media(node,url){if(!node)return;if(url){if(node.getAttribute('src')!==url){node.src=url;node.load?.();}}else if(node.hasAttribute('src')){node.pause?.();node.removeAttribute('src');node.load?.();}}
     function render(state){
-      const locked=!initialized||state.busy||state.picking,caps=state.capabilities,defaults=caps?.defaults||{},hasResult=!!state.result;
+      const locked=!initialized||state.busy||state.picking,caps=state.capabilities,defaults=(state.profile==='fullbody'?caps?.profiles?.fullbody:caps?.defaults)||{},hasResult=!!state.result;
+      const reference=state.reference,nextReference=state.useReference&&reference?.project_id===state.project_id&&reference.epoch===state.epoch+1?reference:null;
+      const active=state.submitting||!!state.pendingSubmission||state.canceling||ACTIVE.has(state.job?.status),binding=active?(state.pendingBinding||state.job?.binding):null;
+      const boundReference=binding?.reference_id&&reference?.reference_id===binding.reference_id&&reference.sha256===binding.reference_sha256&&reference.project_id===state.project_id&&reference.epoch===state.epoch?reference:null;
+      const previewReference=active?boundReference:nextReference;
+      const referenceDetails=value=>value.name+' · '+value.width+' × '+value.height;
+      let referenceStatus;
+      if(state.selectingReference)referenceStatus='선택한 이미지를 보관하고 있어요.';
+      else if(active&&binding?.reference_id)referenceStatus=(ACTIVE.has(state.job?.status)?'현재 영상에 사용 중 · ':'이번 영상에 요청한 참조 · ')+(boundReference?referenceDetails(boundReference):'저장된 참조 이미지');
+      else if(active)referenceStatus=binding?'현재 영상은 참조 이미지를 사용하지 않아요.':'영상 요청의 참조 정보를 확인하고 있어요.';
+      else if(nextReference)referenceStatus='다음 영상 참조 준비됨 · '+referenceDetails(nextReference);
+      else if(state.useReference)referenceStatus=reference?.project_id===state.project_id&&reference.epoch===state.epoch?'이전 영상에 사용한 참조입니다. 새 영상은 현재 이미지 선택을 다시 눌러주세요.':'새 영상은 현재 이미지 선택을 눌러 참조를 준비해주세요.';
+      else referenceStatus='참조 이미지 사용 안 함. Blender 구도와 설명으로 새 영상을 만들어요.';
+      if(previewReference&&state.referencePreviewUnavailable)referenceStatus+=' · 미리보기를 표시할 수 없어요.';
+      if(find('videoProfile')){find('videoProfile').disabled=locked;find('videoProfile').value=state.profile;}
+      if(find('videoUseReference')){find('videoUseReference').disabled=locked;find('videoUseReference').checked=state.useReference;}
+      if(find('videoSelectReference'))find('videoSelectReference').disabled=locked||!state.scene;
+      if(find('videoReferencePreview')){const image=find('videoReferencePreview');image.hidden=state.selectingReference||!previewReference||state.referencePreviewUnavailable;if(!image.hidden)image.src=previewReference.preview_url;else image.removeAttribute('src');}
+      write('videoReferenceStatus',referenceStatus);
       page.dataset.videoState=state.job?.status||'idle';page.setAttribute('aria-busy',String(state.busy));
       find('videoPickScene').disabled=locked||!root.pankekiDesktop?.pickVideoScene;
       write('videoSceneName',state.scene?.name||'아직 선택한 파일이 없어요.');
       const prompt=find('videoPrompt');prompt.disabled=locked;if(!composing&&prompt.value!==state.prompt)prompt.value=state.prompt;
-      find('videoGenerate').disabled=locked||!caps?.ready||!state.scene||!state.prompt.trim();
+      find('videoGenerate').disabled=locked||!caps?.ready||!state.scene||!state.prompt.trim()||state.useReference&&!nextReference;
       find('videoCancel').hidden=!state.busy||!state.job;find('videoCancel').disabled=state.canceling||state.job?.status==='canceling';
       find('videoRefresh').disabled=state.checking||state.submitting;write('videoRefresh',state.checking?'준비 확인 중…':'연결 다시 확인');
       write('videoReadiness',!root.pankekiDesktop?.pickVideoScene?'설치형 Pankeki 앱에서 Blender 파일을 가져올 수 있어요.':state.checking&&!caps?'영상 생성 준비를 확인하고 있어요.':caps?.ready?'로컬 영상 생성 준비됨':caps?.reason||'영상 생성 준비를 확인해주세요.');
       const size=Number.isInteger(defaults.width)&&Number.isInteger(defaults.height)?defaults.width+' × '+defaults.height:'384 × 256';
       const duration=Number.isFinite(defaults.frames)&&Number.isFinite(defaults.fps)&&defaults.fps>0?(defaults.frames/defaults.fps).toFixed(1):'2.0';
-      write('videoFormat','빠른 미리보기 · '+size+' · 약 '+duration+'초');write('videoStatus',state.picking?'Blender 파일을 가져오고 있어요.':state.notice);
+      write('videoFormat',(state.profile==='fullbody'?'전신 영상':'빠른 미리보기')+' · '+size+' · 약 '+duration+'초');write('videoStatus',state.picking?'Blender 파일을 가져오고 있어요.':state.notice);
       find('videoError').hidden=!state.error;write('videoError',state.error);find('videoStorageError').hidden=!state.storageError;write('videoStorageError',state.storageError);
       const progress=find('videoProgress');progress.hidden=!state.busy;if(Number.isFinite(state.job?.progress))progress.value=state.job.progress;else progress.removeAttribute('value');
       write('videoElapsed',state.busy&&Number.isFinite(state.job?.elapsed_seconds)?'진행 '+Math.floor(state.job.elapsed_seconds)+'초':'');
@@ -149,7 +225,17 @@
       write('videoEmptyTitle',state.busy?'영상을 만들고 있어요.':'완성한 영상이 여기에 표시돼요.');write('videoEmptyCopy',state.busy?'완료되면 이 화면에서 재생하고 저장할 수 있어요.':'Blender 파일과 짧은 설명으로 시작하세요.');
     }
     let storage;try{storage=root.localStorage;}catch{}
-    controller=createController({storage,pickScene:root.pankekiDesktop?.pickVideoScene?()=>root.pankekiDesktop.pickVideoScene():null,onChange:render});
+    controller=createController({storage,getSelectedReference:()=>{
+      const summary=studio.getSummary?.();if(!summary||summary.importing||summary.busy||!summary.imageUrl)fail('이미지 후보를 선택하고 작업이 끝난 뒤 다시 시도해주세요.');
+      const state=studio.getState?.(),candidates=state?.project?.versions||[];
+      const candidate=candidates.find(item=>item.id===summary.sourceId&&item.image===summary.imageUrl)||candidates.find(item=>item.id===summary.latestId&&item.image===summary.imageUrl);
+      if(!candidate)fail('현재 보이는 이미지 후보를 확인하지 못했어요. 다시 선택해주세요.');
+      return {image:candidate.image,candidate_id:candidate.id,source_revision:String(summary.sourceRevision),name:candidate.label||candidate.id};
+    },pickScene:root.pankekiDesktop?.pickVideoScene?()=>root.pankekiDesktop.pickVideoScene():null,onChange:render});
+    on(find('videoReferencePreview'),'error',()=>{const reference=controller.getState().reference;if(reference)controller.referencePreviewFailed(reference.reference_id);});
+    on(find('videoProfile'),'change',event=>controller.setProfile(event.target.value));
+    on(find('videoUseReference'),'change',event=>{if(event.target.checked)void controller.selectReference();else controller.clearReference();});
+    on(find('videoSelectReference'),'click',()=>void controller.selectReference());
     on(find('videoPickScene'),'click',()=>void controller.selectScene());on(find('videoGenerate'),'click',()=>{if(!composing)void controller.submit();});on(find('videoCancel'),'click',()=>void controller.cancel());
     on(find('videoRefresh'),'click',async()=>{await controller.check();if(controller.getState().pendingSubmission)await controller.recoverSubmission();else if(controller.getState().job)await controller.refreshJob();});
     on(find('videoPrompt'),'compositionstart',()=>{composing=true;});on(find('videoPrompt'),'compositionend',event=>{composing=false;controller.setPrompt(event.target.value);});on(find('videoPrompt'),'input',event=>{if(!composing&&!event.isComposing)controller.setPrompt(event.target.value);});

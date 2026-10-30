@@ -61,6 +61,18 @@
     function item(record){const doc=document(record.raw),selected=doc.versions.find(v=>v.id===doc.selectionHistory.at(-1)?.candidateId)||doc.versions.at(-1);return Object.freeze({id:record.id,name:doc.brief.name||'이름 없는 프로젝트',candidateCount:doc.versions.length,preview:selected?.image||null,createdAt:record.createdAt,updatedAt:record.updatedAt,favorite:record.favorite,recovered:record.recovered});}
     const kindOf=entry=>entry?.kind||'project';
     function getState(){return Object.freeze({initialized,ready:available,transitioning,saving:saving>0,activeId,activeKind,items:Object.freeze([...records.values()].filter(entry=>kindOf(entry)==='project').map(item)),error,notice,recovery:recovery?Object.freeze({...recovery}):null});}
+    function getRecentImages(limit=5){
+      const rows=[];
+      if(initialized)for(const entry of records.values()){
+        const doc=document(entry.raw);
+        for(const candidate of doc.versions)if(candidate.kind==='generated')rows.push({recordId:entry.id,documentKind:kindOf(entry),projectName:doc.brief.name||(kindOf(entry)==='generation'?'일반 생성 기록':'이름 없는 프로젝트'),candidateId:candidate.id,label:candidate.label,image:candidate.image,createdAt:candidate.createdAt,resultSha256:candidate.execution?.resultSha256||null});
+      }
+      rows.sort((a,b)=>Date.parse(b.createdAt)-Date.parse(a.createdAt)||Number(b.recordId===activeId)-Number(a.recordId===activeId)||Number(b.documentKind==='generation')-Number(a.documentKind==='generation')||a.recordId.localeCompare(b.recordId)||a.candidateId.localeCompare(b.candidateId));
+      const images=new Set(),hashes=new Set(),unique=[];
+      for(const row of rows){if(images.has(row.image)||row.resultSha256&&hashes.has(row.resultSha256))continue;images.add(row.image);if(row.resultSha256)hashes.add(row.resultSha256);unique.push(Object.freeze(row));}
+      const count=Math.max(0,Math.min(100,Number.isSafeInteger(limit)?limit:5));
+      return Object.freeze({items:Object.freeze(unique.slice(0,count)),total:unique.length});
+    }
     function publish(){const state=getState();for(const listener of listeners)try{listener(state);}catch{/* A presentation observer cannot roll back committed storage. */}}
     function message(failure){return String(failure?.message||'프로젝트 저장소를 확인해주세요.').slice(0,300);}
     function rejected(text){notice=text;publish();return Promise.resolve(false);}
@@ -198,7 +210,7 @@
       try{if(previous&&canonical(capture())===canonical(previous.raw)){bind(owner);publish();return true;}}catch{/* A foreign document is never converted into a fabricated v1 entry. */}
       uncommitted(null,'현재 작업을 이미지 프로젝트 목록과 연결하지 않았어요.','unlinked');return false;
     }
-    return Object.freeze({init,getState,subscribe(listener){if(typeof listener!=='function')fail('구독 함수가 필요해요.');listeners.add(listener);listener(getState());return()=>listeners.delete(listener);},saveCurrent,saveAsProject,openGeneration,newProject:()=>transition('new'),importProject:raw=>transition('import',raw),switchTo:id=>transition('switch',id),remove,setFavorite,rebindCurrent,flush:()=>queue});
+    return Object.freeze({init,getState,getRecentImages,subscribe(listener){if(typeof listener!=='function')fail('구독 함수가 필요해요.');listeners.add(listener);listener(getState());return()=>listeners.delete(listener);},saveCurrent,saveAsProject,openGeneration,newProject:()=>transition('new'),importProject:raw=>transition('import',raw),switchTo:id=>transition('switch',id),remove,setFavorite,rebindCurrent,flush:()=>queue});
   }
   return Object.freeze({create,createIndexedDBStore});
 });

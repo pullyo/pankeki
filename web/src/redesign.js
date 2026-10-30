@@ -25,7 +25,10 @@
     {id:'pink',label:'기본 여자 캐릭터',asset:'category-chibi',category:'chibi',prompt:'A cheerful pink-haired chibi girl with curled twin tails and small pink bows, rosy cheeks, pastel peach background, polished 2d illustration'},
     {id:'maid',label:'메이드복',asset:'template-maid',category:'character',prompt:'An adult anime woman with an ash gray bob, a modest black and cream Victorian maid outfit and a small bow headband, warm gentle portrait'},
     {id:'bedroom',label:'배경 일러스트',asset:'category-background',category:'background',prompt:'A cozy sunlit bedroom with warm wood, soft cream textiles and orange afternoon light, detailed background illustration, no characters'},
-    {id:'landscape',label:'풍경 일러스트',asset:'category-landscape',category:'illustration',prompt:'A colorful fantasy castle landscape among mountains and trees, warm sunlight, detailed painterly illustration, no characters'}
+    {id:'landscape',label:'풍경 일러스트',asset:'category-landscape',category:'illustration',prompt:'A colorful fantasy castle landscape among mountains and trees, warm sunlight, detailed painterly illustration, no characters'},
+    {id:'sd-character',label:'SD 캐릭터',asset:'category-chibi',category:'chibi',prompt:'An original cute chibi character with a tiny body, expressive face, clear silhouette, soft warm colors and clean 2d line art'},
+    {id:'expression-sheet',label:'표정 세트',icon:'smile',category:'character',prompt:'A character expression sheet showing the same original adult character with happy, surprised, thoughtful and calm facial expressions, consistent hairstyle and outfit, clean anime line art'},
+    {id:'simple-sketch',label:'간단 스케치',icon:'pencil',category:'character',prompt:'A simple monochrome pencil sketch of an original adult character, clear expressive lines, light construction marks and a plain paper background'}
   ]);
   function preparePrompt(value,id,mode='txt2img'){
     if(typeof value!=='string'||!value.trim())throw Error('원하는 이미지 설명을 먼저 입력해주세요.');
@@ -52,6 +55,11 @@
     for(const item of categories)if(text.endsWith('\n\n'+item.style)){text=text.slice(0,-item.style.length).trim();break;}
     return text;
   }
+  function compareProjectRecency(a,b){
+    const stamp=value=>{const parsed=typeof value==='string'&&value.trim()?Date.parse(value):NaN;return Number.isFinite(parsed)?parsed:-Infinity;};
+    const createdA=stamp(a.createdAt),createdB=stamp(b.createdAt),updatedA=stamp(a.updatedAt),updatedB=stamp(b.updatedAt);
+    return (Number.isFinite(updatedB)?updatedB:createdB)-(Number.isFinite(updatedA)?updatedA:createdA)||createdB-createdA||String(a.id).localeCompare(String(b.id));
+  }
   function conversationEntries(project){
     return project.versions.map((item,index)=>{
       const request=item.request||{},metrics=item.metrics||{},derived=item.kind==='derived',recolor=request.edit_operation==='recolor';
@@ -71,6 +79,7 @@
     const icon=name=>icons[name]||'';
     const esc=value=>String(value??'').replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
     const img=(name,alt='',cls='')=>`<img src="${art[name]||''}" alt="${esc(alt)}" class="${cls}" draggable="false">`;
+    const templateVisual=item=>item.asset?img(item.asset):`<span class="pc-template-icon" aria-hidden="true">${icon(item.icon)}</span>`;
     const button=(label,name,attrs='',cls='pk-icon-button')=>`<button type="button" class="${cls}" ${attrs} aria-label="${esc(label)}" title="${esc(label)}">${icon(name)}</button>`;
     const shell=doc.querySelector('.app-shell'), home=doc.querySelector('[data-studio-page="home"]'),projectsPage=$('pcProjectsPage');
     const originalHeader=doc.querySelector('.app-header'), originalLogo=originalHeader.querySelector('.brand-logo');
@@ -79,20 +88,16 @@
       <aside class="pk-sidebar" aria-label="메인 메뉴">
         <a class="pk-brand" href="#home" aria-label="Pankeki 홈"><img src="${originalLogo.src}" alt=""><span>Pankeki</span></a>
         <nav class="pk-navigation" aria-label="Pankeki 작업 메뉴">
-          ${[['home','home','홈'],['projects','folder','프로젝트'],['design','image','이미지 생성'],['inpaint','pencil','디자인'],['parts','layers','부위 편집'],['motion','sparkles','표정 · 동작'],['export','download','출력']].map(([route,name,label])=>`<button type="button" data-pk-route="${route}" aria-label="${label}" title="${label}">${icon(name)}<span>${label}</span></button>`).join('')}
-          <button type="button" class="pk-gallery-nav" data-pk-action="gallery" aria-label="갤러리" title="갤러리">${icon('grid-2x2')}<span>갤러리</span></button><span class="pk-nav-divider"></span>
-          <button type="button" data-pk-action="templates" aria-label="템플릿" title="템플릿">${icon('layers')}<span>템플릿</span></button>
-          <button type="button" data-pk-action="models" aria-label="모델 관리" title="모델 관리">${icon('box')}<span>모델 관리</span></button>
-          <button type="button" data-pk-action="settings" aria-label="설정" title="설정">${icon('settings')}<span>설정</span></button>
+          ${[[['home','home','홈','route'],['projects','folder','프로젝트','route'],['design','image','이미지 생성','route'],['parts','layers','부위 편집','route'],['motion','sparkles','표정 · 동작','route'],['export','download','출력','route'],['gallery','grid-2x2','갤러리','action']],[['templates','layers','템플릿','action'],['models','box','모델 관리','action'],['settings','settings','설정','action']]].map((group,index)=>(index?'<span class="pk-nav-divider"></span>':'')+group.map(([target,name,label,kind])=>`<button type="button" ${target==='gallery'?'class="pk-gallery-nav"':''} data-pk-${kind}="${target}" aria-label="${label}" title="${label}">${icon(name)}<span>${label}</span></button>`).join('')).join('')}
         </nav>
         <div class="pk-sidebar-bottom">
           <div class="pk-brand-card"><strong>Pankeki</strong><p>상상하는 캐릭터를<br>더 쉽게, 더 자유롭게.</p>${img('pancake-cat')}</div>
-          <div class="pk-storage" role="group" aria-label="브라우저 저장소 추정값" title="화면을 열 때 확인한 브라우저 저장소 추정값입니다. 앱 전용 확보 공간이나 기기 전체 여유 공간을 뜻하지 않습니다."><span>${icon('hard-drive')}브라우저 저장소</span><progress id="pkStorageBar" max="100" value="0" hidden aria-label="브라우저 저장소 추정 사용 비율"></progress><small id="pkStorageText">저장소 추정값을 확인할 수 없어요.</small></div>
+          <div class="pk-storage" role="group" aria-label="브라우저 저장소 추정값" title="화면을 열 때 확인한 브라우저 저장소 추정값입니다. 앱 전용 확보 공간이나 기기 전체 여유 공간을 뜻하지 않습니다."><span>${icon('hard-drive')}브라우저 저장소</span><progress id="pkStorageBar" max="100" value="0" hidden aria-label="브라우저 저장소 추정 사용 비율"></progress><span class="pk-storage-usage"><small id="pkStorageText">저장소 추정값을 확인할 수 없어요.</small><small id="pkStoragePercent" hidden></small></span></div>
         </div>
       </aside>
       <div class="pk-surface">
         <header class="pk-header">
-          <div class="pk-home-search">${icon('search')}<label class="sr-only" for="pkSearch">프로젝트와 현재 후보 검색</label><input id="pkSearch" type="search" placeholder="프로젝트·현재 후보 검색..."><kbd>⌘ K</kbd></div>
+          <div class="pk-home-search">${icon('search')}<label class="sr-only" for="pkSearch">프로젝트와 현재 후보 검색</label><input id="pkSearch" type="search" placeholder="프로젝트·현재 후보 검색…"><kbd>⌘ K</kbd></div>
           <h1 id="pkScreenTitle" tabindex="-1">이미지 생성</h1>
           <span class="pc-header-context" id="pcProjectName"></span>
           <div class="pk-header-home-actions">${button('작업 알림','bell','data-pk-action="notifications" aria-controls="pcNotifications" aria-haspopup="dialog" aria-expanded="false" data-unread-count="0"')}${button('설정 열기','settings','data-pk-action="settings"')}<button type="button" class="pk-avatar" data-pk-action="profile" aria-label="로컬 프로필" title="로컬 프로필" aria-controls="pcProfilePopover" aria-haspopup="dialog" aria-expanded="false"><span id="pcProfileInitial" aria-hidden="true">로</span></button></div>
@@ -101,21 +106,25 @@
         </header>
         <div class="pk-pages"></div>
       </div>`;
-    doc.body.prepend(layout);doc.body.classList.add('pankeki-redesign','pankeki-pc','pankeki-spacious');
+    doc.body.prepend(layout);doc.body.classList.add('pankeki-redesign','pankeki-pc','pankeki-spacious');doc.body.dataset.theme='dark';
     const pages=layout.querySelector('.pk-pages');
     home.className='pk-home';home.setAttribute('aria-label','Pankeki 홈');home.removeAttribute('aria-labelledby');
     home.innerHTML=`
       <main class="pc-home-main" aria-labelledby="pcHomeHeading">
-        <section class="pc-home-hero"><div><p class="pc-home-brand-name">Pankeki</p><h1 id="pcHomeHeading">상상하는 캐릭터를<strong>더 쉽게, 더 자유롭게.</strong></h1><p class="pc-home-introduction">아이디어를 말하면, Pankeki가 이미지를 만들어 드려요.</p></div>${img('pancake-cat','','pc-home-hero-art')}</section>
-        <section id="pcHomeComposer" class="pc-home-composer" aria-label="Pankeki에 작업 요청"></section>
-        <section class="pk-home-templates"><div class="pk-section-title"><h2>추천 템플릿</h2><button type="button" class="pk-text-button" data-pk-action="templates">전체 보기 ${icon('chevron-right')}</button></div><div class="pk-template-thumbnails">${[templates[2],templates[1],templates[0],templates[3],templates[4],templates[5]].map(item=>`<button type="button" data-pk-template="${item.id}" aria-label="${esc(item.label)} 템플릿">${img(item.asset)}<span>${item.label}</span></button>`).join('')}</div></section>
+        <section class="pc-home-hero">${img('pancake-cat','','pc-home-hero-art')}<div class="pc-home-hero-copy"><h1 id="pcHomeHeading">오늘은 <strong>어떤 이미지를</strong> 만들어볼까요?</h1><p class="pc-home-introduction">상상하는 캐릭터를 더 쉽게, 더 자유롭게.</p></div></section>
+        <section id="pcHomeComposer" class="pc-home-composer" aria-label="Pankeki에 작업 요청"><div class="pc-home-composer-context"><p id="pcHomeDestination" class="pc-home-destination">일반 생성으로 시작</p><div class="pc-home-model-summary" role="group" aria-label="현재 모델과 이미지 크기"><button type="button" id="pcHomeChatModel" data-pk-action="settings" data-pk-setting-target="desktopChatModel" hidden></button><button type="button" id="pcHomeImageModel" data-pk-action="settings" data-pk-setting-target="imageModel"></button><button type="button" id="pcHomeImageSize" data-pk-action="settings" data-pk-setting-target="width"></button><span id="pcHomeSourceSize" hidden></span></div><p id="pcHomeTargetNote" hidden>새 이미지 요청은 일반 생성에 보관돼요. 현재 이미지 수정은 ‘이어서 작업’에서 계속하세요.</p></div></section>
+        <section class="pk-home-templates"><div class="pk-section-title"><div><h2>추천 템플릿</h2><p class="pc-home-template-introduction">다양한 스타일의 템플릿으로 시작해 보세요.</p></div><button type="button" class="pk-text-button" data-pk-action="templates">전체 보기 ${icon('chevron-right')}</button></div><div class="pk-template-thumbnails">${[[templates[2],'귀엽고 사랑스러운 캐릭터 일러스트'],[templates[1],'다양한 분위기의 남자 캐릭터'],[templates[0],'고양이 귀가 있는 캐릭터 일러스트'],[templates[4],'따뜻한 분위기의 배경 이미지']].map(([item,description])=>`<button type="button" data-pk-template="${item.id}" aria-label="${esc(item.label)} 템플릿">${img(item.asset)}<span class="pc-home-template-copy"><strong>${item.label}</strong><small>${description}</small></span><span class="pc-home-template-arrow" aria-hidden="true">${icon('chevron-right')}</span></button>`).join('')}</div></section>
       </main>
       <aside class="pc-home-rail" aria-label="프로젝트 목록과 시작 도구">
-        <section class="pc-home-recent pc-home-projects"><div class="pk-section-title"><h2 id="pcProjectLibraryHeading" tabindex="-1">프로젝트 목록</h2><button type="button" class="pk-text-button" data-pk-action="gallery">현재 후보 보기 ${icon('chevron-right')}</button></div><div class="pc-home-project-summary"><div id="pcHomeProjectSummary"><strong>현재 작업</strong><span id="studioTitle" class="sr-only"></span><span id="pcHomeCandidateSummary"></span></div>${button('현재 프로젝트 즐겨찾기','star','id="pkFavorite" aria-pressed="false"')}${button('현재 프로젝트 작업으로 이동','ellipsis','data-pk-action="projects"')}</div><p id="pcProjectLibraryStatus" class="pc-project-status" role="status" aria-live="polite"></p><div id="pkRecentGrid" class="pc-project-list"></div><div id="pcProjectLibraryActions" class="pc-project-actions" role="group" aria-label="프로젝트 파일과 새 작업"><button type="button" class="pc-project-new" data-pk-action="new">${icon('plus')}새 프로젝트</button><button type="button" data-pk-action="import" aria-label="열기" title="열기">${icon('folder-open')}<span>열기</span></button><button type="button" data-pk-action="save" aria-label="파일 저장" title="파일 저장">${icon('download')}<span>파일 저장</span></button></div><div class="pc-project-paging" id="pcProjectPaging" hidden>${button('이전 프로젝트 페이지','chevron-right','id="pcProjectPrevious"')}<span id="pcProjectPage" aria-live="polite"></span>${button('다음 프로젝트 페이지','chevron-right','id="pcProjectNext"')}</div><button type="button" class="pc-project-retry" id="pcProjectRetry" hidden>앱 목록 저장 다시 시도</button><p class="pk-search-empty" id="pkSearchEmpty" hidden>프로젝트 이름과 현재 후보에서 검색 결과를 찾지 못했어요.</p></section>
-        <section class="pk-quick-start"><h2>빠른 시작</h2>${[['reference','image','이미지로 시작하기','이미지를 불러와 편집해보세요.','violet'],['generate','sparkles','AI로 생성하기','원하는 이미지를 입력해보세요.','pink'],['new','file-plus','빈 프로젝트','새로운 프로젝트를 시작합니다.','orange']].map(([action,name,title,desc,color])=>`<button type="button" data-pk-action="${action}"><span class="pk-quick-icon ${color}">${icon(name)}</span><span><strong>${title}</strong><small>${desc}</small></span>${icon('chevron-right')}</button>`).join('')}</section>
-        <section class="pc-home-tip">${icon('lightbulb')||icon('sparkles')}<div><h2>작업 팁</h2><p>원하는 스타일과 구도, 분위기를 함께 적어보세요.</p><button type="button" data-pk-action="prompts">추천 설명 보기 ${icon('chevron-right')}</button></div></section>
+        <section class="pc-home-recent pc-home-projects"><div class="pk-section-title"><h2 id="pcProjectLibraryHeading" tabindex="-1">최근 프로젝트</h2><button type="button" class="pk-text-button" data-pk-route="projects" data-pk-home-projects>전체 보기 ${icon('chevron-right')}</button></div><div class="pc-home-project-summary"><div id="pcHomeProjectSummary"><strong id="pcHomeContextLabel">현재 프로젝트</strong><span id="studioTitle"></span><span id="pcHomeCandidateSummary"></span></div>${button('현재 프로젝트 즐겨찾기','star','id="pkFavorite" aria-pressed="false"')}<button type="button" id="pcHomeResume" class="pk-text-button" data-pk-action="continue">이어서 작업 ${icon('chevron-right')}</button></div><p id="pcHomeSearchSummary" role="status" hidden></p><p id="pcProjectLibraryStatus" class="pc-project-status" role="status" aria-live="polite"></p><div id="pcHomeProjectEmpty" class="pc-home-project-empty" hidden>${icon('folder')}<strong>아직 저장된 프로젝트가 없어요.</strong><p>이미지를 생성하고 프로젝트로 저장해 보세요.</p></div><div id="pkRecentGrid" class="pc-project-list"></div><div id="pcProjectLibraryActions" class="pc-project-actions" role="group" aria-label="프로젝트 파일과 새 작업"><button type="button" class="pc-project-new" data-pk-action="new">${icon('plus')}새 프로젝트</button><button type="button" data-pk-action="import" aria-label="열기" title="열기">${icon('folder-open')}<span>열기</span></button><button type="button" data-pk-action="save" aria-label="파일 저장" title="파일 저장">${icon('download')}<span>파일 저장</span></button></div><div class="pc-project-paging" id="pcProjectPaging" hidden>${button('이전 프로젝트 페이지','chevron-right','id="pcProjectPrevious"')}<span id="pcProjectPage" aria-live="polite"></span>${button('다음 프로젝트 페이지','chevron-right','id="pcProjectNext"')}</div><button type="button" class="pc-project-retry" id="pcProjectRetry" hidden>앱 목록 저장 다시 시도</button><p class="pk-search-empty" id="pkSearchEmpty" hidden>프로젝트 이름과 현재 후보에서 검색 결과를 찾지 못했어요.</p></section>
+        <section class="pk-quick-start"><h2>빠른 시작</h2>${[['reference','image','이미지로 시작하기','이미지를 불러와 편집하세요.','violet'],['generate','sparkles','AI로 생성하기','원하는 이미지를 설명하세요.','pink'],['new','file-plus','빈 프로젝트','새 프로젝트를 시작하세요.','orange']].map(([action,name,title,desc,color])=>`<button type="button" data-pk-action="${action}"><span class="pk-quick-icon ${color}">${icon(name)}</span><span><strong>${title}</strong><small>${desc}</small></span>${icon('chevron-right')}</button>`).join('')}</section>
+        <section class="pc-home-tip">${icon('lightbulb')||icon('sparkles')}<div><h2>작업 팁</h2><p id="pcHomeTipText">스타일과 구도, 분위기를 함께 적어보세요.</p><button type="button" class="pc-home-tip-more" data-pk-action="prompts">추천 설명 보기 ${icon('chevron-right')}</button></div></section>
       </aside>`;
+    home.querySelector('.pc-home-rail').hidden=true;home.querySelector('.pk-home-templates').hidden=true;
+    const recentImagesSection=doc.createElement('section');recentImagesSection.className='pc-home-generated';recentImagesSection.setAttribute('aria-labelledby','pcHomeRecentHeading');recentImagesSection.innerHTML=`<div class="pk-section-title"><h2 id="pcHomeRecentHeading">최근 생성한 이미지</h2><button type="button" class="pk-text-button" data-pk-action="recent-images">전체 보기 ${icon('chevron-right')}</button></div><p id="pcHomeRecentNotice" role="status" aria-live="polite" hidden></p><div id="pcHomeRecentImages" class="pc-home-image-strip"></div><p id="pcHomeRecentEmpty" class="pc-home-images-empty">저장된 생성 이미지가 아직 없어요.</p>`;
+    home.querySelector('.pc-home-main').insertBefore(recentImagesSection,$('pcHomeComposer'));recentImagesSection.insertBefore($('pcProjectLibraryStatus'),$('pcHomeRecentImages'));
     if(art['home-honey-background'])layout.style.setProperty('--pc-home-background',`url("${art['home-honey-background']}")`);
+    if(art['category-background'])layout.style.setProperty('--pc-home-room-background',`url("${art['category-background']}")`);
     $('pkSearch').placeholder='프로젝트·현재 후보 검색…';layout.querySelector('label[for="pkSearch"]').textContent='프로젝트 이름과 현재 후보 이름·설명 검색';
     pages.append(home,projectsPage,shell);
     const motion=$('motionEditor');if(motion)pages.append(motion);
@@ -149,6 +158,19 @@
     environmentSettings.append(executionHeading,$('cache').closest('label'),$('previewOn').closest('label'),$('clearCache'));advancedBody.append(environmentSettings);
     const negativeLabel=modelPanel.querySelector('label[for="negative"]'),negativeHint=$('negative').closest('.field').querySelector('.hint');
     const negativePresentation={label:negativeLabel.textContent,hint:negativeHint.textContent};
+    const seedInput=$('seed'),seedLabel=modelPanel.querySelector('label[for="seed"]'),seedHint=doc.createElement('small');
+    seedHint.id='pcSeedPolicyHint';seedHint.className='hint pc-seed-policy-hint';seedHint.textContent='AI 대화의 새 이미지는 같은 프로젝트·모델에서 사용한 시드를 건너뜁니다. 실제 시드는 결과 기록에 남아요.';
+    let seedPresentation=null;
+    function syncNativeSeedHint(summary){
+      if(desktopBinding&&summary.mode==='txt2img'){
+        if(seedPresentation)return;
+        seedPresentation={html:seedLabel.innerHTML,describedBy:seedInput.getAttribute('aria-describedby')};seedLabel.textContent='기준 시드';seedInput.closest('.field').append(seedHint);
+        seedInput.setAttribute('aria-describedby',[...new Set([...(seedPresentation.describedBy||'').split(/\s+/).filter(Boolean),seedHint.id])].join(' '));
+      }else if(seedPresentation){
+        seedLabel.innerHTML=seedPresentation.html;if(seedPresentation.describedBy===null)seedInput.removeAttribute('aria-describedby');else seedInput.setAttribute('aria-describedby',seedPresentation.describedBy);seedHint.remove();seedPresentation=null;
+      }
+    }
+
     const projectName=originalHeader.querySelector('.project-name');environmentSettings.prepend(projectName);
     const prompt=$('prompt');prompt.placeholder='원하는 이미지를 입력하세요...';prompt.rows=1;prompt.setAttribute('aria-label','원하는 이미지 설명');
     // The original field remains the model/document boundary. Its appended
@@ -164,6 +186,24 @@
     const composer=doc.createElement('div');composer.className='pk-composer-dock';
     composer.innerHTML=`<form class="pk-composer" id="pkPromptForm"><label class="pc-prompt-label" for="prompt">이미지 설명</label><div class="pk-prompt-slot"></div><div class="pc-composer-bar"><div class="pc-composer-tools">${button('원본 이미지 첨부','paperclip','data-pk-action="reference"','pc-tool-button')}<button type="button" class="pc-setting-button" data-pk-action="settings" data-pk-setting-target="imageModel" aria-label="이미지 모델 설정"><span id="pcModelName">모델 확인 중</span>${icon('chevron-down')}</button><button type="button" class="pc-setting-button" id="pcResolution" data-pk-action="settings" data-pk-setting-target="width" aria-label="이미지 크기 설정"></button>${button('생성 옵션 열기','sliders-horizontal','data-pk-action="settings"','pc-tool-button')}</div><div class="pc-send-tools"><span class="pc-key-hint"><kbd>Enter</kbd> 생성 · <kbd>Shift Enter</kbd> 줄바꿈</span><button type="submit" id="pkGenerate" class="pk-send" aria-label="이미지 생성하기">${icon('send-horizontal')}</button></div></div></form><div class="pk-composer-meta"><span id="pkModelHint">이미지 모델 확인 중</span><span id="pkComposerStatus" role="status" aria-live="polite"></span><button type="button" data-pk-action="gallery" id="pkGalleryOpen">후보 0개</button><button type="button" id="pkCancel" hidden>생성 취소</button></div>`;
     composer.querySelector('label[for=prompt]').htmlFor='pcPrompt';
+    const homeAttachIcon=doc.createElement('span');homeAttachIcon.className='pc-home-attach-icon';homeAttachIcon.setAttribute('aria-hidden','true');homeAttachIcon.innerHTML=icon('plus');composer.querySelector('[data-pk-action="reference"]').append(homeAttachIcon);
+    const homeAISettings=doc.createElement('button');homeAISettings.type='button';homeAISettings.className='pc-home-ai-settings';homeAISettings.dataset.pkAction='settings';homeAISettings.dataset.pkSettingTarget='imageModel';homeAISettings.setAttribute('aria-label','이미지 생성 설정');homeAISettings.title='이미지 생성 설정';homeAISettings.innerHTML=icon('sparkles');composer.querySelector('.pc-send-tools').prepend(homeAISettings);
+    categoryRow.querySelector('#pcStyleLabel').tabIndex=-1;
+    const styleDialog=doc.createElement('dialog');styleDialog.id='pcStyleDialog';styleDialog.className='pc-style-dialog';styleDialog.setAttribute('aria-labelledby','pcStyleDialogTitle');styleDialog.innerHTML=`<header><h2 id="pcStyleDialogTitle">스타일</h2>${button('스타일 닫기','x','data-pc-style-close')}</header><div class="pc-style-dialog-content"></div><footer><button type="button" data-pc-style-close>완료</button></footer>`;doc.body.append(styleDialog);
+    const homeToolbar=doc.createElement('div');homeToolbar.className='pc-home-toolbar';homeToolbar.setAttribute('role','group');homeToolbar.setAttribute('aria-label','홈 요청 도구');homeToolbar.innerHTML=`<button type="button" data-pk-action="reference">${icon('image')}<span>참고 이미지</span></button><button type="button" id="pcHomeStyle" data-pk-action="style" aria-controls="pcStyleDialog" aria-haspopup="dialog" aria-expanded="false" aria-label="이미지 스타일 설정">${icon('brush')}<span>스타일</span></button><button type="button" id="pcHomeRatio" data-pk-action="settings" data-pk-setting-target="width" aria-label="비율과 이미지 크기 설정">${icon('grid-2x2')}<span>비율</span>${icon('chevron-down')}</button>`;const homeOptionsTrigger=doc.createElement('button');homeOptionsTrigger.type='button';homeOptionsTrigger.id='pcHomeOptions';homeOptionsTrigger.className='pc-tool-button pc-home-options-trigger';homeOptionsTrigger.setAttribute('aria-label','요청 설정');homeOptionsTrigger.title='요청 설정';homeOptionsTrigger.setAttribute('aria-controls','pcHomeOptionsPanel');homeOptionsTrigger.setAttribute('aria-expanded','false');homeOptionsTrigger.setAttribute('aria-haspopup','dialog');homeOptionsTrigger.innerHTML=icon('sliders-horizontal');composer.querySelector('.pc-composer-tools').append(homeOptionsTrigger);
+    const homeOptions=doc.createElement('div');homeOptions.id='pcHomeOptionsPanel';homeOptions.className='pc-home-options';homeOptions.hidden=true;homeOptions.setAttribute('role','dialog');homeOptions.setAttribute('aria-label','요청 설정');homeOptions.innerHTML=`<div class="pc-home-options-heading"><strong>요청 설정</strong>${button('요청 설정 닫기','x','data-pc-home-options-close')}</div>`;homeOptions.append(home.querySelector('.pc-home-composer-context'),homeToolbar);const moreOptions=doc.createElement('button');moreOptions.type='button';moreOptions.className='pc-home-more-options';moreOptions.dataset.pkAction='settings';moreOptions.innerHTML=icon('settings')+'<span>모든 생성 설정</span>';homeOptions.append(moreOptions);composer.querySelector('#pkPromptForm').append(homeOptions);
+    function closeHomeOptions(restoreFocus=false){if(homeOptions.hidden)return;homeOptions.hidden=true;homeOptions.style.maxHeight='';homeOptionsTrigger.setAttribute('aria-expanded','false');if(restoreFocus&&doc.body.contains(homeOptionsTrigger))homeOptionsTrigger.focus({preventScroll:true});}
+    function toggleHomeOptions(){
+      if(!homeOptions.hidden){closeHomeOptions(true);return;}
+      homeOptions.hidden=false;homeOptionsTrigger.setAttribute('aria-expanded','true');homeOptions.classList.remove('pc-home-options-up');homeOptions.style.maxHeight='';
+      const anchor=$('pkPromptForm').getBoundingClientRect(),viewport=root.innerHeight||doc.documentElement.clientHeight;
+      if(Number.isFinite(viewport)&&viewport>24){
+        const below=Math.max(0,viewport-12-anchor.bottom-10),above=Math.max(0,anchor.top-10-12),up=above>below;
+        homeOptions.classList.toggle('pc-home-options-up',up);homeOptions.style.maxHeight=Math.min(360,up?above:below)+'px';
+      }
+      const first=Array.from(homeOptions.querySelectorAll('button')).find(node=>!node.hidden&&!node.disabled);first?.focus({preventScroll:true});
+    }
+    homeOptionsTrigger.addEventListener('click',()=>toggleHomeOptions());
     const composerTarget=doc.createElement('button');composerTarget.type='button';composerTarget.id='pcComposerTarget';composerTarget.className='pc-composer-target';composerTarget.hidden=true;composerTarget.innerHTML='<img alt=""><span></span>';composer.prepend(composerTarget);
     const editContext=doc.createElement('div');editContext.className='pc-edit-context';editContext.dataset.pkSettingsSection='edit';editContext.append($('inpaintOperations'));composer.prepend(editContext);
     const operationSelect=composer.querySelector('#editOperation'),operationCaption=doc.createElement('span');
@@ -171,7 +211,7 @@
     operationSelect.closest('label').replaceChildren(operationCaption,operationSelect);
     const composerAnchor=doc.createElement('span');composerAnchor.id='pcComposerAnchor';composerAnchor.hidden=true;
     composer.querySelector('.pk-prompt-slot').append(composerTarget,prompt,editor);shell.append(categoryRow,composerAnchor,composer);
-    const homeShortcuts=doc.createElement('div');homeShortcuts.className='pc-home-shortcuts';homeShortcuts.hidden=true;homeShortcuts.setAttribute('role','group');homeShortcuts.setAttribute('aria-label','작업 바로가기: 화면 이동과 프로젝트 파일 열기');homeShortcuts.innerHTML=`<span class="pc-home-shortcuts-label">작업 바로가기</span><button type="button" data-pk-action="generate" aria-label="이미지 생성 화면으로 이동" title="이미지 생성 화면으로 이동">${icon('image')}이미지 생성</button><button type="button" data-pk-route="inpaint" aria-label="디자인 화면으로 이동" title="디자인 화면으로 이동">${icon('pencil')}디자인</button><button type="button" data-pk-route="parts" aria-label="부위 편집 화면으로 이동" title="부위 편집 화면으로 이동">${icon('layers')}부위 편집</button><button type="button" data-pk-action="import" aria-label="저장한 프로젝트 파일 열기" title="저장한 프로젝트 파일 열기">${icon('folder-open')}프로젝트 열기</button>`;composer.querySelector('.pc-composer-tools').append(homeShortcuts);
+    const homeShortcuts=doc.createElement('div');homeShortcuts.className='pc-home-shortcuts';homeShortcuts.hidden=true;homeShortcuts.setAttribute('role','group');homeShortcuts.setAttribute('aria-label','작업 바로가기: 화면 이동과 프로젝트 파일 열기');homeShortcuts.innerHTML=`<span class="pc-home-shortcuts-label">작업 바로가기</span><button type="button" data-pk-action="generate" aria-label="이미지 생성 화면으로 이동" title="이미지 생성 화면으로 이동">${icon('image')}이미지 생성</button><button type="button" data-pk-route="inpaint" aria-label="이미지 편집 화면으로 이동" title="이미지 편집 화면으로 이동">${icon('pencil')}이미지 편집</button><button type="button" data-pk-route="parts" aria-label="부위 편집 화면으로 이동" title="부위 편집 화면으로 이동">${icon('layers')}부위 편집</button><button type="button" data-pk-action="import" aria-label="저장한 프로젝트 파일 열기" title="저장한 프로젝트 파일 열기">${icon('folder-open')}프로젝트 열기</button>`;composer.querySelector('.pc-composer-tools').append(homeShortcuts);
     const thread=doc.createElement('main');thread.id='pcConversation';thread.tabIndex=-1;thread.className='pc-thread';thread.setAttribute('aria-label','이미지 생성 대화');
     thread.innerHTML=`<div class="pc-thread-inner"><div class="pc-welcome">${img('pancake-cat','')}<h2>무엇을 만들어볼까요?</h2><p>설명을 적거나 참고 이미지를 추가하세요.</p><button type="button" class="pc-template-start" data-pk-action="prompts">추천 프롬프트 ${icon('arrow-right')}</button></div><div class="pc-history" role="log" aria-label="저장된 생성 기록" aria-live="polite" aria-relevant="additions"></div><div class="pc-pending" hidden><div class="pc-message-author"><img src="${originalLogo.src}" alt=""><strong>Pankeki</strong></div><p role="status">이미지를 만들고 있어요…</p></div></div>`;
     shell.prepend(thread);
@@ -418,15 +458,31 @@
       if(atEnd&&followLatest)revealLatest();
       updateWorkspace(studio.getSummary());
     }
+    function plainHomeGenerationTarget(){return !desktopBinding&&doc.body.dataset.studioScreen==='home'&&!!projectLibrary;}
+    function plainHomePendingConfiguration(){return plainHomeGenerationTarget()&&(projectState?.activeKind==='project'||studio.getSummary().mode==='inpaint');}
+    function syncHomeModelSummary(){
+      const chat=$('pcHomeChatModel'),image=$('pcHomeImageModel'),size=$('pcHomeImageSize'),state=aiState,images=studio.getImageModelSettings?.(),editing=!desktopBinding&&studio.getSummary().mode==='inpaint',target=plainHomeGenerationTarget(),pending=plainHomePendingConfiguration(),imageState=images?.[editing&&!target?'edit':'generation'];
+      chat.hidden=!desktopBinding;
+      if(desktopBinding){const provider=state?.codex.provider==='claude'?'Claude':state?.codex.provider==='codex'?'Codex':null,model=state?.modelOptions.options.find(item=>item.id===state.codex.modelId)?.displayName||state?.codex.modelId||'모델 확인 중';chat.textContent=provider?`${provider} · ${model}`:'AI 모델 확인 중';chat.title=chat.textContent;chat.setAttribute('aria-label','AI 대화 모델 설정: '+chat.textContent);}
+      const selected=$('imageModel').selectedOptions?.[0],label=(!desktopBinding&&!target&&selected?.textContent)||imageState?.models?.find(item=>item.id===imageState.selectedId)?.label||imageState?.selectedId||'모델 확인 중';
+      image.textContent='이미지 · '+label;image.title=image.textContent;image.dataset.pkSettingTarget=desktopBinding?'desktopGenerationModel':'imageModel';image.setAttribute('aria-label',(editing&&!target?'부분 수정':'이미지 생성')+' 모델 설정: '+label);image.hidden=pending;image.disabled=pending;
+      $('pcHomeStyle').title='이미지 스타일 설정: '+(desktopBinding?categories.find(item=>item.id===aiCategory)?.label||'선택 안 함':categories.find(item=>item.id===category)?.label||'스타일');
+      for(const control of [$('pcHomeStyle'),$('pcHomeRatio'),size]){control.hidden=editing||pending;control.disabled=editing||pending;}
+      const sourceSize=$('pcHomeSourceSize'),summary=studio.getSummary(),source=$('source');sourceSize.hidden=!editing||target;sourceSize.textContent=summary.sourceLoaded&&source.width>0&&source.height>0?`원본 ${source.width} × ${source.height}`:'원본 이미지 없음';sourceSize.setAttribute('aria-label','부분 수정 원본 크기: '+sourceSize.textContent);
+      const width=Number($('width').value),height=Number($('height').value);size.textContent=Number.isSafeInteger(width)&&width>0&&Number.isSafeInteger(height)&&height>0?`${width} × ${height}`:'크기 확인 필요';size.title='이미지 크기 설정: '+size.textContent;size.setAttribute('aria-label',size.title);$('pcHomeRatio').title='비율과 이미지 크기 설정: '+size.textContent;$('pcHomeRatio').setAttribute('aria-label',$('pcHomeRatio').title);
+      $('pcHomeTargetNote').hidden=!pending;
+      if(target){editContext.hidden=true;composer.classList.remove('pc-recolor');composer.querySelector('label[for=pcPrompt]').textContent='새 이미지 설명';editor.placeholder='새로 만들 이미지를 설명해주세요.';editor.setAttribute('aria-label','새 이미지 생성 요청');composer.querySelector('.pc-key-hint').innerHTML='<kbd>Enter</kbd> 생성 · <kbd>Shift Enter</kbd> 줄바꿈';$('pkGenerate').innerHTML=icon('send-horizontal')+'<span class="pc-home-send-label">새 이미지 요청</span>';$('pkGenerate').setAttribute('aria-label',summary.busy?'새 이미지 생성 중':'새 이미지 생성 요청 보내기');}
+    }
     function syncComposerFeedback(home){
-      const state=aiState,summary=studio.getSummary();
+      if(home)syncHomeModelSummary();
+      const state=aiState,summary=studio.getSummary();syncNativeSeedHint(summary);
       const modelControls=$('desktopChatControls');if(modelControls)modelControls.hidden=home;
       const attention=state?state.codex.state!=='ready'||state.codex.toolsReady===false||!!state.activeRequestId||state.canceling||state.modelSaving||['error','limited','needs-input','canceled'].includes(state.phase):summary.busy||$('status').classList.contains('error');
       const show=!!(attention||photoBusy()||projectState?.error||projectState?.recovery||projectTransition());
       $('pkComposerStatus').hidden=home&&!show;composer.classList.toggle('pc-composer-feedback',show);
     }
     const composerView=Object.freeze({
-      bind(binding){desktopBinding=binding;editorOpen=false;editor.value='';fitPrompt();doc.body.classList.add('pc-central-chat','pankeki-reference','pankeki-photo-tools');
+      bind(binding){desktopBinding=binding;syncNativeSeedHint(studio.getSummary());homeAISettings.hidden=false;homeAISettings.dataset.pkSettingTarget='desktopChatModel';homeAISettings.setAttribute('aria-label','AI 대화 모델 설정');homeAISettings.title='AI 대화 모델 설정';editorOpen=false;editor.value='';fitPrompt();doc.body.classList.add('pc-central-chat','pankeki-reference','pankeki-photo-tools');
         const tools=composer.querySelector('.pc-composer-tools');tools.prepend($('desktopChatControls'));tools.setAttribute('role','group');tools.setAttribute('aria-label','메시지 도구');
         negativeLabel.textContent='제외 프롬프트 · 이미지 생성 전용';negativeHint.textContent='현재 AI 부분 수정에는 적용되지 않습니다. CFG 1에서는 이미지 생성에도 적용되지 않습니다.';
         canvasHeader.append(canvasOverlay.querySelector('.pc-canvas-controls'),canvasPrimary);canvasOverlay.classList.add('pc-editor-rail');candidateStrip.hidden=false;
@@ -441,7 +497,7 @@
         sourceViews.dataset.pkSettingsSection='edit';modelPanel.append(categoryRow,editContext,sourceViews);sourceViews.classList.add('pc-source-views');categoryRow.hidden=false;settingsPanel(drawer.dataset.panel);
         const legacy=chatPanel.querySelector('.chat-composer-area');if(legacy){legacy.hidden=true;legacy.inert=true;}
         const none=doc.createElement('button');none.type='button';none.id='pcNoAIStyle';none.className='pk-category selected';none.textContent='선택 안 함';none.setAttribute('aria-pressed','true');
-        none.addEventListener('click',()=>{aiCategory=null;for(const button of categoryRow.querySelectorAll('button')){const selected=button===none;button.classList.toggle('selected',selected);button.setAttribute('aria-pressed',String(selected));}});categoryRow.insertBefore?categoryRow.insertBefore(none,categoryRow.children[1]):categoryRow.prepend(none);
+        none.addEventListener('click',()=>{aiCategory=null;for(const button of categoryRow.querySelectorAll('button')){const selected=button===none;button.classList.toggle('selected',selected);button.setAttribute('aria-pressed',String(selected));}if(doc.body.dataset.studioScreen==='home')syncHomeModelSummary();});categoryRow.insertBefore?categoryRow.insertBefore(none,categoryRow.children[1]):categoryRow.prepend(none);
         for(const node of categoryRow.querySelectorAll('[data-pk-category]')){node.classList.remove('selected');node.setAttribute('aria-pressed','false');}
         composer.classList.remove('pc-recolor');const label=composer.querySelector('label[for=pcPrompt]');label.textContent='메시지';editor.setAttribute('aria-label','메시지');editor.placeholder='메시지를 입력하세요.';
         composer.querySelector('.pc-key-hint').innerHTML='<kbd>Enter</kbd> 보내기 · <kbd>Shift Enter</kbd> 줄바꿈';
@@ -462,7 +518,7 @@
       registerSettings(node){for(const [index,fieldset] of Array.from(node.querySelectorAll('fieldset')).entries())fieldset.dataset.pkSettingsSection=['chat','model','edit'][index];settingsPanel(drawer.dataset.panel);},
       enterConversation(){go(studio.getSummary().mode==='inpaint'?'inpaint':'design');},
       settings,
-      unbind(){setPinMode(false);if(viewerId&&doc.body.dataset.studioScreen==='inpaint')closeViewer();desktopBinding=null;photoEditor?.destroy();photoEditor=null;photoState=null;photoOwner=null;photoControls.hidden=true;aiState=null;aiTurns.clear();for(const node of contextMarkers.values())node.remove();contextMarkers.clear();doc.body.classList.remove('pc-central-chat','pankeki-reference','pc-reference-open','pc-native-result','pankeki-photo-tools','pc-legacy-mask');negativeLabel.textContent=negativePresentation.label;negativeHint.textContent=negativePresentation.hint;for(const {node,html,label,title} of nativeToolPresentation){node.innerHTML=html;for(const [key,value] of [['aria-label',label],['title',title]])if(value===null)node.removeAttribute(key);else node.setAttribute(key,value);}sourceViewsHome.prepend(sourceViews);sourceViews.classList.remove('pc-source-views');sourceViews.hidden=false;editContext.hidden=false;categoryRow.hidden=false;for(const id of ['sourceView','resultView'])$(id).disabled=false;canvasOverlay.prepend(canvasHeader.querySelector('.pc-canvas-controls'));canvasOverlay.classList.remove('pc-editor-rail');candidateStrip.hidden=true;composerTarget.hidden=true;$('pkGenerate').innerHTML=icon('send-horizontal');$('pcNoAIStyle')?.remove();composer.prepend(editContext);shell.append(categoryRow,composer);const legacy=chatPanel.querySelector('.chat-composer-area');if(legacy){legacy.hidden=false;legacy.inert=false;}refresh(studio.getSummary(),'restore');}
+      unbind(){homeAISettings.hidden=false;homeAISettings.dataset.pkSettingTarget='imageModel';homeAISettings.setAttribute('aria-label','이미지 생성 설정');homeAISettings.title='이미지 생성 설정';if(styleDialog.open)closeStyleDialog();setPinMode(false);if(viewerId&&doc.body.dataset.studioScreen==='inpaint')closeViewer();desktopBinding=null;syncNativeSeedHint(studio.getSummary());homeAISettings.hidden=false;photoEditor?.destroy();photoEditor=null;photoState=null;photoOwner=null;photoControls.hidden=true;aiState=null;aiTurns.clear();for(const node of contextMarkers.values())node.remove();contextMarkers.clear();doc.body.classList.remove('pc-central-chat','pankeki-reference','pc-reference-open','pc-native-result','pankeki-photo-tools','pc-legacy-mask');negativeLabel.textContent=negativePresentation.label;negativeHint.textContent=negativePresentation.hint;for(const {node,html,label,title} of nativeToolPresentation){node.innerHTML=html;for(const [key,value] of [['aria-label',label],['title',title]])if(value===null)node.removeAttribute(key);else node.setAttribute(key,value);}sourceViewsHome.prepend(sourceViews);sourceViews.classList.remove('pc-source-views');sourceViews.hidden=false;editContext.hidden=false;categoryRow.hidden=false;for(const id of ['sourceView','resultView'])$(id).disabled=false;canvasOverlay.prepend(canvasHeader.querySelector('.pc-canvas-controls'));canvasOverlay.classList.remove('pc-editor-rail');candidateStrip.hidden=true;composerTarget.hidden=true;$('pkGenerate').innerHTML=icon('send-horizontal');$('pcNoAIStyle')?.remove();composer.prepend(editContext);shell.append(categoryRow,composer);const legacy=chatPanel.querySelector('.chat-composer-area');if(legacy){legacy.hidden=false;legacy.inert=false;}refresh(studio.getSummary(),'restore');}
     });
     $('pkPromptForm').pankekiComposer=composerView;
     thread.addEventListener('click',event=>{
@@ -481,7 +537,7 @@
     const profilePopover=doc.createElement('section');profilePopover.id='pcProfilePopover';profilePopover.className='pc-header-popover pc-profile-popover';profilePopover.hidden=true;profilePopover.setAttribute('role','dialog');profilePopover.setAttribute('aria-labelledby','pcProfileTitle');
     profilePopover.innerHTML=`<div class="pc-popover-heading"><h2 id="pcProfileTitle">로컬 프로필</h2>${button('프로필 닫기','x','data-pc-popup-close')}</div><div class="pc-local-identity"><span class="pc-profile-initial" aria-hidden="true"></span><strong></strong></div><form><label for="pcLocalProfileName">표시 이름</label><input id="pcLocalProfileName" type="text" maxlength="40" autocomplete="off" aria-describedby="pcLocalProfileHelp"><p id="pcLocalProfileHelp">이 기기에만 저장돼요.</p><button type="submit">이름 저장</button><p id="pcLocalProfileStatus" role="status"></p></form>`;
     doc.body.append(notifications,profilePopover,notificationAnnounce);
-    let headerPopup=null,noticeSequence=0,notices=[],profileName='로컬 사용자',profileComposing=false,settingsReturnFocus=null;
+    let headerPopup=null,noticeSequence=0,notices=[],profileName='로컬 사용자',profileComposing=false,settingsReturnFocus=null,styleOwnerPosition=null;
     try{profileName=root.localStorage.getItem('pankeki-local-profile-name')?.trim().slice(0,40)||profileName;}catch{}
     function renderProfile(){const initial=Array.from(profileName)[0]||'로';$('pcProfileInitial').textContent=initial;profilePopover.querySelector('.pc-profile-initial').textContent=initial;profilePopover.querySelector('.pc-local-identity strong').textContent=profileName;$('pcLocalProfileName').value=profileName;}
     renderProfile();
@@ -562,8 +618,10 @@
     workspace.querySelector('.candidate-jump')?.addEventListener('click',event=>{event.preventDefault();galleryDialog.showModal();});
     let category='character',lastSummary=null,heroTemplate=templates[0],lastRecentKey='',lastRoute=null;
     let projectLibrary=null,projectState=null,projectPage=0,projectListKey='',projectSaveTimer=null,projectInputLocked=false,foreignProjectLoading=false,lastProjectActive=null;
-    let projectCatalogPage=0,projectCatalogKey='',projectSearchScope='home',generationOpening=false,homeSubmitPending=false,editorDraftEpoch=0,applyingHomeDraft=false,generationDraftOverlay=null;
+    const recentImageTargets=new WeakMap();let lastHomeImages=[],recentImageNotice='';
+    let projectCatalogPage=0,projectCatalogKey='',projectSearchScope='home',projectCatalogIncludesCandidates=false,generationOpening=false,homeSubmitPending=false,editorDraftEpoch=0,applyingHomeDraft=false,generationDraftOverlay=null;
     const projectSearchQueries={home:$('pkSearch').value,projects:''};
+    const quietHomeProjectNotices=new Set(['현재 프로젝트를 앱에 저장했어요.','이미지 생성 기록을 앱에 저장했어요.','프로젝트를 앱에 저장하고 열었어요.','이미지 생성 기록을 열었어요.','현재 작업을 새 프로젝트로 저장했어요.']);
     const projectListeners=new Set(),projectReadOnly=new Map(),projectInert=new Map();
     function projectTransition(){return foreignProjectLoading||!!projectLibrary&&(!projectState?.initialized||projectState.transitioning);}
     function projectBusy(){const summary=studio.getSummary(),photo=studio.photoTools?.getState();return !!(summary.busy||summary.importing||summary.maskLoading||summary.drawing||photo?.active||aiState?.activeRequestId||aiState?.modelSaving||aiState?.canceling||studio.getImageModelSettings?.().busy||composerComposing||pinSelection||foreignProjectLoading);}
@@ -614,6 +672,9 @@
         if(wasProject)generationDraftOverlay={identity,draft:composerDraft(),requestId:null,pending:true};
         else if(generationDraftOverlay?.identity===identity){generationDraftOverlay.requestId=null;generationDraftOverlay.pending=true;}
         applyHomeDraft(payload);go('design');
+        // A native form ignores requestSubmit while its first submit is firing.
+        await new Promise(resolve=>root.setTimeout(resolve,0));
+        if(editorDraftEpoch!==epoch||studio.desktopChat.getState().projectId!==identity||composerComposing||projectBusy()||projectTransition()||projectState?.recovery||doc.body.dataset.studioScreen!=='design'||$('pkGenerate').disabled||editor.value!==payload.text){if(!aiState?.activeRequestId)generationDraftOverlay=null;return false;}
         return $('pkPromptForm').requestSubmit();
       }catch(error){if(editorDraftEpoch===epoch&&!composerComposing)applyHomeDraft(payload);projectActionFailure(error);return false;}
       finally{homeSubmitPending=false;}
@@ -630,7 +691,7 @@
       const focused=list.contains(doc.activeElement)?doc.activeElement?.closest?.('[data-pk-project-id]'):null,focusId=focused?.dataset.pkProjectId,focusAction=focused?.dataset.pkProjectAction;list.replaceChildren();
       for(const item of items){
         const row=doc.createElement('div');row.className='pc-project-item';row.classList.toggle('current',item.id===state.activeId);if(item.id===state.activeId&&lastProjectActive&&lastProjectActive!==item.id)row.classList.add('pc-project-changed');
-        const open=doc.createElement('button');open.type='button';open.dataset.pkProjectId=item.id;open.dataset.pkProjectAction='open';open.className='pc-project-open';const name=doc.createElement('strong'),details=doc.createElement('small'),text=doc.createElement('span');name.innerHTML=esc(item.name)+(item.favorite?icon('star'):'')+(item.id===state.activeId?'<span class="pc-project-active">사용 중</span>':'');details.textContent=[`후보 ${item.candidateCount}개`,(list===$('pcProjectsPageList')?'수정 ':'')+projectDate(item.updatedAt)].filter(Boolean).join(' · ');open.setAttribute('aria-label',`${item.name}, 후보 ${item.candidateCount}개, ${projectDate(item.updatedAt)}, 프로젝트 ${item.id} ${item.id===state.activeId?'사용 중, 계속 작업':'열기'}`);open.setAttribute('aria-current',String(item.id===state.activeId));open.title=`프로젝트 ${item.id}. 전환하면 저장되지 않은 선택 영역은 초기화됩니다.`;text.append(name,details);
+        const open=doc.createElement('button');open.type='button';open.dataset.pkProjectId=item.id;open.dataset.pkProjectAction='open';open.className='pc-project-open';const name=doc.createElement('strong'),details=doc.createElement('small'),text=doc.createElement('span');name.innerHTML='<span class="pc-project-name">'+esc(item.name)+'</span>'+(item.favorite?icon('star'):'')+(item.id===state.activeId?'<span class="pc-project-active">사용 중</span>':'');details.textContent=[`후보 ${item.candidateCount}개`,(list===$('pcProjectsPageList')?'수정 ':'')+projectDate(item.updatedAt)].filter(Boolean).join(' · ');open.setAttribute('aria-label',`${item.name}, 후보 ${item.candidateCount}개, ${projectDate(item.updatedAt)}, 프로젝트 ${item.id} ${item.id===state.activeId?'사용 중, 계속 작업':'열기'}`);open.setAttribute('aria-current',String(item.id===state.activeId));open.title=`프로젝트 ${item.id}. 전환하면 저장되지 않은 선택 영역은 초기화됩니다.`;if(list===$('pkRecentGrid'))open.title=item.name+' · '+open.title;text.append(name,details);
         if(item.preview){const preview=doc.createElement('img');preview.src=item.preview;preview.alt='';preview.className='pc-project-preview';open.append(preview);}else{const preview=doc.createElement('span');preview.className='pc-project-preview';preview.innerHTML=icon('folder');open.append(preview);}open.append(text);
         const remove=doc.createElement('button');remove.type='button';remove.dataset.pkProjectId=item.id;remove.dataset.pkProjectAction='remove';remove.className='pc-project-remove';remove.hidden=item.id===state.activeId;remove.innerHTML=icon('trash-2');remove.setAttribute('aria-label',`${item.name} 앱 목록에서 제거`);remove.title='앱 목록의 항목만 제거하며 원본 파일은 삭제하지 않아요.';row.append(open,remove);list.append(row);
       }
@@ -638,9 +699,10 @@
       if(focusId&&restoreFocus){const target=Array.from(list.querySelectorAll('[data-pk-project-id]')).find(node=>node.dataset.pkProjectId===focusId&&node.dataset.pkProjectAction===focusAction)||list.querySelector('[data-pk-project-action=open]')||heading;target.focus({preventScroll:true});}
     }
     function lockProjectRows(list,state,locked){for(const node of list.querySelectorAll('[data-pk-project-id]'))node.disabled=locked||!!state?.recovery||node.dataset.pkProjectAction==='remove'&&(node.dataset.pkProjectId===state?.activeId||(state?.items.length||0)<2);}
+    function currentCandidatesMatch(query){return workspaceEntries.some(item=>[item.label,item.prompt,item.operationLabel].some(value=>String(value||'').toLocaleLowerCase().includes(query)));}
     function renderProjectPage(){
       const list=$('pcProjectsPageList');if(doc.body.dataset.studioScreen!=='projects'){if(projectCatalogKey){list.replaceChildren();projectCatalogKey='';}return;}
-      const state=projectState,query=projectSearchQueries.projects.trim().toLocaleLowerCase(),items=(state?.items||[]).filter(item=>!query||item.name.toLocaleLowerCase().includes(query)).slice().sort((a,b)=>Date.parse(b.createdAt)-Date.parse(a.createdAt)||a.id.localeCompare(b.id)),locked=projectTransition()||projectBusy(),pages=Math.max(1,Math.ceil(items.length/20));
+      const state=projectState,query=projectSearchQueries.projects.trim().toLocaleLowerCase(),items=(state?.items||[]).filter(item=>!query||item.name.toLocaleLowerCase().includes(query)||projectCatalogIncludesCandidates&&item.id===state.activeId&&currentCandidatesMatch(query)).slice().sort(compareProjectRecency),locked=projectTransition()||projectBusy(),pages=Math.max(1,Math.ceil(items.length/20));
       projectCatalogPage=Math.max(0,Math.min(projectCatalogPage,pages-1));
       const status=$('pcProjectsPageStatus');status.textContent=state?.error||(!state?.initialized?'프로젝트 목록을 확인하고 있어요.':state?.recovery?'현재 화면은 유지됐어요. 앱 목록 저장을 다시 시도하거나 파일로 저장해주세요.':state?.notice||'');status.classList.toggle('error',!!state?.error||!!state?.recovery);status.setAttribute('role',state?.error||state?.recovery?'alert':'status');
       const key=JSON.stringify([query,projectCatalogPage,state?.activeId,items.map(item=>[item.id,item.name,item.updatedAt,item.candidateCount,item.favorite]),state?.initialized,state?.ready]);
@@ -653,24 +715,59 @@
     function syncProjectSearch(screen){
       const scope=screen==='projects'?'projects':'home',search=$('pkSearch');
       if(scope!==projectSearchScope){projectSearchQueries[projectSearchScope]=search.value;projectSearchScope=scope;search.value=projectSearchQueries[scope];}
-      search.placeholder=scope==='projects'?'프로젝트 검색…':'프로젝트·현재 후보 검색…';layout.querySelector('label[for="pkSearch"]').textContent=scope==='projects'?'프로젝트 이름 검색':'프로젝트 이름과 현재 후보 이름·설명 검색';
+      const candidates=scope==='home'||projectCatalogIncludesCandidates;search.placeholder=candidates?'프로젝트·현재 후보 검색…':'프로젝트 검색…';layout.querySelector('label[for="pkSearch"]').textContent=candidates?'프로젝트 이름과 현재 후보 이름·설명 검색':'프로젝트 이름 검색';
+    }
+    function recentImageResult(limit=5){
+      if(projectLibrary?.getRecentImages)return projectLibrary.getRecentImages(limit);
+      const seen=new Set(),items=workspaceEntries.filter(item=>item.kind==='generated').slice().sort((a,b)=>Date.parse(b.createdAt)-Date.parse(a.createdAt)||a.id.localeCompare(b.id)).filter(item=>{if(seen.has(item.image))return false;seen.add(item.image);return true;}).map(item=>({recordId:null,candidateId:item.id,image:item.image,label:item.label,createdAt:item.createdAt,projectName:studio.getSummary().name||'현재 작업'}));
+      return {items:items.slice(0,limit),total:items.length};
+    }
+    function fillRecentImages(container,items){
+      container.replaceChildren();
+      for(const item of items){const choice=doc.createElement('button'),image=doc.createElement('img');choice.type='button';choice.className='pc-recent-image';choice.dataset.pkRecentImage='true';choice.dataset.recordId=item.recordId||'';choice.dataset.candidateId=item.candidateId;choice.title=`${item.projectName} · ${item.label}`;choice.setAttribute('aria-label',choice.title+' 열기');image.src=item.image;image.alt=item.label;image.loading='lazy';image.decoding='async';choice.append(image);recentImageTargets.set(choice,item);container.append(choice);}
+    }
+    function renderRecentImages(){
+      const result=recentImageResult(4),items=result.items,list=$('pcHomeRecentImages');
+      if(items.length!==lastHomeImages.length||items.some((item,index)=>{const old=lastHomeImages[index];return !old||item.recordId!==old.recordId||item.candidateId!==old.candidateId||item.image!==old.image||item.label!==old.label||item.projectName!==old.projectName;})){fillRecentImages(list,items);lastHomeImages=items;}
+      const notice=$('pcHomeRecentNotice');notice.hidden=!recentImageNotice;notice.textContent=recentImageNotice;
+      const empty=$('pcHomeRecentEmpty');empty.hidden=items.length>0;empty.textContent=projectState&&!projectState.initialized?'생성 기록을 확인하고 있어요.':projectState&&!projectState.ready?'기록을 읽지 못했어요. 프로젝트에서 보관 상태를 확인해주세요.':'저장된 생성 이미지가 아직 없어요.';
+      const selected=visibleEntry()?.id||studio.getSummary().latestId,locked=projectTransition()||projectBusy()||!!projectState?.recovery;
+      for(const button of [...list.querySelectorAll('[data-pk-recent-image]'),...dialog.querySelectorAll('[data-pk-recent-image]')]){button.disabled=locked;button.setAttribute('aria-current',String(button.dataset.recordId===(projectState?.activeId||'')&&button.dataset.candidateId===selected));}
+    }
+    function recentImageUnavailable(){
+      recentImageNotice='이미지 목록이 바뀌었어요. 현재 작업은 그대로예요. 전체 보기를 다시 열어주세요.';renderRecentImages();
+      const feedback=dialog.querySelector('[data-pk-recent-feedback]');if(feedback)feedback.textContent=recentImageNotice;return false;
+    }
+    async function openRecentImage(button){
+      const item=recentImageTargets.get(button);if(!item||button.disabled||projectTransition()||projectBusy()||projectState?.recovery)return false;
+      const fresh=recentImageResult(100).items.find(row=>row.recordId===item.recordId&&row.candidateId===item.candidateId&&row.image===item.image);
+      if(!fresh)return recentImageUnavailable();
+      recentImageNotice='';renderRecentImages();
+      if(item.recordId&&projectState?.activeId!==item.recordId){const opened=await projectLibrary.switchTo(item.recordId);if(!opened){const feedback=dialog.querySelector('[data-pk-recent-feedback]');if(feedback)feedback.textContent=projectState?.error||projectState?.notice||'현재 작업을 유지하고 이미지 열기를 취소했어요.';return false;}}
+      if(item.recordId&&projectState?.activeId!==item.recordId||!workspaceEntries.some(row=>row.id===item.candidateId&&row.kind==='generated'&&row.image===item.image))return recentImageUnavailable();
+      if(dialog.open)dialog.close();activateCandidate(item.candidateId,button);return true;
     }
     function renderProjects(summary=lastSummary||studio.getSummary()){
       renderProjectContext(summary);
-      const state=projectState,query=(projectSearchScope==='home'?$('pkSearch').value:projectSearchQueries.home).trim().toLocaleLowerCase(),currentCandidateMatch=workspaceEntries.some(item=>[item.label,item.prompt,item.operationLabel].some(value=>String(value||'').toLocaleLowerCase().includes(query)));
-      const items=(state?.items||[]).filter(item=>!query||item.name.toLocaleLowerCase().includes(query)||item.id===state.activeId&&currentCandidateMatch).slice().sort((a,b)=>Date.parse(b.createdAt)-Date.parse(a.createdAt)||a.id.localeCompare(b.id));
-      const pages=Math.max(1,Math.ceil(items.length/2));projectPage=Math.max(0,Math.min(projectPage,pages-1));
+      const state=projectState,query=(projectSearchScope==='home'?$('pkSearch').value:projectSearchQueries.home).trim().toLocaleLowerCase(),currentCandidateMatch=currentCandidatesMatch(query);
+      const items=(state?.items||[]).filter(item=>!query||item.name.toLocaleLowerCase().includes(query)||item.id===state.activeId&&currentCandidateMatch).slice().sort(compareProjectRecency);
+      const pages=1;projectPage=0;const searchSummary=$('pcHomeSearchSummary');searchSummary.hidden=!query||items.length===0;searchSummary.textContent=`일치 ${items.length}개 중 최근 ${Math.min(items.length,4)}개`;
       const active=state?.items.find(item=>item.id===state.activeId),locked=projectTransition()||projectBusy(),status=$('pcProjectLibraryStatus');
       const general=state?.activeKind!=='project';
+      $('pcHomeContextLabel').textContent=general?'현재 작업':'현재 프로젝트';$('pcHomeCandidateSummary').hidden=!general;$('pcHomeResume').disabled=locked||!!state?.recovery;
       $('studioTitle').textContent=general?'일반 생성 기록':summary.name||'이름 없는 프로젝트';$('pcHomeCandidateSummary').textContent=`현재 후보 ${summary.candidateCount}개${general?' · '+generationStorageText():state?.saving?' · 저장 중':active?' · 앱에 저장됨':''}`;
-      status.textContent=state?.error||(state?.recovery?'현재 화면은 유지됐어요. 앱 목록 저장을 다시 시도하거나 파일로 저장해주세요.':state&&!state.initialized?'프로젝트 목록을 확인하고 있어요.':state?.notice||'');
+      const statusMessage=state?.error||(state?.recovery?'현재 화면은 유지됐어요. 앱 목록 저장을 다시 시도하거나 파일로 저장해주세요.':state&&!state.initialized?'프로젝트 목록을 확인하고 있어요.':state?.notice||'');
+      if(status.textContent!==statusMessage)status.textContent=statusMessage;
+      status.classList.toggle('sr-only',!!state?.initialized&&!!state?.ready&&!state?.error&&!state?.recovery&&!state?.saving&&!locked&&quietHomeProjectNotices.has(statusMessage));
       status.classList.toggle('error',!!state?.error||!!state?.recovery);status.setAttribute('role',state?.error||state?.recovery?'alert':'status');
       $('pkFavorite').disabled=locked||!active;$('pkFavorite').classList.toggle('selected',!!active?.favorite);$('pkFavorite').setAttribute('aria-pressed',String(!!active?.favorite));const favoriteLabel=active?`현재 프로젝트 ${active.name} 즐겨찾기 ${active.favorite?'해제':'추가'}`:'현재 프로젝트 즐겨찾기';$('pkFavorite').setAttribute('aria-label',favoriteLabel);$('pkFavorite').setAttribute('title',favoriteLabel);
       $('pcProjectPaging').hidden=pages<=1;$('pcProjectPage').textContent=`${projectPage+1} / ${pages}`;$('pcProjectPrevious').disabled=locked||projectPage===0;$('pcProjectNext').disabled=locked||projectPage>=pages-1;$('pcProjectRetry').hidden=!state?.error&&!state?.recovery;$('pcProjectRetry').disabled=projectTransition();
       for(const node of $('pcProjectLibraryActions').querySelectorAll('button'))node.disabled=locked||!!state?.recovery&&node.dataset.pkAction!=='save';
       const key=JSON.stringify([query,projectPage,state?.activeId,items.map(item=>[item.id,item.name,item.updatedAt,item.candidateCount,item.favorite]),state?.initialized]);
-      const list=$('pkRecentGrid');if(key!==projectListKey){projectListKey=key;renderProjectRows(list,items.slice(projectPage*2,projectPage*2+2),state,$('pcProjectLibraryHeading'),doc.body.dataset.studioScreen==='home',query?'검색한 프로젝트가 없어요.':'저장된 프로젝트가 없어요.');}
-      lockProjectRows(list,state,locked);renderProjectPage();
+      const list=$('pkRecentGrid');if(key!==projectListKey){projectListKey=key;renderProjectRows(list,items.slice(0,4),state,$('pcProjectLibraryHeading'),doc.body.dataset.studioScreen==='home',query?'검색한 프로젝트가 없어요.':'저장된 프로젝트가 없어요.');}
+      const emptyHome=state?.initialized===true&&state?.ready===true&&!state.recovery&&!state.error&&!query&&items.length===0;
+      $('pcHomeProjectEmpty').hidden=!emptyHome;list.hidden=emptyHome;home.querySelector('.pc-home-projects').classList.toggle('pc-home-projects-empty',emptyHome);home.querySelector('.pc-home-project-summary').hidden=emptyHome&&summary.candidateCount===0;
+      lockProjectRows(list,state,locked);renderProjectPage();renderRecentImages();
       $('pkSearchEmpty').hidden=!query||items.length>0;if(state?.activeId)lastProjectActive=state.activeId;
     }
     function setupProjects(){
@@ -683,21 +780,27 @@
       void projectLibrary.init();
     }
     function placeComposer(screen){
+      if(!desktopBinding){
+        editContext.hidden=screen==='home'&&plainHomeGenerationTarget();
+        const target=screen==='home'?homeOptions.querySelector('.pc-home-composer-context'):composer;
+        if(editContext.parentNode!==target){const focus=doc.activeElement,inside=editContext.contains(focus);if(screen==='home')target.append(editContext);else target.prepend(editContext);if(inside)focus.focus({preventScroll:true});}
+      }
       const parent=screen==='home'?$('pcHomeComposer'):composerAnchor.parentNode;if(composer.parentNode===parent)return;
       const focused=doc.activeElement,inside=composer.contains(focused),start=editor.selectionStart,end=editor.selectionEnd;
       if(screen==='home')parent.append(composer);else parent.insertBefore(composer,composerAnchor.nextSibling);
       if(inside){focused.focus({preventScroll:true});if(focused===editor&&Number.isInteger(start)&&Number.isInteger(end))editor.setSelectionRange(start,end);}
     }
     function routes(){
+      if(doc.body.dataset.studioScreen!=='home')closeHomeOptions();
       const screen=doc.body.dataset.studioScreen||'home',comparing=screen==='compare';
       if(!['home','projects','design'].includes(screen)&&(!desktopBinding||screen!=='inpaint')&&viewerId)closeViewer();
       if(screen==='inpaint'&&lastRoute!==screen)showPane('canvas',false);lastRoute=screen;
       syncPresentation();
-      const activeRoute=comparing?'inpaint':screen==='video'?'motion':screen;syncProjectSearch(screen);renderProjects();
+      const activeRoute=['inpaint','compare'].includes(screen)?'design':screen==='video'?'motion':screen;syncProjectSearch(screen);renderProjects();
       placeComposer(screen);homeShortcuts.hidden=true;
       composer.querySelector('.pc-prompt-label').classList.toggle('sr-only',screen==='home');
       $('pkGalleryOpen').hidden=screen==='home';syncComposerFeedback(screen==='home');
-      if(desktopBinding)editor.placeholder=screen==='home'?'어떤 이미지를 만들어볼까요?':'메시지를 입력하세요.';
+      if(screen==='home')editor.placeholder='어떤 이미지를 만들어볼까요?';else if(desktopBinding)editor.placeholder='메시지를 입력하세요.';
       const children=Array.from(shell.children);
       if(screen==='design'){if(children.at(-1)!==workspace)shell.append(workspace);}
       else if(screen!=='home'&&children.indexOf(workspace)>children.indexOf(composer))shell.append(...(desktopBinding?[workspace,composerAnchor,composer]:[workspace,categoryRow,composerAnchor,composer]));
@@ -706,10 +809,10 @@
         node.classList.toggle('active',active);if(active)node.setAttribute('aria-current','page');else node.removeAttribute('aria-current');
       }
       composer.hidden=comparing;composer.inert=comparing;
-      categoryRow.hidden=comparing||!desktopBinding&&studio.getSummary().mode==='inpaint';
+      categoryRow.hidden=comparing||!desktopBinding&&studio.getSummary().mode==='inpaint'&&!stylesInSettings();
       $('editorTools').hidden=comparing||$('editor').hidden;
       $('pcShowCanvas').disabled=!viewerId&&screen!=='inpaint';syncCanvasTools();
-      $('pkScreenTitle').textContent=({projects:'프로젝트',design:'이미지 생성',inpaint:'디자인 · 부분 수정',compare:'후보 비교',parts:'부위 편집',motion:'표정 · 동작',video:'Blender 영상',export:'출력'})[screen]||'홈';
+      $('pkScreenTitle').textContent=({projects:'프로젝트',design:'이미지 생성',inpaint:'이미지 편집',compare:'후보 비교',parts:'부위 편집',motion:'표정 · 동작',video:'Blender 영상',export:'출력'})[screen]||'홈';
       layout.dataset.screen=screen;
       const visible=screen==='design';
       if(visible&&!threadVisible){followLatest=true;root.requestAnimationFrame(()=>{fitPrompt();revealLatest();});}
@@ -717,6 +820,20 @@
       const skip=doc.querySelector('.skip-link');if(skip)skip.href=screen==='projects'?'#pcProjectsHeading':visible?'#pcConversation':'#workspace';
     }
     function go(screen){if(composerComposing&&screen!==workflow.getScreen()){queuedRoute=screen;return;}if(screen==='inpaint')editorOpen=true;workflow.go(screen);routes();updateWorkspace(studio.getSummary());}
+    function restoreStyleOwner(){
+      const position=styleOwnerPosition;if(!position)return;
+      position.parent.insertBefore(categoryRow,position.next?.parentNode===position.parent?position.next:null);categoryRow.hidden=position.hidden;styleOwnerPosition=null;$('pcHomeStyle').setAttribute('aria-expanded','false');
+      if(position.focus&&doc.body.contains(position.focus))position.focus.focus({preventScroll:true});
+    }
+    function closeStyleDialog(){restoreStyleOwner();if(styleDialog.open)styleDialog.close();}
+    function openStyleDialog(){
+      if(styleDialog.open||plainHomePendingConfiguration()||!desktopBinding&&studio.getSummary().mode==='inpaint')return;
+      closeHeaderPopup(false);if(dialog.open)dialog.close();if(galleryDialog.open)galleryDialog.close();if(drawer.open){settingsReturnFocus=null;drawer.close();}
+      styleOwnerPosition={parent:categoryRow.parentNode,next:categoryRow.nextSibling,hidden:categoryRow.hidden,focus:doc.body.dataset.studioScreen==='home'?homeOptionsTrigger:doc.activeElement};
+      styleDialog.querySelector('.pc-style-dialog-content').append(categoryRow);categoryRow.hidden=false;$('pcHomeStyle').setAttribute('aria-expanded','true');styleDialog.showModal();
+      const focus=categoryRow.querySelector('[aria-pressed=true]')||categoryRow.querySelector('button');root.requestAnimationFrame(()=>{if(styleDialog.open)focus?.focus();});
+    }
+    function stylesInSettings(){return styleDialog.open&&styleDialog.contains(categoryRow)||drawer.open&&drawer.dataset.panel==='model'&&categoryRow.parentNode===modelPanel;}
     function settingsPanel(panel){
       if(!settingCategories.some(([key])=>key===panel))panel='model';
       drawer.dataset.panel=panel;
@@ -726,10 +843,11 @@
       for(const node of drawer.querySelectorAll('[data-pk-panel]')){const selected=node.dataset.pkPanel===panel;node.setAttribute('aria-selected',String(selected));node.tabIndex=selected?0:-1;}
     }
     function settings(panel='model',field=null){
+      if(field==='pcStyleLabel')return openStyleDialog();if(styleDialog.open)closeStyleDialog();
       closeHeaderPopup(false);if(dialog.open)dialog.close();if(galleryDialog.open)galleryDialog.close();
       if(desktopBinding&&field==='imageModel')field=studio.getSummary().mode==='inpaint'?'desktopEditModel':'desktopGenerationModel';
       const target=field&&$(field),category=target?.closest('[data-pk-settings-section]')?.dataset.pkSettingsSection;
-      settingsPanel(category||panel);if(!drawer.open){settingsReturnFocus=doc.activeElement;drawer.showModal();}moreSettings.open=false;
+      settingsPanel(category||panel);if(!drawer.open){settingsReturnFocus=homeOptions.contains(doc.activeElement)?homeOptionsTrigger:doc.activeElement;drawer.showModal();}moreSettings.open=false;
       $('detailPanel').open=true;$('briefDrawer').open=true;$('advanced').open=true;
       const focus=target&&!target.hidden&&!target.inert?target:drawer.querySelector('[aria-selected="true"]');
       for(let node=focus?.parentNode;node&&node!==drawer;node=node.parentNode)if(node.tagName==='DETAILS')node.open=true;
@@ -737,7 +855,7 @@
     }
     function chooseCategory(id,{fromUser=true}={}){
       if(!categories.some(item=>item.id===id))return;
-      if(desktopBinding){if(!fromUser)return;aiCategory=id;for(const node of categoryRow.querySelectorAll('button')){const selected=node.dataset.pkCategory===id;node.classList.toggle('selected',selected);node.setAttribute('aria-pressed',String(selected));}return;}
+      if(desktopBinding){if(!fromUser)return;aiCategory=id;for(const node of categoryRow.querySelectorAll('button')){const selected=node.dataset.pkCategory===id;node.classList.toggle('selected',selected);node.setAttribute('aria-pressed',String(selected));}if(doc.body.dataset.studioScreen==='home')syncHomeModelSummary();return;}
       category=id;
       // Environment/photo styles should not inherit the character brief's
       // silhouette and palette instructions. The drawer can enable it again.
@@ -745,6 +863,7 @@
         $('useBrief').checked=false;$('useBrief').dispatchEvent(new root.Event('change',{bubbles:true}));
       }
       for(const node of categoryRow.querySelectorAll('[data-pk-category]')){const active=node.dataset.pkCategory===id;node.classList.toggle('selected',active);node.setAttribute('aria-pressed',String(active));}
+      if(doc.body.dataset.studioScreen==='home')syncHomeModelSummary();
     }
     async function useTemplate(id){
       const item=templates.find(value=>value.id===id);if(!item)return;
@@ -759,16 +878,19 @@
     function library(kind){
       closeHeaderPopup(false);if(drawer.open)drawer.close();if(galleryDialog.open)galleryDialog.close();
       let title='추천 템플릿',body='';
-      if(kind==='templates'||kind==='prompts'){
+      if(kind==='recent-images'){
+        recentImageNotice='';const result=recentImageResult(100);title='최근 생성한 이미지';body=`<p>${result.total>100?'전체 '+result.total+'개 중 최근 100개를 보여드려요.':'저장된 생성 이미지 '+result.total+'개'} · 생성·수정 기록에서 중복 이미지를 제외했어요.</p><p data-pk-recent-feedback role="status" aria-live="polite"></p><div class="pc-recent-image-grid"></div>${result.total?'':'<p class="pk-library-empty">저장된 생성 이미지가 아직 없어요.</p>'}`;
+      }else if(kind==='templates'||kind==='prompts'){
         title=kind==='prompts'?'추천 프롬프트':'추천 템플릿';
-        body=`<p>마음에 드는 방향을 골라 나만의 설명으로 바꿔보세요.</p><div class="pk-library-grid">${templates.map(item=>`<button type="button" data-pk-template="${item.id}" aria-label="${esc(item.label)}">${img(item.asset)}<strong>${item.label}</strong><small>${esc(item.prompt)}</small></button>`).join('')}</div>`;
+        body=`<p>마음에 드는 방향을 골라 나만의 설명으로 바꿔보세요.</p><div class="pk-library-grid">${templates.map(item=>`<button type="button" data-pk-template="${item.id}" aria-label="${esc(item.label)}">${templateVisual(item)}<strong>${esc(item.label)}</strong><small>${esc(item.prompt)}</small></button>`).join('')}</div>`;
       }else if(kind==='stages'){
-        title='작업 단계';body=`<div class="pk-stage-list">${[['design','이미지 생성'],['inpaint','디자인 · 부분 수정'],['parts','부위 편집'],['motion','표정 · 동작'],['export','출력']].map(([screen,label])=>`<button type="button" data-pk-route="${screen}">${label}${icon('arrow-right')}</button>`).join('')}</div>`;
+        title='작업 단계';body=`<div class="pk-stage-list">${[['design','이미지 생성'],['inpaint','이미지 편집'],['parts','부위 편집'],['motion','표정 · 동작'],['export','출력']].map(([screen,label])=>`<button type="button" data-pk-route="${screen}">${label}${icon('arrow-right')}</button>`).join('')}</div>`;
       }else{
         title='내 프로젝트';const summary=studio.getSummary();
         body=`<p>이 브라우저의 현재 작업을 이어 열거나, 저장한 프로젝트 파일을 불러오세요.</p>${summary.imageUrl?`<button type="button" class="pk-library-current" data-pk-action="continue">${imgFromURL(summary.imageUrl)}<strong>${esc(summary.name||'이름 없는 프로젝트')}</strong><small>후보 ${summary.candidateCount}개</small></button>`:'<p class="pk-library-empty">아직 저장된 이미지가 없습니다.</p>'}<div class="pk-library-actions"><button type="button" class="pk-secondary" data-pk-action="import">${icon('folder-open')}프로젝트 불러오기</button><button type="button" class="pk-secondary" data-pk-action="save">${icon('download')}현재 프로젝트 저장</button><button type="button" class="pk-primary" data-pk-action="new">${icon('plus')}새 프로젝트</button></div>`;
       }
       dialog.innerHTML=`<div class="pk-dialog-heading"><h2>${title}</h2>${button('닫기','x','data-pk-close')}</div>${body}`;
+      if(kind==='recent-images'){fillRecentImages(dialog.querySelector('.pc-recent-image-grid'),recentImageResult(100).items);renderRecentImages();}
       dialog.showModal();
     }
     function imgFromURL(url){return `<img src="${esc(url)}" alt="현재 프로젝트 이미지">`;}
@@ -777,8 +899,9 @@
       closeHeaderPopup(false);
       if(name==='gallery'){galleryDialog.showModal();const query=$('pkSearch').value.trim().toLocaleLowerCase(),match=query&&workspaceEntries.find(item=>[item.label,item.prompt,item.operationLabel].some(value=>String(value||'').toLocaleLowerCase().includes(query)));if(match)galleryDialog.querySelector(`[data-candidate-id="${match.id}"] [data-action=view]`)?.focus({preventScroll:true});return;}
       if(name==='projects')return go('projects');
-      if(['templates','prompts','stages'].includes(name))return library(name);
-      if(name==='settings')return settings('model',field);
+      if(['templates','prompts','stages','recent-images'].includes(name))return library(name);
+      if(name==='style')return openStyleDialog();
+      if(name==='settings')return settings(field?'model':'environment',field);
       if(name==='models')return settings('model',field||'imageModel');
       if(name==='brief')return settings('brief');
       if(dialog.open)dialog.close();
@@ -793,7 +916,7 @@
       if(name==='new')return Promise.resolve(studio.requestNewProject?studio.requestNewProject():studio.resetProject()).then(done=>{if(done)go('design');});
       if(name==='generate')return enterGeneration();
       if(name==='hero'){if(studio.getSummary().imageUrl)go('design');else useTemplate(heroTemplate.id);return;}
-      if(name==='continue')return go('design');
+      if(name==='continue'){if(projectTransition()||projectBusy()||projectState?.recovery)return false;go(studio.getSummary().mode==='inpaint'?'inpaint':'design');editor.focus({preventScroll:true});return true;}
       if(['parts','motion','export'].includes(name))return go(name);
     }
     function recent(summary){renderProjects(summary);}
@@ -802,7 +925,7 @@
       lastSummary=summary;const hasImage=!!summary.imageUrl;
       if(['restore','import','reset'].includes(reason)&&(viewerId||desktopBinding&&editorOpen))closeViewer();
       const editing=summary.mode==='inpaint';
-      if(!desktopBinding)categoryRow.hidden=editing;
+      if(!desktopBinding)categoryRow.hidden=editing&&!stylesInSettings();
       const recolor=editing&&summary.editOperation==='recolor';
       if(!desktopBinding){
       composer.classList.toggle('pc-recolor',recolor);
@@ -823,7 +946,7 @@
       $('pcResolution').textContent=`${$('width').value} × ${$('height').value}`;
       $('pkModelHint').textContent=`${selected?.textContent||'SDXL 1.0 Base'} · ${$('width').value} × ${$('height').value} · 영어 설명 권장`;
       $('pkGenerate').disabled=generateDisabled(summary);
-      $('pkGenerate').innerHTML=recolor?'색상 적용':icon('send-horizontal');
+      $('pkGenerate').innerHTML=recolor?'색상 적용':icon('send-horizontal')+'<span class="pc-home-send-label">'+(editing?'수정하기':'생성하기')+'</span>';
       $('pkGenerate').setAttribute('aria-label',recolor?summary.busy?'색상 적용 중':'색상 적용':summary.busy?'이미지 생성 중':summary.mode==='inpaint'?'선택 영역 수정하기':'이미지 생성하기');
       $('pkGenerate').classList.toggle('busy',summary.busy);
       $('pkCancel').hidden=!summary.busy;
@@ -850,16 +973,23 @@
       if(id===projectState.activeId)return focusEditor();return projectLibrary.switchTo(id).then(opened=>{if(opened)focusEditor();return opened;});
     }
     layout.addEventListener('click',event=>{
+      if(event.target.closest('[data-pc-home-options-close]'))return closeHomeOptions(true);
+      const generated=event.target.closest('[data-pk-recent-image]');if(generated)return openRecentImage(generated);
+
       const recent=event.target.closest('[data-pk-home-candidate]');if(recent){activateCandidate(recent.dataset.pkHomeCandidate,recent);return;}
       const project=event.target.closest('[data-pk-project-id]');if(project)return projectAction(project);
       const projectPageControl=event.target.closest('[data-pk-project-page]');if(projectPageControl&&!projectPageControl.disabled){projectCatalogPage+=projectPageControl.dataset.pkProjectPage==='previous'?-1:1;renderProjectPage();projectsPage.scrollTop=0;$('pcProjectsHeading').focus({preventScroll:true});return;}
       const projectRetry=event.target.closest('[data-pk-project-retry]');if(projectRetry&&!projectRetry.disabled)return projectLibrary?.saveCurrent();
-      const route=event.target.closest('[data-pk-route]');if(route){const next=route.dataset.pkRoute;if(next==='projects')return action('projects');if(next==='design')return enterGeneration();go(next);return;}
-      const target=event.target.closest('[data-pk-action]');if(target)return action(target.dataset.pkAction,target.dataset.pkSettingTarget);
+      const route=event.target.closest('[data-pk-route]');if(route){const next=route.dataset.pkRoute;if(next==='projects'){if(route.hasAttribute('data-pk-home-projects')){projectSearchQueries.projects=$('pkSearch').value;projectCatalogIncludesCandidates=!!projectSearchQueries.projects.trim();projectCatalogPage=0;}return action('projects');}if(next==='design')return enterGeneration();go(next);return;}
+      const target=event.target.closest('[data-pk-action]');if(target){closeHomeOptions();return action(target.dataset.pkAction,target.dataset.pkSettingTarget);}
       const template=event.target.closest('[data-pk-template]');if(template)return useTemplate(template.dataset.pkTemplate);
       const chosen=event.target.closest('[data-pk-category]');if(chosen)chooseCategory(chosen.dataset.pkCategory);
     });
+    doc.addEventListener('click',event=>{if(!homeOptions.hidden&&!homeOptions.contains(event.target)&&!homeOptionsTrigger.contains(event.target))closeHomeOptions();},true);
+    doc.addEventListener('focusin',event=>{if(!homeOptions.hidden&&!homeOptions.contains(event.target)&&!homeOptionsTrigger.contains(event.target))closeHomeOptions();},true);
+    doc.addEventListener('keydown',event=>{if(event.key==='Escape'&&!event.isComposing&&event.keyCode!==229&&!homeOptions.hidden){event.preventDefault();closeHomeOptions(true);}});
     dialog.addEventListener('click',event=>{
+      const generated=event.target.closest('[data-pk-recent-image]');if(generated)return openRecentImage(generated);
       if(event.target.closest('[data-pk-close]'))return dialog.close();
       const template=event.target.closest('[data-pk-template]');if(template){dialog.close();return useTemplate(template.dataset.pkTemplate);}
       const route=event.target.closest('[data-pk-route]');if(route){dialog.close();return go(route.dataset.pkRoute);}
@@ -872,9 +1002,11 @@
     });
     drawer.querySelector('[role=tablist]').addEventListener('keydown',event=>{if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown','Home','End'].includes(event.key)){event.preventDefault();const index=settingCategories.findIndex(([key])=>key===drawer.dataset.panel),next=event.key==='Home'?0:event.key==='End'?settingCategories.length-1:(index+(['ArrowLeft','ArrowUp'].includes(event.key)?-1:1)+settingCategories.length)%settingCategories.length,panel=settingCategories[next][0];settingsPanel(panel);drawer.querySelector(`[data-pk-panel="${panel}"]`).focus();}});
     drawer.addEventListener('close',()=>{if(settingsReturnFocus&&doc.body.contains(settingsReturnFocus))settingsReturnFocus.focus();settingsReturnFocus=null;});
+    styleDialog.addEventListener('click',event=>{if(event.target.closest('[data-pc-style-close]'))return closeStyleDialog();const chosen=event.target.closest('[data-pk-category]');if(chosen)return chooseCategory(chosen.dataset.pkCategory);if(event.target===styleDialog){const box=styleDialog.getBoundingClientRect();if(event.clientX<box.left||event.clientX>box.right||event.clientY<box.top||event.clientY>box.bottom)closeStyleDialog();}});
+    styleDialog.addEventListener('close',()=>{if(!styleDialog.open)restoreStyleOwner();});
     for(const modal of [dialog,drawer,galleryDialog])modal.addEventListener('click',event=>{if(event.target===modal){const box=modal.getBoundingClientRect();if(event.clientX<box.left||event.clientX>box.right||event.clientY<box.top||event.clientY>box.bottom)modal.close();}});
     layout.querySelector('.pk-brand').addEventListener('click',event=>{event.preventDefault();go('home');});
-    $('pkSearch').addEventListener('input',()=>{projectSearchQueries[projectSearchScope]=$('pkSearch').value;if(projectSearchScope==='projects')projectCatalogPage=0;else projectPage=0;if(lastSummary)recent(lastSummary);});
+    $('pkSearch').addEventListener('input',()=>{projectSearchQueries[projectSearchScope]=$('pkSearch').value;if(projectSearchScope==='projects'){projectCatalogPage=0;projectCatalogIncludesCandidates=false;syncProjectSearch('projects');}else projectPage=0;if(lastSummary)recent(lastSummary);});
     $('pkFavorite').addEventListener('click',()=>{const active=projectState?.items.find(item=>item.id===projectState.activeId);if(active&&!$('pkFavorite').disabled)return projectLibrary.setFavorite(active.id,!active.favorite);});
     $('pcProjectPrevious').addEventListener('click',()=>{if(!$('pcProjectPrevious').disabled){projectPage--;renderProjects();}});$('pcProjectNext').addEventListener('click',()=>{if(!$('pcProjectNext').disabled){projectPage++;renderProjects();}});$('pcProjectRetry').addEventListener('click',()=>projectLibrary?.saveCurrent());
     $('pkPromptForm').addEventListener('submit',submitHomeGeneration,{capture:true});
@@ -885,7 +1017,7 @@
     editor.addEventListener('compositionstart',()=>composerComposing=true);editor.addEventListener('compositionend',()=>{composerComposing=false;if(queuedRoute){const screen=queuedRoute;queuedRoute=null;go(screen);}});
     editor.addEventListener('input',()=>{if(!applyingHomeDraft){editorDraftEpoch++;if(doc.body.dataset.studioScreen!=='home')generationDraftOverlay=null;}if(desktopBinding){fitPrompt();return;}prompt.value=editor.value;prompt.dispatchEvent(new root.Event('input',{bubbles:true}));});
     editor.addEventListener('keydown',event=>{if(desktopBinding)return;if(event.key==='Enter'&&!event.shiftKey&&!event.isComposing){event.preventDefault();if(!$('pkGenerate').disabled)$('pkPromptForm').requestSubmit();}});
-    doc.addEventListener('keydown',event=>{if((event.metaKey||event.ctrlKey)&&event.key.toLowerCase()==='k'){event.preventDefault();if(doc.body.dataset.studioScreen!=='projects')go('home');$('pkSearch').focus();}});
+    doc.addEventListener('keydown',event=>{if((event.metaKey||event.ctrlKey)&&event.key.toLowerCase()==='k'){event.preventDefault();if(doc.body.dataset.studioScreen!=='projects')go('projects');$('pkSearch').focus();}});
     doc.querySelector('.skip-link')?.addEventListener('click',event=>{if(doc.body.dataset.studioScreen==='design'){event.preventDefault();event.stopImmediatePropagation();thread.focus();}},{capture:true});
     new root.MutationObserver(routes).observe(doc.body,{attributes:true,attributeFilter:['data-studio-screen']});
     new root.MutationObserver(()=>syncFeedback()).observe($('status'),{attributes:true,attributeFilter:['class'],childList:true,characterData:true,subtree:true});
@@ -899,11 +1031,12 @@
     });setupProjects();settingsPanel('model');renderNotifications();routes();
     root.navigator?.storage?.estimate?.().then(value=>{
       const used=value.usage,quota=value.quota,available=Number.isFinite(used)&&used>=0&&Number.isFinite(quota)&&quota>0;
-      $('pkStorageBar').hidden=true;
+      const percent=available?Math.min(100,Math.round(used/quota*100)):null;
+      $('pkStorageBar').hidden=!available;$('pkStorageBar').value=percent??0;$('pkStoragePercent').hidden=!available;$('pkStoragePercent').textContent=available?`${percent}%`:'';
       $('pkStorageText').textContent=available?`약 ${(used/1000000).toFixed(1)} MB 사용`:'저장소 추정값을 확인할 수 없어요.';
       if(available){const detail=`브라우저 저장소 추정값: 약 ${(used/1000000).toFixed(1)} MB 사용 / ${(quota/1000000000).toFixed(1)} GB 추정 한도. 화면을 열 때 확인했으며 앱 전용 확보 공간이나 기기 전체 여유 공간을 뜻하지 않습니다.`;layout.querySelector('.pk-storage').setAttribute('title',detail);layout.querySelector('.pk-storage').setAttribute('aria-label',detail);}
-    }).catch(()=>{$('pkStorageBar').hidden=true;$('pkStorageText').textContent='저장소 추정값을 확인할 수 없어요.';});
+    }).catch(()=>{$('pkStorageBar').hidden=true;$('pkStoragePercent').hidden=true;$('pkStorageText').textContent='저장소 추정값을 확인할 수 없어요.';});
     return Object.freeze({go,chooseCategory,settings,composer:composerView,projects:projectLibrary});
   }
-  return Object.freeze({categories,templates,preparePrompt,submitPrompt,conversationEntries,mount});
+  return Object.freeze({categories,templates,preparePrompt,submitPrompt,conversationEntries,compareProjectRecency,mount});
 });

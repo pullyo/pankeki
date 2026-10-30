@@ -7,7 +7,7 @@ const {createIpcController}=require('./ipc.cjs');
 async function createEditorWindow({origin,html,projectRoot,contexts,results,resultsFactory,bridgeFactory,getAppStatus,allowLiveSend=false,verifyBackend=async()=>true,mapBridgeMessage,notifyUnconfirmedClose,
   partition='persist:pankeki-editor'}={}) {
   const isolated=session.fromPartition(partition);
-  const win=new BrowserWindow({title:'Pankeki',width:1360,height:920,minWidth:960,minHeight:640,backgroundColor:'#f6f2ec',
+  const win=new BrowserWindow({title:'Pankeki',width:1360,height:920,minWidth:960,minHeight:640,backgroundColor:'#171615',
     webPreferences:{preload:path.join(__dirname,'preload.cjs'),nodeIntegration:false,contextIsolation:true,sandbox:true,webSecurity:true,session:isolated,spellcheck:false}});
   let closing=false,controller;
   const pickVideoScene=projectRoot?require('./video-scene-picker.cjs').createVideoScenePicker({projectRoot,

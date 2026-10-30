@@ -736,3 +736,13 @@ test('only a PNG inside inputs/<project> is ever read for the model', async () =
   for (const sourcePath of [outside, path.join(inputRoot, 'p', 'in.txt'), path.join(inputRoot, 'p', 'link.png'), 'p/in.png']) assert.equal(await read(sourcePath), null, sourcePath);
   assert.equal(await sourceImageBytes({...ref, contextId: null}, {inputRoot, resolveEditContext: async () => { throw Error('not called'); }}), null);
 });
+
+
+test('Animagine pose policy reaches the real Codex RPC with original Korean and preserves the bound generation contract',async()=>{
+ const t=setup('animagine'),korean='성인 여성 한 명이 정면으로 자연스럽게 서 있는 전신. 머리끝부터 신발 밑창까지 잘리지 않게 위아래 여백을 남겨줘.',negative='사용자 negative,  Keep CASE, bad hands';
+ try{await t.bridge.connect();const settings={mode:'txt2img',model_id:'animagine-xl-4.0-opt',prompt:korean,negative,seed:42,width:832,height:1216,steps:28,cfg:5,sampler:'euler_ancestral',scheduler:'normal',cache:false,preview:false};await t.bridge.send({text:'[Pankeki action: generate]\n[Pankeki settings: '+JSON.stringify(settings)+']\n'+korean,projectId:'pose-policy',requestId:'pose-policy',context:{sourceRevision:'pose-policy'}});await t.waitFor(e=>e.type==='turn-completed'&&e.requestId==='pose-policy');
+  const policy=t.received('codex','thread/start')[0].params.developerInstructions;assert.equal(policy,toolLayerInstructions);assert.match(policy,/Only for animagine-xl-4\.0-opt pankeki_generate, canonicalize explicitly requested pose and framing/);assert.match(policy,/looking at viewer only for an explicitly requested gaze/);assert.match(policy,/shoe soles.*full body, feet visible, uncropped/);assert(policy.includes('Translate compositional 여백/위아래 공간 as the requested margins/headroom'));assert(policy.includes('Preserve a genuinely requested cosmic/outer-space background.'));const turn=t.received('codex','turn/start')[0].params.input.find(item=>item.type==='text').text;assert(turn.includes(korean),'the provider receives the untouched Korean request');
+  // The fake supplies a fixed English tool prompt; this tests transport, not translation quality.
+  const calls=t.received('mcp','tools/call').filter(e=>e.params.name==='pankeki_generate_image');assert.equal(calls.length,1);assert.deepEqual(calls[0].params.arguments,{prompt:'cat girl',negative,model_id:'animagine-xl-4.0-opt',seed:42,width:832,height:1216,steps:28,cfg:5,sampler:'euler_ancestral',scheduler:'normal',cache:false,preview:false,trace_id:'pose-policy'});
+ }finally{await t.bridge.close();}
+});

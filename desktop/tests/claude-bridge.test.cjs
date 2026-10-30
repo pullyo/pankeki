@@ -521,3 +521,13 @@ test('the model sees the selected source with the message and the verified resul
     assert.deepEqual(withImage[0].result.content[1], {type: 'image', data: png.toString('base64'), mimeType: 'image/png'});
   } finally { await t.bridge.close(); server.close(); }
 });
+
+
+test('Animagine pose policy reaches the real Claude CLI with original Korean and preserves the bound generation contract',async()=>{
+ const t=setup(),korean='성인 여성 한 명이 정면으로 자연스럽게 서 있는 전신. 머리끝부터 신발 밑창까지 잘리지 않게 위아래 여백을 남겨줘.',negative='사용자 negative,  Keep CASE, bad hands';
+ try{await t.bridge.connect();const settings={mode:'txt2img',model_id:'animagine-xl-4.0-opt',prompt:korean,negative,seed:42,width:832,height:1216,steps:28,cfg:5,sampler:'euler_ancestral',scheduler:'normal',cache:false,preview:false};await t.bridge.send({text:'[Pankeki action: generate]\n[Pankeki settings: '+JSON.stringify(settings)+']\n'+korean+'\nGENERATE',projectId:'pose-policy',requestId:'pose-policy',context:{sourceRevision:'pose-policy'}});await t.done('pose-policy');
+  const invocation=t.log().find(row=>row.role==='claude'&&row.argv?.includes('--system-prompt'));assert(invocation);const policy=invocation.argv[invocation.argv.indexOf('--system-prompt')+1],shared=require('../pankeki-tools.cjs').INSTRUCTIONS;assert(policy.startsWith(shared));assert.match(policy,/Only for animagine-xl-4\.0-opt pankeki_generate, canonicalize explicitly requested pose and framing/);assert.match(policy,/looking at viewer only for an explicitly requested gaze/);assert.match(policy,/shoe soles.*full body, feet visible, uncropped/);assert(policy.includes('Translate compositional 여백/위아래 공간 as the requested margins/headroom'));assert(policy.includes('Preserve a genuinely requested cosmic/outer-space background.'));const turn=t.log().find(row=>row.role==='claude'&&row.received?.type==='user').received.message.content;assert.equal(typeof turn,'string');assert(turn.includes(korean),'the CLI receives the untouched Korean request');
+  // GENERATE is the fake CLI control token; no Korean translation is simulated or claimed.
+  const calls=t.adapterCalls().filter(row=>row.name==='pankeki_generate_image');assert.equal(calls.length,1);assert.deepEqual(calls[0].arguments,{prompt:'cat girl',negative,model_id:'animagine-xl-4.0-opt',seed:42,width:832,height:1216,steps:28,cfg:5,sampler:'euler_ancestral',scheduler:'normal',cache:false,preview:false,trace_id:'pose-policy'});
+ }finally{await t.bridge.close();}
+});

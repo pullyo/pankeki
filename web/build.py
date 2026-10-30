@@ -96,7 +96,9 @@ def build():
         raise RuntimeError('Source content identity unavailable; refusing an unidentified build')
     font = ROOT.parent/FONT_SOURCE
     font_url = None
-    css = (ROOT/'src'/'style.css').read_text(encoding='utf-8') + '\n' + (ROOT/'src'/'redesign.css').read_text(encoding='utf-8') + '\n' + (ROOT/'src'/'desktop-chat.css').read_text(encoding='utf-8') + '\n' + (ROOT/'src'/'photo-editor.css').read_text(encoding='utf-8') + '\n' + (ROOT/'src'/'video-workspace.css').read_text(encoding='utf-8')
+    css = '\n'.join((ROOT/'src'/name).read_text(encoding='utf-8') for name in (
+        'style.css', 'redesign.css', 'desktop-chat.css', 'photo-editor.css',
+        'video-workspace.css', 'dark-theme.css', 'dark-editors.css'))
     if font.exists():
         # Served by pankeki/server.py from FONT_SOURCE with a long immutable cache.
         # The hashed name changes with the bytes, so the no-store page never pins stale fonts.

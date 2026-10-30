@@ -218,7 +218,7 @@ class DedicatedInpaintTests(unittest.TestCase):
 
     def test_launcher_config_is_pure_and_registers_known_components(self):
         config = run_macos.build_config(self.root)
-        self.assertEqual(config['default_model_id'], 'sdxl-base')
+        self.assertEqual(config['default_model_id'], 'animagine-xl-4.0-opt')
         self.assertEqual(config['models'][INPAINT]['conditioning_model_id'], 'sdxl-base')
         self.assertEqual(config['models'][INPAINT]['model_name'], ALIAS)
         self.assertFalse((self.root / 'runtime' / 'macos' / 'config.json').exists())

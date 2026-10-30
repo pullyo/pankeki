@@ -86,3 +86,16 @@ for(const provider of ['codex','claude'])test(`${provider} source-only recompose
   const posted=t.bridge.getSubmittedRequest({projectId:'p',requestId:'auto',sourceRevision:'rev',jobId:JOB});assert.equal(posted.request.mode,'img2img');assert.equal(posted.request.source,undefined);
  }finally{await t.bridge.close();}
 });
+
+
+// Controlled ENGLISH provider output checks preservation and one-job authorization.
+// It cannot establish that an LLM translates Korean pose/framing correctly.
+for(const provider of ['codex','claude'])for(const positive of [
+ '1girl, solo, adult woman, standing, front view, straight-on, full body, feet visible, uncropped, masterpiece, high score, great score, absurdres',
+ '2boys, adult men, sitting, from behind, eyes closed, foot focus, soles, cropped, outer space, masterpiece, high score, great score, absurdres'
+])test(`${provider} Animagine explicit pose framing output stays verbatim through automatic one-job settings binding: ${positive.includes('1girl')?'front':'contrasting intent'}`,async()=>{
+ const {spawn}=require('node:child_process');let t;
+ const spawnImpl=(command,args,options)=>{const filename=path.join(__dirname,provider==='codex'||command==='fake-mcp'?'codex-bridge-fake-server.cjs':'claude-bridge-fake-cli.cjs');const script=fs.readFileSync(filename,'utf8').replaceAll("prompt:'first'",'prompt:'+JSON.stringify(positive));return spawn(process.execPath,['-e',script,'controlled-english-output',...args],{...options,env:{...options.env,FAKE_SCENARIO:'auto-race',FAKE_AUTH:'ok',FAKE_LOG:path.join(t.dataDir,'fake.log')}});};
+ t=setups[provider]('auto-race',{spawnImpl});try{await t.bridge.connect();const automatic=fixture({modelId:'animagine-xl-4.0-opt'}),negative='사용자 negative,  Keep CASE, bad hands';Object.assign(automatic.generation.settings,{negative,seed:42,width:832,height:1216,steps:28,cfg:5,sampler:'euler_ancestral',scheduler:'normal',cache:false,preview:false});await send(t,automatic,{text:'[Pankeki action: auto]\n원래 요청의 자세와 구도를 그대로 표현해줘.'});automatic.generation.settings.negative='late mutation';automatic.generation.settings.seed=999;await done(t);const submitted=submits(t);assert.equal(submitted.length,1,'duplicate and cross-operation provider attempts cannot generate another candidate');assert.equal(submitted[0].name,'pankeki_generate_image');assert.deepEqual(submitted[0].arguments,{prompt:positive,negative,model_id:'animagine-xl-4.0-opt',seed:42,width:832,height:1216,steps:28,cfg:5,sampler:'euler_ancestral',scheduler:'normal',cache:false,preview:false,trace_id:'auto'});assert.equal(t.events.filter(event=>event.type==='intent-resolved').length,1);assert.equal(t.events.filter(event=>event.payload.resultId).length,1);
+ }finally{await t.bridge.close();}
+});

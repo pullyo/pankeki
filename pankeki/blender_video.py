@@ -12,6 +12,9 @@ import uuid
 from PIL import Image
 
 
+LOADED_SOURCE_SHA256 = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
+
+
 class GuideError(RuntimeError):
     pass
 
@@ -89,8 +92,8 @@ class GuideRequest:
                 raise GuideError(f'{name} must be an integer')
         if self.epoch < 0 or not self.project_id or len(self.project_id) > 128:
             raise GuideError('project_id and nonnegative epoch are required')
-        if not 1 <= self.start <= self.end or self.end - self.start + 1 > 240:
-            raise GuideError('frame range must contain 1..240 positive frames')
+        if not 1 <= self.start <= self.end or self.end - self.start + 1 > 241:
+            raise GuideError('frame range must contain 1..241 positive frames')
         if not 1 <= self.fps <= 30:
             raise GuideError('fps must be 1..30')
         if not (16 <= self.width <= 1280 and 16 <= self.height <= 720):

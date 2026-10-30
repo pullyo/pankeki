@@ -96,7 +96,10 @@ function structuralDOM(ui) {
   doc.createElement = tag => { const node=create(tag);node.style.setProperty=function(name,value){this[name]=value;};return node; };
   doc.querySelectorAll = selector => doc.body.querySelectorAll(selector);
   doc.querySelector = selector => doc.querySelectorAll(selector)[0] || null;
-  doc.getElementById = id => descendants(doc.body).find(node=>node.id===id) || null;
+  doc.getElementById = id => {
+    const find = node => { for (const child of node.children) { if (!child.tagName) continue; if (child.id === id) return child; const found=find(child); if(found) return found; } return null; };
+    return find(doc.body);
+  };
   const template=readFileSync(path.join(__dirname,'../web/src/index.template.html'),'utf8');
   parse(doc.body,template.match(/<body[^>]*>([\s\S]*?)<\/body>/)[1].replace(/<script\b[\s\S]*?<\/script>/g,''));
   doc.body.dataset.studioScreen='home';
@@ -228,15 +231,15 @@ test('compare hides composers and edit tools, blocks submissions, and restores e
   assert.equal(ui.doc.querySelector('.pk-categories').hidden,false);
 });
 
-test('all routes retain eleven sidebar items and compare activates the Design parent',async()=>{
+test('all routes retain ten sidebar items and image edit or compare activates image generation',async()=>{
   const ui=await mounted(),nav=ui.doc.querySelector('.pk-navigation');
-  const expected=['홈','프로젝트','이미지 생성','디자인','부위 편집','표정 · 동작','출력','갤러리','템플릿','모델 관리','설정'];
+  const expected=['홈','프로젝트','이미지 생성','부위 편집','표정 · 동작','출력','갤러리','템플릿','모델 관리','설정'];
   for(const screen of ['home','projects','design','inpaint','compare','parts','motion','export']){
     ui.controller.go(screen);
     assert.deepEqual(nav.querySelectorAll('button').map(node=>node.getAttribute('aria-label')),expected);
     assert.equal(nav.querySelector('.pk-gallery-nav').hidden,false);
     const active=nav.querySelectorAll('[aria-current="page"]');assert.equal(active.length,1);
-    assert.equal(active[0].dataset.pkRoute,screen==='compare'?'inpaint':screen);
+    assert.equal(active[0].dataset.pkRoute,['inpaint','compare'].includes(screen)?'design':screen);
     assert.equal(active[0].classList.contains('active'),true);
   }
   assert.equal(ui.requests.length,0);
@@ -267,10 +270,10 @@ test('candidate gallery and image card accessibility distinguish same-name work 
 });
 test('home audit storage labels real browser estimates as browser scope',async()=>{
   let estimates=0;const ui=await mounted({storageEstimate:async()=>{estimates++;return {usage:19600000,quota:1756300000000};}});ui.controller.go('home');
-  const text=ui.doc.getElementById('pkStorageText'),storage=ui.doc.querySelector('.pk-storage');assert.equal(text.textContent,'약 19.6 MB 사용');assert.doesNotMatch(text.textContent,/GB|한도/);assert.match(storage.getAttribute('title'),/1756\.3 GB 추정 한도/);assert.match(storage.getAttribute('aria-label'),/브라우저.*앱 전용 확보 공간이나 기기 전체 여유 공간을 뜻하지 않습니다/);assert.equal(ui.doc.getElementById('pkStorageBar').hidden,true);assert.equal(estimates,1);
+  const text=ui.doc.getElementById('pkStorageText'),storage=ui.doc.querySelector('.pk-storage');assert.equal(text.textContent,'약 19.6 MB 사용');assert.doesNotMatch(text.textContent,/GB|한도/);assert.match(storage.getAttribute('title'),/1756\.3 GB 추정 한도/);assert.match(storage.getAttribute('aria-label'),/브라우저.*앱 전용 확보 공간이나 기기 전체 여유 공간을 뜻하지 않습니다/);assert.equal(ui.doc.getElementById('pkStorageBar').hidden,false);assert.equal(ui.doc.getElementById('pkStoragePercent').textContent,'0%');assert.equal(estimates,1);
 });
 test('home audit unavailable storage remains unknown',async()=>{const unavailable=await mounted({storageEstimate:async()=>{throw Error('unavailable');}});assert.equal(unavailable.doc.getElementById('pkStorageBar').hidden,true);assert.match(unavailable.doc.getElementById('pkStorageText').textContent,/확인할 수 없/);});
-test('home audit actual zero storage remains a valid measured number',async()=>{const empty=await mounted({storageEstimate:async()=>({usage:0,quota:1000000000})});assert.equal(empty.doc.getElementById('pkStorageBar').hidden,true);assert.equal(empty.doc.getElementById('pkStorageText').textContent,'약 0.0 MB 사용');assert.match(empty.doc.querySelector('.pk-storage').getAttribute('title'),/1\.0 GB 추정 한도/);});
+test('home audit actual zero storage remains a valid measured number',async()=>{const empty=await mounted({storageEstimate:async()=>({usage:0,quota:1000000000})});assert.equal(empty.doc.getElementById('pkStorageBar').hidden,false);assert.equal(empty.doc.getElementById('pkStoragePercent').textContent,'0%');assert.equal(empty.doc.getElementById('pkStorageText').textContent,'약 0.0 MB 사용');assert.match(empty.doc.querySelector('.pk-storage').getAttribute('title'),/1\.0 GB 추정 한도/);});
 
 test('project library host waits for restore decode and preserves legacy raw across superseded or failed boot',async()=>{
   const restored=page({holdRestore:true});restored.heldImages.add(RED);await until(()=>restored.restores.length===1,'legacy read pending');
@@ -348,8 +351,8 @@ test('sidebar projects isolates its search and opens actual stored projects with
   const many=new CatalogStore(),Design=require('../web/src/profiles.js');
   many.state.records=Array.from({length:21},(_,i)=>({id:'stored-'+String(i+1).padStart(2,'0'),raw:JSON.stringify(Design.createProject({name:'Stored '+String(i+1).padStart(2,'0')},[],[])),createdAt:new Date(Date.UTC(2026,9,29,0,0,i)).toISOString(),updatedAt:'2026-10-29T00:01:00.000Z',favorite:false,recovered:false}));
   const large=await mounted({projectStore:many,initialProject:false});large.controller.go('home');
-  assert.equal(large.controller.projects.getState().items.length,21);assert.equal(large.doc.getElementById('pkRecentGrid').querySelectorAll('.pc-project-open').length,2);
-  await large.doc.getElementById('pcProjectNext').click();assert.equal(large.doc.getElementById('pcProjectPage').textContent,'2 / 11');assert.equal(large.doc.getElementById('pkRecentGrid').querySelectorAll('.pc-project-open').length,2,'home retains its2-per-page list');
+  assert.equal(large.controller.projects.getState().items.length,21);assert.equal(large.doc.getElementById('pkRecentGrid').querySelectorAll('.pc-project-open').length,4);
+  assert.equal(large.doc.getElementById('pcProjectPaging').hidden,true);assert.equal(large.doc.getElementById('pkRecentGrid').querySelectorAll('.pc-project-open').length,4,'home retains its four newest rows; the complete catalog remains reachable');
   await large.doc.querySelector('.pk-navigation [data-pk-route=projects]').click();const libraryPage=large.doc.querySelector('[data-studio-page=projects]');
   assert.equal(libraryPage.querySelectorAll('.pc-project-open').length,20);const next=libraryPage.querySelector('[aria-label="다음 프로젝트 페이지"]');assert(next&&!next.disabled,'21st project has an accessible next page');await next.click();
   const oldest=libraryPage.querySelectorAll('.pc-project-open');assert.equal(oldest.length,1);assert.equal(oldest[0].dataset.pkProjectId,'stored-01');await oldest[0].click();await large.controller.projects.flush();await settle();
@@ -403,4 +406,14 @@ test('generation project save failure is visible beside the preserved ordinary w
  const save=ui.doc.querySelectorAll('button').find(node=>node.getAttribute('aria-label')==='프로젝트로 저장'||node.textContent.trim()==='프로젝트로 저장');assert(save);await save.click();await library.flush();
  assert.equal(library.getState().activeKind,'generation');assert.equal(library.getState().activeId,id);assert.equal(library.getState().items.length,0);assert.equal(ui.studio().exportProject(),raw);
  const feedback=ui.doc.getElementById('pkComposerStatus');assert.match(feedback.textContent,/Controlled project save failure/);assert.equal(feedback.hidden,false);
+});
+
+// Keep the optimized fixture lookup equivalent to its original live document walk.
+test('structural DOM id lookup preserves duplicate order detach reparent and missing semantics',async()=>{
+ const ui=page();await settle();const doc=structuralDOM(ui),left=doc.createElement('div'),right=doc.createElement('div'),first=doc.createElement('span'),second=doc.createElement('span'),detached=doc.createElement('span');
+ first.id=second.id=detached.id='lookup-shared';doc.body.append(left,right);left.append(first);right.append(second);
+ assert.equal(doc.getElementById('lookup-shared'),first);first.remove();assert.equal(doc.getElementById('lookup-shared'),second);left.prepend(first);assert.equal(doc.getElementById('lookup-shared'),first);
+ right.prepend(first);assert.equal(doc.getElementById('lookup-shared'),first);left.prepend(second);assert.equal(doc.getElementById('lookup-shared'),second);
+ second.id='lookup-renamed';assert.equal(doc.getElementById('lookup-shared'),first);assert.equal(doc.getElementById('lookup-renamed'),second);left.remove();assert.equal(doc.getElementById('lookup-renamed'),null);
+ doc.body.id='lookup-body';assert.equal(doc.getElementById('lookup-body'),null,'preserve the prior fixture body exclusion');assert.equal(doc.getElementById('lookup-missing'),null);detached.id='lookup-detached';assert.equal(doc.getElementById('lookup-detached'),null);
 });

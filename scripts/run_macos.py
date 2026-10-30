@@ -40,7 +40,7 @@ def build_config(root):
         'conditioning_model_id': 'sdxl-base',
         'manifest': {'schema': 1, 'model_name': name, 'model_sha256': digest}}
     return {'transport': 'direct', 'managed_builtin_only': False, 'fingerprint_policy': 'stat_cache',
-            'models': models, 'default_model_id': 'sdxl-base'}
+            'models': models, 'default_model_id': 'animagine-xl-4.0-opt'}
 
 
 def free_port(port):

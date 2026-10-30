@@ -1,75 +1,229 @@
-# Pankeki desktop design system
+---
+name: Pankeki
+description: Existing Pankeki warm-charcoal desktop interface
+colors:
+  pc-background: "#171615"
+  pc-surface: "#1e1c1a"
+  pc-sidebar: "#191817"
+  pc-paper: "#26231f"
+  pc-ink: "#f5f0e9"
+  pc-muted: "#b9b0a6"
+  pc-line: "#51473e"
+  pc-control-line: "#81715f"
+  pc-selected: "#3b2b20"
+  pc-action: "#e5753e"
+  pc-action-hover: "#f18b4c"
+  pc-on-action: "#21150f"
+  pc-error: "#f0a08f"
+  pc-error-bg: "#3a2421"
+  pc-warning: "#ecc18a"
+  pc-warning-bg: "#392c1c"
+  pc-success: "#a4cf95"
+  pc-success-bg: "#253422"
+  pc-disabled: "#a3978a"
+  pc-disabled-bg: "#302b26"
+typography:
+  home-title:
+    fontFamily: "Pretendard, -apple-system, BlinkMacSystemFont, sans-serif"
+    fontSize: "27px"
+    fontWeight: 750
+    lineHeight: 1.4
+    letterSpacing: "-.035em"
+  page-title:
+    fontFamily: "Pretendard, -apple-system, BlinkMacSystemFont, sans-serif"
+    fontSize: "20px"
+    fontWeight: 700
+    letterSpacing: "-.4px"
+  message:
+    fontFamily: "Pretendard, -apple-system, BlinkMacSystemFont, sans-serif"
+    fontSize: "15px"
+    lineHeight: 1.6
+  home-input:
+    fontFamily: "Pretendard, -apple-system, BlinkMacSystemFont, sans-serif"
+    fontSize: "14px"
+    lineHeight: 1.6
+  metadata:
+    fontFamily: "Pretendard, -apple-system, BlinkMacSystemFont, sans-serif"
+    fontSize: "12px"
+    lineHeight: 1.5
+rounded:
+  badge: "5px"
+  field: "6px"
+  compact: "8px"
+  thumbnail: "9px"
+  navigation: "10px"
+  container: "12px"
+  home-composer: "36px"
+spacing:
+  xs: "4px"
+  sm: "8px"
+  md: "12px"
+  lg: "16px"
+  xl: "24px"
+  xxl: "32px"
+components:
+  button-primary:
+    backgroundColor: "{colors.pc-action}"
+    textColor: "{colors.pc-on-action}"
+    rounded: "{rounded.compact}"
+    padding: "9px 14px"
+  button-primary-hover:
+    backgroundColor: "{colors.pc-action-hover}"
+    textColor: "{colors.pc-on-action}"
+  button-primary-disabled:
+    backgroundColor: "{colors.pc-disabled-bg}"
+    textColor: "{colors.pc-disabled}"
+  navigation-item:
+    backgroundColor: "transparent"
+    textColor: "{colors.pc-ink}"
+    rounded: "{rounded.navigation}"
+    padding: "10px 12px"
+  navigation-item-selected:
+    backgroundColor: "{colors.pc-selected}"
+    textColor: "{colors.pc-ink}"
+  input-recolor:
+    backgroundColor: "{colors.pc-paper}"
+    textColor: "{colors.pc-ink}"
+    rounded: "{rounded.field}"
+    padding: "4px 6px"
+    height: "32px"
+    width: "88px"
+  composer-home:
+    backgroundColor: "#26231feb"
+    textColor: "{colors.pc-ink}"
+    typography: "{typography.home-input}"
+    rounded: "{rounded.home-composer}"
+    padding: "8px 10px"
+  template-card:
+    backgroundColor: "{colors.pc-paper}"
+    textColor: "{colors.pc-ink}"
+    rounded: "{rounded.container}"
+    padding: "0"
+  availability-tag:
+    backgroundColor: "{colors.pc-selected}"
+    rounded: "{rounded.badge}"
+    padding: "5px 8px"
+---
 
-## Scope and visual authority
+# Design System: Pankeki
 
-This pass improves the existing image-generation workspace for desktop use. Preserve the selected pancake logo, every sidebar item, actual SDXL generation, saved candidates, reference upload, masked editing, motion, and export. Existing cream/brown/orange identity and the incumbent home screen are visual authority. No new backend, document format, model behavior, or third-party frontend dependency.
+## Overview
 
-Surface mode: **Operate**. Center the task: prompt → real generated image → continue editing. Use a single conversation column and a bottom composer. Keep settings behind the existing settings dialog; no persistent right panel. Image history reflects actual saved candidates, including truthful upload labels. Never invent assistant prose, requests, projects, timestamps, or model success.
+**Creative North Star: "The user's warm-charcoal Pankeki reference"**
 
-## Analysis and design evidence
+The user's 2026-10-30 pinned reference supersedes the earlier cream theme and expanded Home layouts. The implemented world uses warm charcoal, subdued amber window light and the existing room artwork. It carries the approved logo and existing pancake/cat art into a compact welcome while keeping working surfaces restrained and readable. This documents the accepted reference and implemented system; it introduces no new aesthetic direction.
 
-UI UX Pro Max was installed from `nextlevelbuilder/ui-ux-pro-max-skill`, revision `623a9a9037d006ea727f8213f084d02a6b6f11b5`. Searches for `image generation desktop workspace` and the narrower `creative desktop productivity tool` returned minimal/flat product guidance, but marketing page compositions. Those compositions and automatic purple/teal palette/font suggestions do not fit the fixed product identity and Korean desktop workspace, so they are not persisted as canonical recommendations. Applicable database matches for `keyboard focus modal` and `error feedback generation` inform focus, unobscured controls, clear inline errors and announcements.
+The theme anchor is `body.pankeki-pc[data-theme="dark"]`. `web/src/dark-theme.css` owns shared shell, Home, chat, projects, gallery, templates, notifications and profile. `web/src/dark-editors.css` owns editor, parts, motion, video, output, settings, style and ppe UI. `web/build.py` loads both after existing CSS, in that order. Original canvas/media code remains authoritative. Product behavior and preservation boundaries are recorded in `PRODUCT.md`.
 
-Impeccable 4.7.0 from `pbakaus/impeccable`, revision `8644175285360c166e57b1e35ecadfbc85ff5209`, supplies Operate-mode restraint, the craft floor, rendered-screen critique, and final polish. The context loader ran once against `web/src/redesign.js`; scoped improvement proceeds from existing code and screenshots without a greenfield identity exercise.
+**Key Characteristics:**
 
-## Color tokens
+- Warm charcoal UI with amber actions, visible focus and readable state colors.
+- Existing brand assets and media preserved; decorative room treatment stays behind the UI.
+- Compact centered Home, persistent working controls and component-owned scrolling.
 
-| Token | Value | Role |
-| --- | --- | --- |
-| `--pc-background` | `#f3f0ea` | Outer frame |
-| `--pc-surface` | `#fcfaf7` | Working surface |
-| `--pc-sidebar` | `#f7f4ee` | Quiet navigation |
-| `--pc-paper` | `#ffffff` | Composer and image-view dialog |
-| `--pc-ink` | `#30271f` | Main text |
-| `--pc-muted` | `#756b60` | Secondary text |
-| `--pc-line` | `#e3dcd2` | Separators and control borders |
-| `--pc-selected` | `#f9e9de` | Selected controls |
-| `--pc-action` | `#b34422` | Primary action and focus |
-| `--pc-action-hover` | `#9d3b1c` | Primary hover |
-| `--pc-error` | `#a73227` | Visible error state |
+### Evidence and acceptance
 
-Measure text/placeholder contrast against actual surfaces; target 4.5:1 for normal text. Use the accent on selection, focus, and the primary action. The logo asset is unchanged.
+Evidence root: `output/finalization-20261030/dark-redesign-20261030/`. `implementation/final-freeze.json` identifies source `48f9d7e99b610e390c915b359f8a603de1796fafe62885b813143a00ae8d5f23`, HTML `801789df34d918cbc31d8071fe5d1cf2dd4f2cf446b5df7a95e303f1194894a9` and desktop fingerprint `428c6dcb4e54f679d9c7f924958dafe78ca16d2af7be73a874940360a5d09a5c`. Its immutable `implementation/correction-5-review-snapshot/` preserves the pre-documentation files. This refresh changes the three design/product documents, not those frontend inputs.
 
-## Typography and spacing
+`review/dark-finish-review-48f9.ko.md` records **ship, material findings 0** within the supplied browser fixture UI. That reviewer directly opened all 33 PNGs in `qa/final-render-index.json` and matched the 13 freeze hashes. The index preserves each capture's source and equivalence lineage: 54ffc (18), 26e466 (9), 6647 (4), 48f9 (2). These are not 33 newly captured final-build/native screens. The review covers the reference size (1672×941) and Home at 1280×800, 1360×888, 1440×900 and 1920×1080, plus representative projects, gallery, templates, generation/compare, editing, parts, unready motion/video, output preview, settings, notifications and profile.
 
-- Retain bundled Pretendard. Existing handwritten logo lettering stays confined to the brand.
-- Fixed desktop scale: 12px metadata, 13px compact labels, 14px navigation/actions, 15px prompt/message text, 20px page title, 24px empty-state title. Text line-height 1.5–1.6. Wrap real user text with `overflow-wrap:anywhere`; no prose-breaking forced line breaks.
-- Spacing scale: 4 / 8 / 12 / 16 / 24 / 32 / 48px. Tight related controls, larger gaps between turns.
-- Desktop sidebar around 216px, header 64px, conversation maximum 960px. Readable prompt measure around 72ch. Image gets the main visual weight; large style thumbnails become compact choices.
-- Message/image/composer radius 12–16px; pills only for small controls. Border or shadow per surface, no decorative glow/gradient.
+**Native UI acceptance: scoped pass (2026-10-30).** The [root's direct observation](output/finalization-20261030/dark-redesign-20261030/review/native-manager-observation.ko.md) records the exact installed `/Users/plant313/Applications/Pankeki.app` selected through Computer Use and its 2720×1840 Home screenshot inspected: dark room, existing logo, ten menus, actual recent four, single pill composer, blank input/disabled send, notification/profile and storage presentation all fit without scrolling. Root performed no GUI actions. QA's separate [native observation](output/finalization-20261030/dark-redesign-20261030/qa/native-observation.json) and [final report](output/finalization-20261030/dark-redesign-20261030/qa/QA-report.ko.md) record settings/focus return, one listed project with 14 candidates, the current ordinary document's empty gallery, nine templates, model settings and representative empty/preparation image/parts/motion/video/output screens, then return to Home. These dated counts describe that observation rather than a fixed catalog or model default. Root did not repeat every QA route, and this documenter read the reports without manipulating UI. Native captures were inline only; no supported local screenshot path was provided.
 
-## Component and interaction rules
+The [release record](output/finalization-20261030/dark-redesign-20261030/release/FINAL-RELEASE.json) records actual ASAR 17-file equality, strict codesign, DMG verification, normal quit/launch, bundle backup and atomic application. It identifies an ad-hoc signed, non-notarized package; bundle backup does not prove rollback of the external checkout. The [final preservation check](output/finalization-20261030/dark-redesign-20261030/qa/final-preservation.json) records source/HTML/process and desktop match, 24 image-job rows, three video journals, checked protected code/icon/font and owned-media SHA equality, and the same profile/partition directory identities. Profile contents were not read/copied/reset. The [cleanup record](output/finalization-20261030/dark-redesign-20261030/qa/cleanup.json) records the owned QA server/tabs closed, production app/services left running and final Comfy running/pending queues zero.
 
-- One dominant send action. Native buttons, anchors, dialogs, and the original prompt/input IDs and handlers remain in use.
-- The visible `pcPrompt` contains only the editable description and forwards input through the original hidden `prompt` field. For generation, the selected style and enabled character brief still compose the request. For masked editing, submit only the entered edit instruction; preserve the stored style and brief metadata for later generation. Editing uses the label `수정할 내용` and hides generation style choices. Restore strips only the known, separately appended style suffix from the visible description.
-- Visible composer label; attach/model/resolution/options controls beneath the prompt. Enter submits, Shift+Enter adds a line; composition input remains safe.
-- Real saved turns show user prompt and actual image. Uploads are labeled as references. View/edit/save actions stay next to the image.
-- Loading reflects the actual job; cancel remains available. Errors remain after generation stops and wrap near the composer. Empty state is short and useful.
-- Focus is visible and unobscured. Icon-only buttons have accessible labels. Dialog supports Escape and focus restoration. Reduced motion disables optional transitions.
-- Model and resolution summaries focus the original model/width field. Keep technical inputs inside a collapsed native details group. Settings use a named native dialog with keyboard-operated ARIA tabs.
-- Fit the latest image against the measured conversation height, leaving room for author and image actions. Follow new results when at the bottom; retain manual scrolling through older work.
-- Primary desktop checks: 1440×900, 1920×1080, 1280×800. Check narrower layouts for overflow without adding mobile product features.
+Loaded-image overlay/compare remains browser fixture evidence because the current native ordinary document had no selected source. Provider/local inference, new saves/imports/project switching, ready/playing motion and media quality were not tested; task inference count is zero. A hidden preview-tag color sample is not a visible loading/error pass; invalid HEX was not reached. The recorded 116/116 related tests include the initial five and do not establish GPU inference or quality. Earlier light theme, eleven-menu and expanded-template Home records remain historical evidence rather than current design authority.
 
-## Change boundary and proof
+## Colors
 
-Product changes are confined to `web/src/redesign.js` and `web/src/redesign.css`, plus generated `web/index.html` and design/verification documents. Record hashes of existing core files before/after. Run the existing relevant JavaScript suites and verify actual browser interaction, not only build output. Save before, first implementation, critique, correction, and final screenshots under `runtime/macos/pc-chat-ui/`. Separate verified results from residual gaps in the report.
+The normative frontmatter maps one-to-one to the twenty `--pc-*` color declarations in `dark-theme.css` (remove the CSS `--` prefix for the frontmatter key). Existing accent/focus/ink/muted/line/surface/selected and pk aliases resolve to these values. No synthetic ramp or new color is introduced.
 
-Final evidence: `runtime/macos/pc-chat-ui/review.md` and `verification.json`. The initial independent review scored 26/40; its five priority issues were corrected and checked again. This is not a new final score. Current sampled text pairs pass 4.5:1, including selected action text at 4.709:1.
+### Primary
 
-2026-10-23 partial-edit follow-up: the bounded request fix also changes `web/src/profiles.js` and its regression tests. The actual browser run `ef48762b02b2449eb486138a3d46234e` confirms that the entered edit instruction alone reached the recipe and workflow, with the original source/mask hashes retained. Generation mode restores its label and style controls. The full JavaScript run has 153 cases: 151 pass, one skip, one TODO, zero failures. Evidence is under `runtime/macos/inpaint-quality/integration/`; independent server-pixel and request checks are under `runtime/macos/inpaint-quality/qa/`. This verifies request behavior and preservation, not better image quality. Dedicated-model trials remain isolated until reviewed.
+- **Amber action** (`pc-action`): primary actions, focus and restrained highlights; `pc-action-hover` supplies hover.
+- **Dark on-action** (`pc-on-action`): labeled text/icons over the bright action surface.
 
-2026-10-23 precise-color follow-up: the user authorized a color-only operation within the existing masked-edit workspace. `AI 부분 수정` retains generative editing; `색상 변경` uses target HEX/swatch, automatic or explicit source color, and a compact range control. It bypasses prompt/model requirements and creates one honest local-color candidate. A no-op is `변경 없음`, including persisted string reasons. Keep generation styles hidden in edit/comparison views while preserving their generation state. No permanent side panel, new menu, logo change, or document version. Native PNG download uses the existing Blob helper without re-encoding image bytes. Final proof and limits: `docs/team-macos-20261022/recolor/integration-review.md`, `runtime/macos/recolor-quality/integration/`. The real 1024px red-scarf UI result preserves the original folds/fringe coordinates and outside-mask RGB/alpha. Black/white tone limits and automatic color-selection ambiguity remain explicit. Explicit source colors missed by the representative sample still receive full-resolution selection; a one-pixel request was verified through the final server. Final suite: JS 177 cases (175 pass, one skip, one TODO), Python 147 (127 pass, 20 Windows skips), zero failures.
+### Neutral
 
-## 2026-10-23 desktop unification: U1–U8
+- **Outer charcoal** (`pc-background`), **working charcoal** (`pc-surface`), **navigation charcoal** (`pc-sidebar`) and **raised paper** (`pc-paper`) separate the shell, work area and controls by tone.
+- **Warm ink** (`pc-ink`) and **muted warm text** (`pc-muted`) distinguish primary text from help, metadata and placeholders.
+- **Quiet separator** (`pc-line`) is decorative; **control boundary** (`pc-control-line`) identifies interactive fields and necessary controls.
+- **Selected brown** (`pc-selected`) marks selection. Error, warning, success and disabled pairs retain their semantic roles without implying that an operation succeeded.
 
-This scoped follow-up also owns `web/src/character-motion.js` and `web/src/index.template.html`. It supersedes the earlier two-source-file change boundary for this sprint only. Preserve the existing logo bytes, eleven sidebar labels/order, document formats, generation/edit requests, and document/render/export engines.
+**The On-Action Rule.** Use dark on-action text/icons for amber primary controls. Do not inherit a white label from the earlier light theme.
 
-- Keep all eleven navigation entries at the same coordinates across routes; comparison activates Design. Settings completes configuration and closes the dialog. Generation, inpainting, and recolor run only from the workspace action.
-- Apply the existing PC color/type/spacing tokens to legacy home, output, editor, and settings controls. Resolve actual computed foreground/background contrast, including active tabs and availability labels, instead of relying on the declared token alone.
-- Use one chat-style generation column. Comparison replaces the composer with two complete images at the same scale and fits the available height; preserve the original form and its values for return to editing.
-- In an actual-project home hero, place information/actions and the complete image in separate columns. Keep the project menu next to its title. Static recommendations stay in their named template area; they must not appear to be actual saved candidates.
-- Show image PNG, character board, and project-file output first. Fit the complete preview within available height. Place motion output in native details below; open it when a rig is ready and keep real progress/cancel reachable.
-- Use compact editor panels: 220px left / 240px right at 1280–1440, 240px / 280px at 1920. At 1280 retain a 516px center column (492px after horizontal padding). Unprepared editors use two columns and collapsed inactive details. Prepared editors expose their original controls. Allow one scroll container per branch; sibling panels may scroll independently.
-- A source selector shows a real candidate or an explicit placeholder. Empty/stale IDs cannot prepare; selecting a different option alone does not replace the source. Explicit preparation uses the selected candidate and honors busy/availability state.
+Normal text and placeholders target at least 4.5:1; large text and necessary control/focus graphics target at least 3:1. Static token pairs are ink/background (15.94:1), muted/paper (7.32:1), on-action/action (5.89:1). These calculations do not replace rendered measurement against real ancestor surfaces or the room. The independent review reports no active text samples below 4.5:1 in the supplied contrast JSON. The corrected opaque image-overlay buttons measured text (13.80:1) and boundary (3.32:1), recorded in `qa/final-26e466-overlay-contrast-1280.json`.
 
-Final evidence: `runtime/macos/ui-unification-20261023/integration-review.md`, `verification.json`, and the frozen QA criteria/reader. The final 48 screenshots cover 1280×800, 1440×900, and 1920×1080, seven routes, unprepared/prepared rigs, and settings. UX independently reviewed every final image. The fixed reader passed 2,159 checks with no failure/pending; 1,558 sampled enabled normal-text pairs meet 4.5:1. Actual native project/PNG, v1 import preservation, part undo, motion playback, 48-frame ZIP, and local recolor were exercised. This is scoped desktop UI acceptance, not mobile, 200% zoom, screen-reader, all hover/focus states, general RGBA, or a new SDXL inference/quality certification.
+## Typography
+
+Retain the bundled Pretendard with its existing platform fallbacks. The original brand lettering is preserved as an incumbent identity detail, not a new display family for application headings.
+
+The frontmatter records observed roles: Home title, page title, message, Home input and metadata. Home title is reduced to 25px in the existing desktop short-height query (minimum width 960px and maximum height 850px). Controls retain their actual per-component type, including 14px navigation and 13px compact primary buttons. Meaningful help/metadata uses a 12px minimum. The QA font evidence is `qa/final-26e466-font-proof.json`; the review reports the existing font loaded rather than substituting a new face.
+
+**The Existing Type Rule.** Preserve Korean text, IME and the established type hierarchy; do not turn brand lettering into a general UI font or shrink meaningful metadata to fit a layout.
+
+## Layout
+
+The desktop shell uses a full-height work area (`100dvh`) with a 208px sidebar and a flexible work column. At widths up to 800px the dark override uses a 64px icon rail. Existing narrower component rules still apply; the desktop review does not establish mobile acceptance.
+
+Home-specific composition: center the actual content at a 760px maximum width with the existing small transparent pancake/cat illustration, recent four thumbnails, and original pill composer. Keep real notification/profile actions upper right. Home search remains reachable through Projects and command-K. This is a Home layout, not a template for editor pages. The approved opaque cream logo tile remains a small warm badge with unchanged image bytes.
+
+Default Home padding is 76px 32px 42px and the main vertical gap is 24px. The short-height desktop query reduces padding to 66px 28px 24px and gap to 20px; the art also reduces in size. The implementation uses an existing 4/8/12/16/24/32 spacing rhythm rather than a new scale. Ordinary Home content fits the five reviewed desktop sizes; exceptional content and dialogs must scroll instead of clipping.
+
+The settings disclosure stays within 12px viewport margins and scrolls internally. In the existing split editor at widths from 1025px, the header uses a two-row grid and bounded horizontal actions. The 6647 captures show all four initial project actions at 1280/1360 widths, retaining title/aria names and fullwidth labels. For the unready motion preview at widths from 801px, the guidance overlay is centered in the existing size-container card with internal scrolling; this does not change source-canvas geometry or make motion ready.
+
+## Elevation & Depth
+
+Depth comes mainly from tonal layering and limited soft shadows. The Home composer uses a low shadow; settings/profile popovers and modal libraries use stronger diffuse shadows. Shared toolbar buttons and editor frames remain flat. Exact shadow values and the existing 0.15s control transitions are in the sidecar. The reduced-motion query removes animation/transitions and restores automatic scrolling; the supplied reduced-motion sample reports 0s animation/transition.
+
+The existing room is darkened only on decorative pseudo-layers. Its brightness/saturation/blur treatment must not be copied onto images, canvases, masks or videos. Transparent-image checkerboards describe transparency through the surrounding frame and preserve the underlying media.
+
+**The Original Media Rule.** A dark frame may change CSS around media, including contain-padding backgrounds, but must preserve image/video bytes, mask pixels, fit/zoom, canvas geometry, transparency meaning and export/download handlers.
+
+## Shapes
+
+The shell and sidebar meet at square edges. Navigation has gentle corners, library cards and contained controls retain their existing rounded shapes, and the Home composer has a pill silhouette. Use the frontmatter's observed radii for their named roles rather than applying one global radius. Existing circular header/send actions keep their actual sizes. Borders are 1px where present; keyboard focus uses a 2px amber outline, normally offset 3px, with bounded control-specific exceptions.
+
+## Components
+
+### Buttons
+
+Compact primary buttons retain their existing padding and radius from the frontmatter and a minimum height of 40px. Home send is a separate circular 44×44 control. Primary hover changes to action-hover; disabled controls retain disabled text/background at full opacity. State styling must not enable an unavailable control. The sidecar records primary, hover, disabled and focus snippets from the existing code.
+
+### Chips
+
+Availability tags retain their existing small rounded form and selected surface. In editor/readiness contexts their text may use muted rather than ink; preserve that context-specific override. A styled availability tag does not certify readiness.
+
+### Cards / Containers
+
+Template/library cards retain the existing container radius, zero outer padding, clipped contents and a decorative separator border. Hover uses selected tone and amber border. Dialogs keep internal scrolling. Current project selection and image comparison retain their actual state controls; templates remain presets rather than fabricated saved images.
+
+### Inputs / Fields
+
+Fields use paper, ink, muted placeholders and identifiable control boundaries. Recolor's compact text field retains its observed dimensions from the frontmatter. Error styling uses the error pair and the existing invalid state; the browser QA did not reach invalid HEX. Do not recolor native color-swatches or alter field values.
+
+### Navigation
+
+The ten existing actions retain labels, handlers and order. Default navigation is transparent with ink text, hover uses paper, and selected navigation uses selected tone plus an amber border. Do not restore a separate Design item. Keep keyboard focus visible and preserve the native OS dialogs outside web styling.
+
+### Canonical composer
+
+Keep the original textarea/form and selection across route changes. Home uses the same composer with plus, settings sliders, input, sparkle and send actions. The bounded growing textarea retains the 4000-character limit, IME and Shift+Enter. The settings disclosure closes without stealing outside/Tab focus; Escape returns to its visible trigger. Busy/progress/cancel/error feedback stays reachable outside the disclosure. Preserve the existing task-boundary submit and guards; the design layer does not add a new controller or automatic retries.
+
+## Do's and Don'ts
+
+### Do:
+
+- **Do** use the source-defined warm-charcoal tokens and dark on-action labels across the existing application UI.
+- **Do** preserve the approved logo, existing art, all ten navigation actions and the canonical Korean-IME composer.
+- **Do** keep readable help, identifiable control boundaries, visible keyboard focus and truthful selected/disabled/error/readiness states.
+- **Do** preserve media pixels and component scrolling, and honor reduced-motion preferences.
+- **Do** retain capture lineage and separate browser visual review, scoped native UI acceptance, inference and media-quality evidence.
+
+### Don't:
+
+- **Don't** apply whole-app inversion, neon/glow decoration or filters/opacity/blending to working media.
+- **Don't** create saved gallery results, online account claims or completed operations from presentation-only state.
+- **Don't** replace the original composer, handlers, guarded transitions, document formats, model settings or existing stored data for styling.
+- **Don't** expand browser fixture ship or scoped native UI acceptance into provider/save/inference, loaded native compare or ready-motion acceptance.
+
+No additional defect or stylistic exception is canonized by this documentation pass. Reported visual material findings are zero within the independent review's scope; untested runtime operations remain unverified rather than design rules.

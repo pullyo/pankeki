@@ -379,5 +379,430 @@ class VideoHTTPTests(unittest.TestCase):
                 thread.join(2)
 
 
+class VideoUpgradeTests(unittest.TestCase):
+    setUp = VideoTests.setUp
+    tearDown = VideoTests.tearDown
+    grant = VideoTests.grant
+    request = VideoTests.request
+
+    def test_named_fullbody_profile_propagates_without_accepting_arbitrary_sizes(self):
+        from pankeki.video_runtime import VideoError
+        result = self.runtime.validate_request(self.request(profile='fullbody'))
+        self.assertEqual({k:result[k] for k in ('width','height','frames','fps','steps')},
+                         {'width':384,'height':512,'frames':241,'fps':24,'steps':8})
+        self.assertEqual(self.runtime.normalize_request(self.request(profile='preview')), self.runtime.normalize_request(self.request()))
+        for changes in ({'profile':'unbounded'}, {'profile':'fullbody','frames':1000}, {'reference_id':'../bad'}):
+            with self.subTest(changes=changes), self.assertRaises(VideoError):
+                self.runtime.validate_request(self.request(**changes))
+
+    def test_opted_in_reference_is_owned_bound_and_immutable(self):
+        import base64, io
+        from PIL import Image
+        from pankeki.video_runtime import VideoError
+        self.assertTrue(hasattr(self.runtime,'create_reference'),'explicit PNG snapshots are not implemented')
+        image=Image.new('RGB',(80,160),'orange'); stream=io.BytesIO();image.save(stream,format='PNG')
+        raw=stream.getvalue()
+        grant=self.runtime.create_reference({'image':'data:image/png;base64,'+base64.b64encode(raw).decode(),
+              'project_id':'video-test','epoch':2,'candidate_id':'chosen-one','source_revision':'rev-7'})
+        request=self.runtime.validate_request(self.request(profile='fullbody',reference_id=grant['reference_id']))
+        directory=self.root/'runtime/video/runs'/('a'*32); directory.mkdir(parents=True)
+        prepared=self.runtime.prepare_reference(request,directory)
+        self.assertEqual((directory/'reference-original.png').read_bytes(),raw)
+        with Image.open(directory/'reference.png') as output:self.assertEqual(output.size,(384,512))
+        self.assertEqual(prepared['fit'],'contain'); self.assertEqual(prepared['content_bounds'],[64,0,320,512])
+        self.assertEqual(prepared['original_sha256'],hashlib.sha256(raw).hexdigest())
+        with self.assertRaises(VideoError):self.runtime.validate_request(self.request(reference_id=grant['reference_id'],epoch=3))
+        source=self.runtime.directory/'references'/grant['reference_id']/'source.png';source.write_bytes(b'changed')
+        with self.assertRaises(VideoError):self.runtime.validate_request(self.request(reference_id=grant['reference_id']))
+
+    def test_reference_rejects_non_png_oversize_stale_and_symlink(self):
+        from pankeki.video_runtime import VideoError
+        self.assertTrue(hasattr(self.runtime,'create_reference'),'reference validation is missing')
+        for image in ('data:image/jpeg;base64,eA==','data:image/png;base64,%%%%','data:image/png;base64,eA=='):
+            with self.subTest(image=image),self.assertRaises(VideoError):
+                self.runtime.create_reference({'image':image,'project_id':'video-test','epoch':2,'candidate_id':'one','source_revision':'r'})
+
+    def test_completed_guide_cache_exact_hit_tamper_cancel_and_profile_miss(self):
+        from unittest.mock import patch
+        from pankeki.video_runtime import VideoCanceled
+        self.assertTrue(hasattr(self.runtime,'guide_cache_key'),'completed guide cache is missing')
+        request=self.runtime.validate_request(self.request())
+        stage=Path(__file__).resolve().parents[1]
+        for rel in ('scripts/blender_video_runner.py','pankeki/blender_video.py','pankeki/video_runtime.py','pankeki/video_profiles.py'):
+            path=self.root/rel;path.parent.mkdir(parents=True,exist_ok=True);path.write_bytes((stage/rel).read_bytes())
+        for name in ('blender','ffmpeg','ffprobe'):
+            path=self.root/'bin'/name;path.parent.mkdir(exist_ok=True);path.write_bytes(name.encode());setattr(self.runtime,name,path)
+        identity=self.runtime.guide_identity(request)
+        key=self.runtime.guide_cache_key(request,identity=identity)
+        source=self.runtime.directory/'runs'/('a'*32);source.mkdir(parents=True)
+        for name in ('guide.mp4','control-depth.mp4'):(source/name).write_bytes(name.encode())
+        def verify(path,**kwargs):
+            return {**{k:request[k] for k in ('width','height','frames','fps')},'full_decode_verified':True,
+                    'sha256':hashlib.sha256(path.read_bytes()).hexdigest(),'bytes':path.stat().st_size}
+        from pankeki.video_runtime import atomic_json
+        atomic_json(source/'guide-verification.json',{'guide':verify(source/'guide.mp4'),'control':verify(source/'control-depth.mp4'),
+                    'normalization':{'near':1,'far':2},'scene_sha256':request['scene_sha256'],'cache_key':key,'cache_identity':identity,'profile':'preview'})
+        atomic_json(source/'request.json',request)
+        target=self.runtime.directory/'runs'/('b'*32);target.mkdir()
+        cancel=threading.Event()
+        with patch.object(self.runtime,'verify_mp4',side_effect=verify):
+            self.assertFalse(self.runtime.publish_guide_cache(source,cancel),'an uncommitted guide is not reusable')
+            atomic_json(source/'complete.json',{'job_id':source.name})
+            atomic_json(self.runtime.directory/'jobs'/(source.name+'.json'),{'id':source.name,'status':'succeeded'})
+            with patch('pankeki.video_runtime.GUIDE_CACHE_LIMIT_COUNT',0):
+                self.assertFalse(self.runtime.publish_guide_cache(source,cancel))
+            self.assertFalse(self.runtime.publish_guide_cache(source,cancel,commit=lambda publish:False))
+            self.assertFalse((self.runtime.directory/'guide-cache'/key).exists())
+            self.assertTrue(self.runtime.publish_guide_cache(source,cancel))
+            hit=self.runtime.restore_guide_cache(request,target,cancel)
+            self.assertTrue(hit);self.assertEqual((target/'control-depth.mp4').read_bytes(),b'control-depth.mp4')
+            changed={**request,'scene_sha256':'f'*64}
+            self.assertFalse(self.runtime.restore_guide_cache(changed,target,threading.Event()))
+            self.assertNotEqual(key,self.runtime.guide_cache_key({**request,'profile':'fullbody','height':512,'frames':241}))
+            helper=self.root/'scripts/blender_video_runner.py';helper.write_text('changed renderer source')
+            self.assertFalse(self.runtime.restore_guide_cache(request,target,threading.Event()))
+            helper.write_bytes((stage/'scripts/blender_video_runner.py').read_bytes())
+            journal=self.runtime.directory/'jobs'/(source.name+'.json')
+            atomic_json(journal,{'id':source.name,'status':'canceled'})
+            self.assertFalse(self.runtime.restore_guide_cache(request,target,threading.Event()))
+            atomic_json(journal,{'id':source.name,'status':'succeeded'})
+            cache=self.runtime.directory/'guide-cache'/key
+            (cache/'control-depth.mp4').write_bytes(b'corrupt')
+            self.assertFalse(self.runtime.restore_guide_cache(request,target,threading.Event()))
+            cancel.set()
+            with self.assertRaises(VideoCanceled):self.runtime.restore_guide_cache(request,target,cancel)
+
+
+    def test_runner_rejects_unowned_reference_and_arbitrary_cli_fields(self):
+        import importlib.util
+        spec=importlib.util.spec_from_file_location('owned_video_runner',Path(__file__).resolve().parents[1]/'scripts/pankeki_video_runner.py')
+        runner=importlib.util.module_from_spec(spec);spec.loader.exec_module(runner)
+        directory=self.root/'runtime/video/runs'/('b'*32);directory.mkdir(parents=True)
+        control=directory/'control-depth.mp4';control.write_bytes(b'control')
+        body={'root':str(self.root),'prompt':'A fullbody dance.','seed':42,'profile':'fullbody',
+              'width':384,'height':512,'frames':241,'fps':24,'steps':8,
+              'control_sha256':hashlib.sha256(control.read_bytes()).hexdigest()}
+        path=directory/'ltx-request.json';path.write_text(json.dumps(body))
+        command,profile=runner.build_command(path,self.root)
+        self.assertEqual(profile,'fullbody');self.assertEqual(command[command.index('-f')+1],'241')
+        self.assertNotIn('--image',command)
+        for changes in ({'frames':242},{'width':768},{'extra_cli':['--arbitrary']},{'reference':{'prepared_sha256':'a'*64}}):
+            path.write_text(json.dumps({**body,**changes}))
+            with self.subTest(changes=changes),self.assertRaises(ValueError):runner.build_command(path,self.root)
+
+    def test_fullbody_guide_uses_exact_241_frames_and_cache_hit_skips_render(self):
+        from unittest.mock import patch
+        from pankeki.blender_video import GuideRequest,GuideError
+        from pankeki.video_runtime import atomic_json
+        GuideRequest(self.scene,'project',1,start=1,end=241,fps=24,width=384,height=512).validate()
+        with self.assertRaises(GuideError):GuideRequest(self.scene,'project',1,start=1,end=242).validate()
+        request=self.runtime.validate_request(self.request(profile='fullbody'))
+        directory=self.root/'runtime/video/runs'/('c'*32);directory.mkdir(parents=True)
+        verification={'guide':{'sha256':'a'*64},'control':{'sha256':'b'*64},'normalization':{'near':1,'far':2}}
+        def cache_hit(*args,**kwargs):atomic_json(directory/'guide-verification.json',verification);return {'hit':True}
+        with patch.object(self.runtime,'restore_guide_cache',side_effect=cache_hit),patch('pankeki.video_runtime.BlenderGuideJob') as render:
+            result,cache=self.runtime.prepare_guide(request,directory,threading.Event(),lambda **changes:None)
+            self.assertEqual(result,verification);self.assertTrue(cache['hit']);render.assert_not_called()
+
+    def test_fullbody_verify_uses_requested_frame_count_and_dimensions(self):
+        from unittest.mock import patch
+        from pankeki.video_runtime import VideoError
+        path=self.root/'test.mp4';path.write_bytes(b'video')
+        probe={'streams':[{'codec_type':'video','codec_name':'h264','width':384,'height':512,'nb_read_frames':'241','avg_frame_rate':'24/1'}],
+               'format':{'duration':str(241/24)}}
+        def process(command,**kwargs):
+            return subprocess.CompletedProcess(command,0,json.dumps(probe).encode() if '-show_streams' in command else b'',b'')
+        with patch('pankeki.video_runtime.subprocess.run',side_effect=process):
+            self.assertEqual(self.runtime.verify_mp4(path,profile='fullbody')['frames'],241)
+            with self.assertRaises(VideoError):self.runtime.verify_mp4(path)
+            probe['streams'][0]['nb_read_frames']='240'
+            with self.assertRaises(VideoError):self.runtime.verify_mp4(path,profile='fullbody')
+
+
+    def test_fullbody_pipeline_binds_profile_reference_and_monotonic_phases(self):
+        from unittest.mock import patch
+        from pankeki.video_runtime import atomic_json
+        import io,base64
+        from PIL import Image
+        stream=io.BytesIO();Image.new('RGB',(40,80),'green').save(stream,format='PNG')
+        grant=self.runtime.create_reference({'image':'data:image/png;base64,'+base64.b64encode(stream.getvalue()).decode(),
+                    'project_id':'video-test','epoch':2,'candidate_id':'chosen','source_revision':'r'})
+        request=self.runtime.validate_request(self.request(profile='fullbody',reference_id=grant['reference_id']))
+        directory=self.runtime.directory/'runs'/('d'*32);directory.mkdir(parents=True)
+        guide={'guide':{'sha256':'a'*64},'control':{'sha256':'b'*64},'normalization':{'near':1,'far':2}}
+        calls=[];updates=[]
+        def process(command,directory,logfile,cancel,**kwargs):
+            calls.append((command,logfile,kwargs))
+            if logfile=='inference.log':
+                (directory/'inference.log').write_text('[Loading transformer] done\nDenoising: 100%| | 8/8\n')
+                (directory/'raw.mp4').write_bytes(b'raw video')
+            elif logfile=='silent-remux.log':(directory/'result.pending.mp4').write_bytes(b'final video')
+        def verify(path,**kwargs):
+            self.assertEqual(kwargs.get('profile'),'fullbody')
+            return {'sha256':hashlib.sha256(path.read_bytes()).hexdigest(),'full_decode_verified':True,
+                    **{key:request[key] for key in ('width','height','frames','fps')}}
+        with patch.object(self.runtime,'status',return_value={'ready':True}),patch.object(self.runtime,'prepare_guide',return_value=(guide,{'hit':False})),\
+             patch.object(self.runtime,'comfy_queue',return_value=0),patch.object(self.runtime,'memory_preflight') as memory,\
+             patch.object(self.runtime,'run_process',side_effect=process),patch.object(self.runtime,'verify_mp4',side_effect=verify):
+            result=self.runtime.run(request,directory,threading.Event(),lambda **value:updates.append(value))
+        self.assertEqual(memory.call_args.kwargs['profile'],'fullbody');self.assertIn('cancel',memory.call_args.kwargs)
+        execution=json.loads((directory/'ltx-request.json').read_text())
+        self.assertEqual(execution['frames'],241);self.assertEqual(execution['profile'],'fullbody')
+        self.assertEqual(execution['reference']['reference_id'],grant['reference_id'])
+        self.assertEqual(result['reference']['fit'],'contain');self.assertEqual(result['frames'],241)
+        self.assertEqual(set(result['phase_timings_s']),{'reference_prepare','guide_prepare','gpu_lease_and_queue_wait','memory_preflight','engine_load_denoise_decode_mux','result_verify'})
+        self.assertTrue(all(value>=0 for value in result['phase_timings_s'].values()))
+        self.assertEqual(len([value for value in calls if value[1]=='inference.log']),1)
+
+    def test_reference_expiry_symlink_and_size_limits_fail_closed(self):
+        import io,base64
+        from PIL import Image
+        from pankeki.video_runtime import VideoError,atomic_json
+        stream=io.BytesIO();Image.new('RGB',(8,8),'red').save(stream,format='PNG')
+        body={'image':'data:image/png;base64,'+base64.b64encode(stream.getvalue()).decode(),
+              'project_id':'video-test','epoch':2,'candidate_id':'chosen','source_revision':'r'}
+        grant=self.runtime.create_reference(body);directory=self.runtime.directory/'references'/grant['reference_id']
+        manifest=json.loads((directory/'manifest.json').read_text());manifest['created_at']=time.time()-90000
+        atomic_json(directory/'manifest.json',manifest)
+        with self.assertRaises(VideoError):self.runtime.read_reference(grant['reference_id'],self.request())
+        manifest['created_at']=time.time();atomic_json(directory/'manifest.json',manifest)
+        source=directory/'source.png';source.unlink();source.symlink_to(self.scene)
+        with self.assertRaises(VideoError):self.runtime.read_reference(grant['reference_id'],self.request())
+        with self.assertRaises(VideoError):self.runtime.create_reference({**body,'image':'data:image/png;base64,'+'A'*(16*1024**2)})
+
+
+    def test_fullbody_memory_guard_stops_critical_or_sustained_pressure(self):
+        from pankeki.video_runtime import VideoError
+        self.assertTrue(hasattr(self.runtime,'check_memory_guard'),'fullbody guard must match the reviewed local execution')
+        self.assertEqual(self.runtime.check_memory_guard({'pressure_level':1,'reported_free_percent':60},2),0)
+        self.assertEqual(self.runtime.check_memory_guard({'pressure_level':2,'reported_free_percent':30},0),1)
+        with self.assertRaises(VideoError):self.runtime.check_memory_guard({'pressure_level':4,'reported_free_percent':60},0)
+        with self.assertRaises(VideoError):self.runtime.check_memory_guard({'pressure_level':1,'reported_free_percent':20},2)
+
+
+    def test_fullbody_render_and_depth_command_propagate_named_contract(self):
+        from unittest.mock import patch
+        import numpy as np
+        request=self.runtime.validate_request(self.request(profile='fullbody'))
+        directory=self.runtime.directory/'runs'/('e'*32);directory.mkdir(parents=True)
+        captured={}
+        class FakeGuide:
+            def __init__(inner,request,output_dir,**options):
+                captured['request']=request;inner.output_dir=output_dir;inner.request=request
+            def prepare(inner):
+                inner.request.validate();inner.output_dir.mkdir();(inner.output_dir/'scene.blend').write_bytes(self.scene.read_bytes())
+            def run(inner):(inner.output_dir/'guide.mp4').write_bytes(b'guide');return {'camera_clip_start':.1,'camera_clip_end':100}
+        def run_process(command,*args,**kwargs):
+            captured['command']=command;(directory/'control-depth.mp4').write_bytes(b'control')
+        def verify(path,**kwargs):
+            self.assertEqual(kwargs['profile'],'fullbody')
+            return {'sha256':hashlib.sha256(path.read_bytes()).hexdigest(),**{key:request[key] for key in ('width','height','frames','fps')}}
+        def depth(path,size):
+            self.assertEqual(size,(384,512));return np.array([[1.,2.],[3.,1e10]],dtype=np.float32)
+        with patch.object(self.runtime,'restore_guide_cache',return_value=False),patch('pankeki.video_runtime.BlenderGuideJob',FakeGuide),\
+             patch.object(self.runtime,'run_process',side_effect=run_process),patch.object(self.runtime,'verify_mp4',side_effect=verify),\
+             patch('pankeki.video_runtime.read_depth',side_effect=depth) as read:
+            verification,cache=self.runtime.prepare_guide(request,directory,threading.Event(),lambda **changes:None)
+        self.assertEqual(captured['request'].end,241);self.assertEqual(captured['request'].height,512)
+        command=captured['command'];self.assertEqual(command[command.index('-frames:v')+1],'241')
+        self.assertEqual(command[command.index('-framerate')+1],'24');self.assertEqual(read.call_count,482)
+        self.assertEqual(len(list((directory/'depth-png').glob('*.png'))),241)
+        self.assertFalse(cache['hit']);self.assertEqual(verification['profile'],'fullbody')
+
+
+    def test_legacy_journal_public_profile_remains_preview_after_restart(self):
+        from pankeki.video_jobs import VideoJobManager
+        manager=VideoJobManager.__new__(VideoJobManager)
+        legacy={'id':'a'*32,'status':'succeeded','project_id':'old','epoch':2,'request':{'scene_id':self.scene_id},'elapsed_seconds':2}
+        self.assertEqual(manager._public(legacy)['profile'],'preview')
+        self.assertIsNone(manager._public(legacy)['reference_id'])
+        fullbody={**legacy,'request':{'profile':'fullbody','reference_id':str(uuid.uuid4())}}
+        self.assertEqual(manager._public(fullbody)['profile'],'fullbody')
+        self.assertEqual(manager._public(fullbody)['reference_id'],fullbody['request']['reference_id'])
+
+
+    def test_slow_cache_publish_does_not_hold_job_state_lock(self):
+        from pankeki.video_jobs import VideoJobManager
+        from pankeki.video_runtime import atomic_json
+        entered,release,polled=threading.Event(),threading.Event(),threading.Event()
+        def run(request,directory,cancel,update):
+            (directory/'result.pending.mp4').write_bytes(b'fake video')
+            result={'ai_generated':True,'full_decode_verified':True,'sha256':hashlib.sha256(b'fake video').hexdigest(),'url':f'/api/video/assets/{directory.name}/result.mp4'}
+            atomic_json(directory/'verification.json',result);return result
+        def publish(*args,**kwargs):entered.set();release.wait(3);return False
+        self.runtime.run=run;self.runtime.publish_guide_cache=publish
+        manager=VideoJobManager(self.runtime)
+        try:
+            item=manager.submit(self.request());self.assertTrue(entered.wait(2))
+            reader=threading.Thread(target=lambda:(manager.get(item['id']),polled.set()));reader.start()
+            self.assertTrue(polled.wait(.3),'polling must remain responsive while cache decode/copy is blocked')
+        finally:
+            release.set();manager.close()
+
+
+    def test_memory_probe_cancel_and_timeout_are_bounded_and_classified(self):
+        from pankeki.video_runtime import VideoCanceled,VideoError
+        self.assertTrue(hasattr(self.runtime,'probe_command'),'memory probes need a cancel-aware owned child')
+        cancel=threading.Event();threading.Timer(.15,cancel.set).start();began=time.monotonic()
+        with self.assertRaises(VideoCanceled):self.runtime.probe_command([sys.executable,'-c','import time; time.sleep(30)'],cancel=cancel,timeout=5)
+        self.assertLess(time.monotonic()-began,1.5)
+        with self.assertRaisesRegex(VideoError,'시간'):
+            self.runtime.probe_command([sys.executable,'-c','import time; time.sleep(30)'],cancel=threading.Event(),timeout=.05)
+
+    def test_reference_namespace_limits_and_expiry_never_delete_foreign_artifacts(self):
+        from unittest.mock import patch
+        import io,base64
+        from PIL import Image
+        from pankeki.video_runtime import VideoError,atomic_json
+        stream=io.BytesIO();Image.new('RGB',(8,8),'red').save(stream,format='PNG')
+        body={'image':'data:image/png;base64,'+base64.b64encode(stream.getvalue()).decode(),'project_id':'p','epoch':1,'candidate_id':'c','source_revision':'r'}
+        grant=self.runtime.create_reference(body);base=self.runtime.directory/'references'
+        foreign=base/str(uuid.uuid4());foreign.mkdir();(foreign/'user-note.txt').write_text('preserve')
+        with patch('pankeki.video_runtime.REFERENCE_LIMIT_COUNT',2):
+            with self.assertRaises(VideoError):self.runtime.create_reference(body)
+        owned=base/grant['reference_id'];manifest=json.loads((owned/'manifest.json').read_text());manifest['created_at']=time.time()-90000
+        atomic_json(owned/'manifest.json',manifest)
+        with patch('pankeki.video_runtime.REFERENCE_LIMIT_COUNT',2):new=self.runtime.create_reference(body)
+        self.assertNotEqual(new['reference_id'],grant['reference_id']);self.assertFalse(owned.exists());self.assertEqual((foreign/'user-note.txt').read_text(),'preserve')
+        with patch('pankeki.video_runtime.REFERENCE_LIMIT_BYTES',1):
+            with self.assertRaises(VideoError):self.runtime.create_reference(body)
+
+    def test_reference_exact_12_mib_png_payload_accepts_prefix_and_rejects_one_byte_over(self):
+        import base64,io
+        from PIL import Image,PngImagePlugin
+        from pankeki.video_runtime import VideoError
+        def png(size):
+            stream=io.BytesIO();Image.new('RGB',(1,1),'red').save(stream,format='PNG');base=len(stream.getvalue())
+            info=PngImagePlugin.PngInfo();info.add(b'tEXt',b'padding\0'+b'0'*(size-base-12-8))
+            stream=io.BytesIO();Image.new('RGB',(1,1),'red').save(stream,format='PNG',pnginfo=info)
+            self.assertEqual(len(stream.getvalue()),size);return stream.getvalue()
+        body={'project_id':'p','epoch':1,'candidate_id':'c','source_revision':'r'}
+        exact=png(12*1024**2);grant=self.runtime.create_reference({**body,'image':'data:image/png;base64,'+base64.b64encode(exact).decode()})
+        self.assertEqual(self.runtime.read_reference(grant['reference_id'])['bytes'],12*1024**2)
+        with self.assertRaises(VideoError):self.runtime.create_reference({**body,'image':'data:image/png;base64,'+base64.b64encode(png(12*1024**2+1)).decode()})
+
+
+    def test_render_identity_uses_loaded_sources_snapshot_helper_and_tool_bytes(self):
+        from unittest.mock import patch
+        from pankeki.video_runtime import sha256,VideoError
+        from pankeki.blender_video import GuideRequest
+        import numpy as np
+        helper=self.root/'scripts/blender_video_runner.py';helper.parent.mkdir();helper.write_bytes(b'fixed helper source')
+        for name in ('blender','ffmpeg','ffprobe'):
+            path=self.root/'bin'/name;path.parent.mkdir(exist_ok=True);path.write_bytes(name.encode());setattr(self.runtime,name,path)
+        request=self.runtime.validate_request(self.request())
+        identity=self.runtime.guide_identity(request);frozen=self.runtime.guide_cache_key(request,identity=identity)
+        changed_source=self.root/'pankeki/video_runtime.py';changed_source.parent.mkdir();changed_source.write_bytes(b'new disk source after import')
+        self.assertNotEqual(sha256(changed_source),identity['loaded_source_sha256']['pankeki/video_runtime.py'])
+        self.assertEqual(self.runtime.guide_cache_key(request),frozen,'disk source cannot relabel loaded Python code')
+        directory=self.runtime.directory/'runs'/('e'*32);directory.mkdir(parents=True)
+        class FakeGuide:
+            def __init__(inner,request,output_dir,**kwargs):inner.request=request;inner.output_dir=output_dir
+            def prepare(inner):inner.output_dir.mkdir();(inner.output_dir/'scene.blend').write_bytes(self.scene.read_bytes())
+            def run(inner):
+                self.assertEqual(inner.runner.read_bytes(),b'fixed helper source');helper.write_bytes(b'changed while rendering')
+                (inner.output_dir/'guide.mp4').write_bytes(b'guide');return {}
+        def process(*args,**kwargs):(directory/'control-depth.mp4').write_bytes(b'control')
+        def verify(path,**kwargs):return {'sha256':sha256(path)}
+        with patch('pankeki.video_runtime.BlenderGuideJob',FakeGuide),patch.object(self.runtime,'verify_mp4',side_effect=verify),\
+             patch.object(self.runtime,'run_process',side_effect=process),patch('pankeki.video_runtime.read_depth',return_value=np.array([[1.,2.]],dtype=np.float32)):
+            verification,_=self.runtime.prepare_guide(request,directory,threading.Event(),lambda **changes:None)
+        self.assertEqual(verification['cache_key'],frozen);self.assertEqual(verification['cache_identity'],identity)
+        self.assertNotEqual(self.runtime.guide_cache_key(request),frozen)
+        helper.write_bytes(b'fixed helper source');self.runtime.ffmpeg.write_bytes(b'new encoder binary')
+        self.assertNotEqual(self.runtime.guide_cache_key(request),frozen)
+
+    def test_expired_cache_cleanup_is_owned_only_and_capacity_is_bounded(self):
+        from unittest.mock import patch
+        from pankeki.video_runtime import VideoError,atomic_json
+        base=self.runtime.directory/'guide-cache';owned=base/('a'*64);owned.mkdir(parents=True)
+        atomic_json(owned/'manifest.json',{'owner':'pankeki-video-runtime-v1','schema':'pankeki.completed-guide.v1','cache_key':owned.name,'created_at':time.time()-8*24*3600})
+        (owned/'guide.mp4').write_bytes(b'owned guide')
+        foreign=base/('b'*64);foreign.mkdir();(foreign/'user.blend').write_bytes(b'original user data')
+        self.runtime.storage_usage('guide-cache');self.assertFalse(owned.exists());self.assertEqual((foreign/'user.blend').read_bytes(),b'original user data')
+        with patch('pankeki.video_runtime.GUIDE_CACHE_LIMIT_BYTES',1):
+            with self.assertRaises(VideoError):self.runtime.admit_storage('guide-cache',2)
+
+
+    def test_optional_cache_subprocess_and_metadata_failures_preserve_committed_video(self):
+        from unittest.mock import patch
+        from pankeki.video_runtime import atomic_json
+        from pankeki.video_jobs import VideoJobManager
+        errors=[subprocess.CalledProcessError(1,['ffprobe']),subprocess.TimeoutExpired(['ffmpeg'],60),RuntimeError('unexpected optional cache error')]
+        for index,error in enumerate(errors):
+            with self.subTest(error=type(error).__name__):
+                runtime=type(self.runtime)(self.root/str(index))
+                runtime.directory.mkdir(parents=True)
+                # Validation remains the real source-grant validation on our temp fixture.
+                runtime.validate_request=self.runtime.validate_request
+                def run(request,directory,cancel,update):
+                    data=b'committed result';(directory/'result.pending.mp4').write_bytes(data)
+                    result={'ai_generated':True,'full_decode_verified':True,'sha256':hashlib.sha256(data).hexdigest(),'url':f'/api/video/assets/{directory.name}/result.mp4'}
+                    atomic_json(directory/'verification.json',result);return result
+                runtime.run=run
+                with patch.object(runtime,'publish_guide_cache',side_effect=error):
+                    manager=VideoJobManager(runtime)
+                    try:
+                        item=manager.submit(self.request());done=manager.wait(item['id'],2)
+                        self.assertEqual(done['status'],'succeeded');self.assertTrue(manager.result(item['id'])['ai_generated'])
+                        self.assertIn(type(error).__name__,done['guide_cache_error'])
+                    finally:manager.close()
+        runtime=type(self.runtime)(self.root/'metadata-failure');runtime.directory.mkdir(parents=True)
+        runtime.validate_request=self.runtime.validate_request;runtime.run=run;runtime.publish_guide_cache=lambda *args,**kwargs:False
+        manager=VideoJobManager(runtime);save=manager._save
+        def save_optional(item):
+            if item.get('guide_cache_publish')=='skipped':raise OSError('optional metadata write unavailable')
+            return save(item)
+        manager._save=save_optional
+        try:
+            item=manager.submit(self.request());done=manager.wait(item['id'],2)
+            self.assertEqual(done['status'],'succeeded');self.assertTrue(manager.result(item['id'])['ai_generated'])
+        finally:manager.close()
+
+
+class VideoReferenceHandlerTests(unittest.TestCase):
+    """Exercise the real Handler without an Engine, server, socket, or GPU."""
+    def setUp(self):
+        import ast
+        from types import SimpleNamespace
+        import pankeki.server as module
+        from pankeki.video_runtime import VideoRuntime
+        self.temp=tempfile.TemporaryDirectory();self.root=Path(self.temp.name).resolve();self.runtime=VideoRuntime(self.root)
+        tree=ast.parse(Path(module.__file__).read_text())
+        handler=next(node for node in ast.walk(tree) if isinstance(node,ast.ClassDef) and node.name=='Handler')
+        namespace={**vars(module),'root':self.root,'video_manager':SimpleNamespace(runtime=self.runtime)}
+        exec(compile(ast.Module(body=[handler],type_ignores=[]),module.__file__,'exec'),namespace)
+        self.handler=namespace['Handler']
+    def tearDown(self):self.temp.cleanup()
+    def request(self,method,path,body=None,origin='http://127.0.0.1:8190'):
+        from types import SimpleNamespace
+        from email.message import Message
+        import io
+        request=self.handler.__new__(self.handler)
+        raw=json.dumps(body).encode() if body is not None else b''
+        request.rfile=io.BytesIO(raw);request.wfile=io.BytesIO();request.path=path
+        request.server=SimpleNamespace(server_port=8190);request.connection=SimpleNamespace(gettimeout=lambda:None,settimeout=lambda value:None)
+        request.headers=Message();request.headers['Host']='127.0.0.1:8190';request.headers['Origin']=origin
+        request.headers['Content-Type']='application/json';request.headers['Content-Length']=str(len(raw))
+        request.request_version='HTTP/1.1';request.requestline=method+' '+path+' HTTP/1.1';request.command=method
+        getattr(request,'do_'+method)()
+        headers,data=request.wfile.getvalue().split(b'\r\n\r\n',1)
+        return int(headers.split(b' ')[1]),data
+    def test_same_origin_reference_api_rejects_foreign_upload_and_serves_verified_png(self):
+        import base64,io
+        from PIL import Image
+        stream=io.BytesIO();Image.new('RGB',(8,16),'blue').save(stream,format='PNG');raw=stream.getvalue()
+        body={'image':'data:image/png;base64,'+base64.b64encode(raw).decode(),'project_id':'p','epoch':1,'candidate_id':'c','source_revision':'r'}
+        status,_=self.request('POST','/api/video/references',body,origin='https://outside.invalid')
+        self.assertEqual(status,400);self.assertFalse((self.runtime.directory/'references').exists())
+        status,data=self.request('POST','/api/video/references',body)
+        self.assertEqual(status,201);reference=json.loads(data)
+        self.assertNotIn('image',reference);self.assertNotIn('path',reference)
+        route='/api/video/references/'+reference['reference_id']+'/source.png'
+        self.assertEqual(self.request('GET',route),(200,raw))
+        source=self.runtime.directory/'references'/reference['reference_id']/'source.png';source.write_bytes(b'corrupt')
+        self.assertEqual(self.request('GET',route)[0],400)
+
+
 if __name__ == '__main__':
     unittest.main()
