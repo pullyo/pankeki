@@ -136,7 +136,7 @@ test('motion header keeps video entry and all three rig mode controls in row one
   const gridItem=node=>{while(node&&node.parent!==page)node=node.parent;return node;};
   assert.ok(gridItem(entry)===gridItem(modes),'video entry and mode switch must share one grid item, preserving the two-row motion layout');
   const header=gridItem(entry);assert.ok(hasClass(header,'motion-mode-header'));
-  for(const id of ['motionNativeMode','v3Mode','motionCubismMode'])assert.ok(all.some(node=>node.attrs.id===id&&node.parent===modes),id+' must remain in the original mode control group');
+  for(const id of ['motionNativeMode','v3Mode'])assert.ok(all.some(node=>node.attrs.id===id&&node.parent===modes),id+' must remain in the original mode control group');
   const videoCss=fs.readFileSync(path.join(__dirname,'../src/video-workspace.css'),'utf8'),legacyCss=fs.readFileSync(path.join(__dirname,'../src/redesign.css'),'utf8');
   const declarations=(css,selector)=>{const rule=css.match(new RegExp(selector.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')+'\\s*\\{([^}]*)\\}'));assert.ok(rule,'missing layout contract '+selector);return Object.fromEntries(rule[1].split(';').filter(Boolean).map(row=>row.split(':').map(value=>value.trim())));};
   const top=declarations(videoCss,'.motion-mode-header');assert.equal(top['grid-column'],'1/-1');assert.equal(top['grid-row'],'1');assert.equal(top.display,'flex');assert.equal(top['flex-direction'],'column');

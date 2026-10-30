@@ -238,11 +238,9 @@ let activeOperation = null;
 let photoActive = null, photoSequence = 0;
 const studioListeners = new Set();
 let motionController = null, motionDatabase = null, motionSaveTimer = null;
-let cubismWorkspace = null;
 let authoringV3 = null, authoringV3Selected = false, authoringV3Database = null, authoringV3Restore = null;
 let authoringV3Timer = null, authoringV3Queue = Promise.resolve(), authoringV3PersistenceEpoch = 0;
-function activeAuthoringV3Workspace() { return authoringV3Selected && ['motion','export'].includes(document.body.dataset.studioScreen) && !activeCubismWorkspace() ? authoringV3 : null; }
-function activeCubismWorkspace() { return document.body.dataset.studioScreen === 'motion' && cubismWorkspace?.getSummary().mode === 'cubism' ? cubismWorkspace : null; }
+function activeAuthoringV3Workspace() { return authoringV3Selected && ['motion','export'].includes(document.body.dataset.studioScreen) ? authoringV3 : null; }
 let motionSaveQueue = Promise.resolve(), motionPersistenceEpoch = 0;
 const canvas = $('source'), paint = $('paint'), context = paint.getContext('2d');
 const clone = value => JSON.parse(JSON.stringify(value));
@@ -758,11 +756,6 @@ $('saveProject').onclick = async () => {
   try {
     const precise = activeAuthoringV3Workspace();
     if (precise) { downloadBlob(new Blob([await precise.saveProject()],{type:'application/json'}),safeName() + '.rigging.v3.json'); projectStatus('정밀 리깅 작업을 저장했어요.'); return; }
-    const cubism = activeCubismWorkspace();
-    if (cubism) {
-      downloadBlob(new Blob([await cubism.saveProject()],{type:'application/json'}),safeName() + '.cubism-session.json');
-      projectStatus('Live2D 세션을 저장했어요. 다시 열 때 같은 모델 폴더를 선택해주세요.'); return;
-    }
     const motion = motionController?.getSummary();
     if (motion && (motion.isMotionProject || motion.dirty || motion.partCount > 0)) {
       downloadBlob(new Blob([await motionController.saveProject()],{type:'application/json'}),safeName() + '.motion.v2.json');
@@ -784,13 +777,7 @@ async function importProject(raw,{restore = false} = {}) {
     const incoming = typeof raw === 'string' ? JSON.parse(raw) : raw;
     const formatField = Object.getOwnPropertyDescriptor(incoming || {},'format');
     if (formatField && !Object.hasOwn(formatField,'value')) throw Error('프로젝트 필드에 접근자를 사용할 수 없습니다.');
-    if (formatField?.value === 'pankeki-cubism-session') {
-      if (!cubismWorkspace) throw Error('Live2D 화면을 사용할 수 없습니다.');
-      notifyStudio('cubism-import');
-      cubismWorkspace.setMode('cubism');
-      globalThis.PankekiWorkflowController?.go('motion');
-      return await cubismWorkspace.restoreSession(raw);
-    }
+    if (formatField?.value === 'pankeki-cubism-session') throw Error('Live2D 세션 파일은 더 이상 지원하지 않습니다.');
     const versionField = Object.getOwnPropertyDescriptor(incoming || {},'version');
     if (versionField && !Object.hasOwn(versionField,'value')) throw Error('프로젝트 필드에 접근자를 사용할 수 없습니다.');
     const version = versionField?.value;
@@ -802,7 +789,7 @@ async function importProject(raw,{restore = false} = {}) {
       void stopBatch(); ++sourceRevision; ++maskRevision; ++importRevision; ++motionPersistenceEpoch;
       motionController.suspend();
       const loaded = await motionController.loadDocument(raw);
-      if (loaded) { authoringV3Selected=false; document.body.dataset.nativeAuthoring='v2'; ++authoringV3PersistenceEpoch; clearTimeout(authoringV3Timer); authoringV3?.suspend?.(); cubismWorkspace?.setMode('native'); projectStatus('움직임 v2를 불러왔어요. 이전 undo는 복원되지 않습니다.'); notifyStudio('motion-import'); scheduleMotionSave(); }
+      if (loaded) { authoringV3Selected=false; document.body.dataset.nativeAuthoring='v2'; ++authoringV3PersistenceEpoch; clearTimeout(authoringV3Timer); authoringV3?.suspend?.(); projectStatus('움직임 v2를 불러왔어요. 이전 undo는 복원되지 않습니다.'); notifyStudio('motion-import'); scheduleMotionSave(); }
       return loaded;
     }
     const next = Design.parseProject(raw);
@@ -892,10 +879,10 @@ function storage(db,write,value) {
 // skipUnchanged lets the catalog path reuse this queue's last committed write.
 function persistCurrentProject(raw=exportProject(),{skipUnchanged=false}={}) {
   clearTimeout(saveTimer);saveTimer=null;
-  if(activeCubismWorkspace()||activeAuthoringV3Workspace())return Promise.resolve(false);
+  if(activeAuthoringV3Workspace())return Promise.resolve(false);
   if(!validatedProject(raw))Design.parseProject(raw);
   const task=saveQueue.catch(()=>null).then(async()=>{
-    if(activeCubismWorkspace()||activeAuthoringV3Workspace())throw Error('다른 형식의 작업이 시작되어 이미지 프로젝트 저장을 중단했습니다.');
+    if(activeAuthoringV3Workspace())throw Error('다른 형식의 작업이 시작되어 이미지 프로젝트 저장을 중단했습니다.');
     const db=await database;
     if(!db)throw Error('브라우저 저장소를 사용할 수 없습니다.');
     if(skipUnchanged&&persistedRaw!==null&&raw===persistedRaw)return true;
@@ -908,14 +895,14 @@ function persistCurrentProject(raw=exportProject(),{skipUnchanged=false}={}) {
 // The catalog defers its own save while this debounce is pending; always hand it back.
 function runScheduledSave() {
   const handOff=()=>{try{projectActions?.autosaved?.();}catch(error){console.error('Pankeki catalog autosave hook failed',error);}};
-  if(activeCubismWorkspace()||activeAuthoringV3Workspace())return handOff();
+  if(activeAuthoringV3Workspace())return handOff();
   let raw;try{raw=exportProject();}catch(error){projectStatus(error.message,true);return handOff();}
   const epoch=editEpoch;
   void persistCurrentProject(raw).then(()=>{if(epoch===editEpoch)projectStatus('이 브라우저에 자동 저장했어요. 프로젝트 파일로도 보관할 수 있습니다.');}).catch(error=>projectStatus('자동 저장 실패: '+error.message+' 현재 작업은 화면에 유지됩니다.',true)).finally(handOff);
 }
 function scheduleSave(delay=200) {
   clearTimeout(saveTimer);saveTimer=null;
-  if(activeCubismWorkspace()||activeAuthoringV3Workspace())return;
+  if(activeAuthoringV3Workspace())return;
   saveTimer=setTimeout(()=>{saveTimer=null;runScheduledSave();},delay);
 }
 // A pending debounce is written now when the page may be discarded.
@@ -975,7 +962,7 @@ function getSummary() {
     projectStatus:$('projectStatus').textContent,modelsReady,editEpoch,sourceRevision,importing,maskLoading,drawing,photoTools:photoState()});
 }
 function notifyStudio(reason = 'state') {
-  if (['reset','import','restore','motion-import','v3-import','cubism-import'].includes(reason)) {
+  if (['reset','import','restore','motion-import','v3-import'].includes(reason)) {
     ++desktopProjectGeneration; desktopRequests.clear(); desktopAppliedJobs.clear();
   }
   motionController?.refreshSources();
@@ -1374,7 +1361,7 @@ const desktopChat=Object.freeze({getState:desktopState,captureContext:desktopCon
   endRequest:({requestId}={})=>{const removed=desktopRequests.delete(requestId);if(removed)renderView();return removed;}});
 globalThis.PankekiStudio = Object.freeze({generate,cancel,loadSource,importProject,exportProject,resetProject,requestImportProject,requestNewProject,setProjectActions,persistCurrentProject,validatedProject,flushScheduledSave,savePending:()=>saveTimer!==null,get ready(){return initialRestore;},getSummary,subscribe,downloadImage,desktopChat,photoTools,getImageModelSettings,setImageModelSettings,
   getAuthoringMode:() => authoringV3Selected ? 'v3' : 'v2',
-  snapshotProject:async () => activeAuthoringV3Workspace() ? activeAuthoringV3Workspace().snapshotProject() : activeCubismWorkspace() ? activeCubismWorkspace().snapshotProject() : motionController?.getSummary().isMotionProject ? motionController.snapshotProject() : exportProject(),
+  snapshotProject:async () => activeAuthoringV3Workspace() ? activeAuthoringV3Workspace().snapshotProject() : motionController?.getSummary().isMotionProject ? motionController.snapshotProject() : exportProject(),
   setMode:mode => { if (!['txt2img','inpaint'].includes(mode)) throw Error('Unsupported workspace mode'); touch(); setMode(mode); },
   getState:() => clone({project,sourceDataURL,sourceLoaded,latestUrl,selectedIds,sourceId,serial,busy,sourceRevision,maskRevision,maskLoading,importing})});
 // Motion uses its own database/key. A v1 restore never overwrites a v2 scene.
@@ -1411,17 +1398,17 @@ function mountMotionWorkspace() {
   return motionController;
 }
 function scheduleMotionSave() {
-  if (!motionController || activeCubismWorkspace() || activeAuthoringV3Workspace()) return;
+  if (!motionController || activeAuthoringV3Workspace()) return;
   clearTimeout(motionSaveTimer);
   const persistenceEpoch = motionPersistenceEpoch;
   motionSaveTimer = setTimeout(() => {
     motionSaveQueue = motionSaveQueue.then(async () => {
-      if (activeCubismWorkspace() || activeAuthoringV3Workspace()) return;
+      if (activeAuthoringV3Workspace()) return;
       const summary = motionController.getSummary(), db = await motionDatabase;
-      if (persistenceEpoch !== motionPersistenceEpoch || !db || activeAuthoringV3Workspace() || activeCubismWorkspace()) return;
+      if (persistenceEpoch !== motionPersistenceEpoch || !db || activeAuthoringV3Workspace()) return;
       if (summary.isMotionProject || summary.dirty || summary.partCount > 0) {
         const raw = await motionController.snapshotProject();
-        if (persistenceEpoch === motionPersistenceEpoch && !activeAuthoringV3Workspace() && !activeCubismWorkspace()) await storage(db,true,raw);
+        if (persistenceEpoch === motionPersistenceEpoch && !activeAuthoringV3Workspace()) await storage(db,true,raw);
       } else await new Promise((resolve,reject) => {
         const tx = db.transaction('projects','readwrite'); tx.objectStore('projects').delete('current');
         tx.oncomplete = resolve; tx.onerror = tx.onabort = () => reject(tx.error || Error('움직임 저장소 초기화 실패'));
@@ -1441,41 +1428,6 @@ function bindAuthoringPageRestore() {
   if(authoringPageRestoreBound)return; authoringPageRestoreBound=true;
   globalThis.addEventListener?.('pageshow',event => { if(event.persisted) { const workflow=globalThis.PankekiWorkflowController; workflow?.go(workflow.getScreen(),{focus:false}); } });
 }
-function mountCubismWorkspace() {
-  if (cubismWorkspace || !globalThis.PankekiCubismWorkspace || !globalThis.PankekiCubismController || !$('cubismWorkspace')) return cubismWorkspace;
-  const availability = Object.freeze({ready:false,reason:'SDK_OR_USAGE_EVIDENCE_MISSING'});
-  const clock = {now:() => performance.now(),request:callback => requestAnimationFrame(callback),cancel:id => cancelAnimationFrame(id),setTimeout:(callback,ms) => setTimeout(callback,ms),clearTimeout:id => clearTimeout(id)};
-  const controller = globalThis.PankekiCubismController.createController({clock,
-    runtimeFactory:async ({signal}) => {
-      if (signal.aborted) throw Object.assign(Error('Load aborted'),{code:'ABORTED'});
-      throw Object.assign(Error('Official Cubism runtime is unavailable'),{code:'SDK_UNAVAILABLE'});
-    },onState:() => cubismWorkspace?.refresh()});
-  const cubismDatabase = typeof indexedDB === 'undefined' ? Promise.resolve(null) : new Promise((resolve,reject) => {
-    const request = indexedDB.open('pankeki-cubism-studio-v1',1);
-    request.onupgradeneeded = () => { if (!request.result.objectStoreNames.contains('sessions')) request.result.createObjectStore('sessions'); };
-    request.onsuccess = () => resolve(request.result); request.onerror = () => reject(request.error || Error('세션 저장소를 열지 못했습니다.'));
-    request.onblocked = () => reject(Error('다른 탭이 세션 저장소를 사용하고 있습니다.'));
-  });
-  async function sessionStorage(write,value) {
-    const db = await cubismDatabase;
-    if (!db) { if (write) throw Error('세션 자동 저장을 사용할 수 없습니다.'); return null; }
-    return new Promise((resolve,reject) => {
-      const tx = db.transaction('sessions',write ? 'readwrite' : 'readonly'),store = tx.objectStore('sessions');
-      const request = write ? store.put(value,'current') : store.get('current');
-      request.onerror = () => reject(request.error || Error('세션 저장 실패'));
-      tx.onerror = tx.onabort = () => reject(tx.error || Error('세션 저장 실패'));
-      if (write) tx.oncomplete = () => resolve(); else request.onsuccess = () => resolve(request.result);
-    });
-  }
-  cubismWorkspace = globalThis.PankekiCubismWorkspace.mount(document,{controller,readPackage:globalThis.PankekiCubismPackage.readPackage,availability,
-    storage:{read:() => sessionStorage(false),write:raw => sessionStorage(true,raw)},
-    onModeChange:() => { const workflow = globalThis.PankekiWorkflowController; if (workflow) workflow.go(workflow.getScreen(),{focus:false}); },
-    onError:error => projectStatus('Live2D: ' + error.message,true)});
-  globalThis.PankekiCubismWorkspaceController = cubismWorkspace;
-  globalThis.addEventListener?.('pagehide',event => { if(event.persisted) cubismWorkspace?.suspend({resetPlayback:true}); else cubismWorkspace?.destroy(); motionController?.suspend(); });
-  bindAuthoringPageRestore();
-  return cubismWorkspace;
-}
 function mountAuthoringV3Workspace() {
   if (authoringV3 || !globalThis.PankekiAuthoringV3 || !globalThis.PankekiDocumentV3 || !globalThis.PankekiRendererV3 || !$('v3Workspace')) return authoringV3;
   authoringV3Database = typeof indexedDB === 'undefined' ? Promise.resolve(null) : new Promise((resolve,reject) => {
@@ -1493,7 +1445,7 @@ function mountAuthoringV3Workspace() {
   $('v3ExportPng')?.addEventListener('click',action(() => authoringV3.exportPosePng()));
   $('v3ExportZip')?.addEventListener('click',action(() => authoringV3.exportFrames()));
   $('v3Mode')?.addEventListener('click',action(() => setAuthoringV3Mode(true)));
-  for (const id of ['motionNativeMode','cubismBack']) $(id)?.addEventListener('click',action(() => setAuthoringV3Mode(false)));
+  for (const id of ['motionNativeMode']) $(id)?.addEventListener('click',action(() => setAuthoringV3Mode(false)));
   $('v3CopyFromMotion')?.addEventListener('click',action(async () => {
     if (!motionController) throw Error('기본 제작에서 부위와 메시를 먼저 준비해주세요.');
     const raw = await motionController.snapshotProject();
@@ -1514,7 +1466,6 @@ async function setAuthoringV3Mode(selected) {
   if (!authoringV3) return;
   if (!selected && authoringV3.getSummary().loaded) await authoringV3.snapshotProject();
   authoringV3Selected = selected; document.body.dataset.nativeAuthoring = selected ? 'v3' : 'v2';
-  if (selected) cubismWorkspace?.setMode('native');
   const workflow = globalThis.PankekiWorkflowController;
   workflow?.go(workflow.getScreen(),{focus:false});
   if (selected && !authoringV3.getSummary().loaded) {
@@ -1547,7 +1498,7 @@ function scheduleAuthoringV3Save() {
   },200);
 }
 try { generationSettings = readGenerationSettings(); } catch { /* Retain only complete generation controls during startup. */ }
-clearMask(); setMode('txt2img'); renderGallery(); const initialRestore=restoreSaved(); mountMotionWorkspace(); mountCubismWorkspace(); mountAuthoringV3Workspace();
+clearMask(); setMode('txt2img'); renderGallery(); const initialRestore=restoreSaved(); mountMotionWorkspace(); globalThis.addEventListener?.('pagehide',() => motionController?.suspend()); bindAuthoringPageRestore(); mountAuthoringV3Workspace();
 function modelsForMode(mode) {
   return mode === 'txt2img' ? imageModels : mode === 'inpaint' ? editImageModels : [];
 }

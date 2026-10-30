@@ -25,7 +25,7 @@ Korean is the primary UI language. Built for the Comfy.org Open Source Higgsfiel
 - **One composer:** conversation, generation and editing requests share an automatic input flow. The selected AI/image models, image dimensions, progress, cancellation and errors stay visible. Completed text replies can be copied; failed prompts can be restored to the input for manual review and resubmission.
 - **Images:** click a result to open the editor on the right. Image actions stay with the image. Use a brush or uploaded mask for local changes; the editor stays closed until you open an image.
 - **Generations and projects:** ordinary generation records are saved separately. **New project** and **Save as project** explicitly register projects. Browse multiple projects in the dedicated Projects screen, switch between them, reopen project files and export image boards. Downloading a project file keeps the current generation/project kind; it does not turn a generation into a project.
-- **2D motion:** prepare PNG parts, meshes, expressions and motion in the self-built rigging tools. Export a pose PNG or a 48-frame ZIP. This is separate from Cubism playback and Blender video.
+- **2D motion:** prepare PNG parts, meshes, expressions and motion in the self-built rigging tools. Export a pose PNG or a 48-frame ZIP. This is separate from Blender video.
 
 | Image operation | Local engine |
 | --- | --- |
@@ -80,7 +80,7 @@ Use the [Windows branch and installation guide](https://github.com/pullyo/pankek
 
 - **Blender/local video is experimental on macOS.** It renders a scene guide and sends that guide to a separately prepared local video runtime. Compatible Blender, video tools and model weights are not included in the ordinary image setup. Output quality, long dances, identity retention and speed are not guaranteed. This path is disabled on Windows.
 - **Apple Vision background separation is macOS-only.** Its optional helper requires Apple tools; it is disabled on Windows.
-- **Live2D/Cubism playback is disabled.** Folder/path/reference checks can inspect a model bundle, but the official Core/Framework SDK is not included. A `.moc3` file cannot be played or exported through the self-built rigging tools.
+- **Live2D/Cubism is not supported.** The official Core/Framework SDK cannot be redistributed, so the app has no Cubism screen and cannot open, play or export `.moc3` models.
 - Automatic tests use controlled fixtures and fake service responses. Passing them or producing an app package is not proof of GPU inference, image quality or native compatibility. There is no general performance guarantee.
 
 ## Development and licenses

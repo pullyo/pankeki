@@ -241,7 +241,7 @@
     on(find('videoPrompt'),'compositionstart',()=>{composing=true;});on(find('videoPrompt'),'compositionend',event=>{composing=false;controller.setPrompt(event.target.value);});on(find('videoPrompt'),'input',event=>{if(!composing&&!event.isComposing)controller.setPrompt(event.target.value);});
     const observer=new root.MutationObserver(()=>{if(doc.body.dataset.studioScreen!=='video'){find('videoPlayer').pause?.();find('videoGuidePlayer').pause?.();}});observer.observe(doc.body,{attributes:true,attributeFilter:['data-studio-screen']});
     render(controller.getState());
-    void Promise.resolve(studio.ready).then(async()=>{if(dead)return;unsubscribe=studio.subscribe((_summary,reason)=>{if(['reset','import','motion-import','v3-import','cubism-import'].includes(reason))controller.reset();});await controller.restore();if(dead)return;initialized=true;render(controller.getState());}).catch(()=>{initialized=true;render(controller.getState());});
+    void Promise.resolve(studio.ready).then(async()=>{if(dead)return;unsubscribe=studio.subscribe((_summary,reason)=>{if(['reset','import','motion-import','v3-import'].includes(reason))controller.reset();});await controller.restore();if(dead)return;initialized=true;render(controller.getState());}).catch(()=>{initialized=true;render(controller.getState());});
     return Object.freeze({...controller,destroy(){dead=true;unsubscribe?.();observer.disconnect();for(const dispose of disposers.splice(0))dispose();controller.destroy();}});
   }
   return Object.freeze({STORAGE_KEY,createController,checkedAsset,phaseLabel,mount});

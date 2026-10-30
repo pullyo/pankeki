@@ -326,13 +326,10 @@ test('stale mask snapshots and invalid samplers cannot be formatted into an imag
   const fresh=api.captureContext({intent:'generate'});ui.element('sampler').value='unsafe_sampler';
   assert.throws(()=>api.formatMessage({text:'image',intent:'generate',context:fresh}),/sampler|scheduler/);
 });
-test('v3 and Cubism replacement entry points invalidate the old desktop project snapshot',async()=>{
-  for(const format of ['pankeki-authoring','pankeki-cubism-session']){
-    const ui=await fixture(),api=ui.studio().desktopChat,before=api.getState();
-    if(format==='pankeki-authoring')vm.runInContext('authoringV3={getSummary:()=>({loaded:false}),loadDocument:async()=>false}',ui.sandbox);
-    else vm.runInContext('cubismWorkspace={setMode(){},restoreSession:async()=>true}',ui.sandbox);
-    await ui.studio().importProject({version:3,format});assert.notEqual(api.getState().sourceRevision,before.sourceRevision,format);
-  }
+test('v3 replacement entry point invalidates the old desktop project snapshot',async()=>{
+  const ui=await fixture(),api=ui.studio().desktopChat,before=api.getState();
+  vm.runInContext('authoringV3={getSummary:()=>({loaded:false}),loadDocument:async()=>false}',ui.sandbox);
+  await ui.studio().importProject({version:3,format:'pankeki-authoring'});assert.notEqual(api.getState().sourceRevision,before.sourceRevision);
 });
 for(const modelId of ['sdxl-base','animagine-xl-4.0-opt'])test('real bridge descriptor resolves and saves one candidate through app adapter: '+modelId,async t=>{
   const os=require('node:os'),{spawn}=require('node:child_process');

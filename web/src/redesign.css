@@ -373,46 +373,13 @@ body.pankeki-pc[data-studio-screen=compare] .pk-categories{display:none}
   .pankeki-pc .pk-project-hero[data-content=project] .pk-hero-image.actual-project{order:1;max-height:280px;height:auto;width:100%;aspect-ratio:1;object-fit:contain}
 }
 
-/* Cubism stays inside the existing motion route; native canvases remain separate. */
+/* Native and precise canvases share the motion route. */
 .pankeki-pc .motion-workspace-switch{grid-column:1/-1;display:flex;gap:8px;align-items:center}
 .pankeki-pc .motion-workspace-switch .button{min-height:32px;padding:4px 12px}
 .pankeki-pc .motion-workspace-switch [aria-pressed="true"]{background:var(--pc-selected);color:var(--pc-ink);border-color:var(--pc-action)}
 .pankeki-pc .motion-native-panel{display:contents}
-.pankeki-pc .motion-native-panel[hidden],.pankeki-pc .cubism-workspace[hidden]{display:none!important}
-.pankeki-pc .cubism-workspace{grid-column:1/-1;display:grid;grid-template-columns:minmax(0,1fr) 280px;gap:16px;min-width:0}
-.pankeki-pc .cubism-main{min-width:0}
-.pankeki-pc .cubism-canvas-host{display:flex;align-items:center;justify-content:center;min-height:340px;height:min(58vh,640px);background:var(--pc-surface);border:1px solid var(--pc-line);border-radius:12px;overflow:hidden}
-.pankeki-pc .cubism-canvas-host canvas{max-width:100%;max-height:100%;object-fit:contain}
-.pankeki-pc .cubism-empty{padding:24px;text-align:center;color:var(--pc-muted)}
-.pankeki-pc .cubism-empty h3{font-size:20px;color:var(--pc-ink);margin:0 0 12px}
-.pankeki-pc .cubism-empty p{margin:4px 0;font-size:13px}
-.pankeki-pc .cubism-transport,.pankeki-pc .cubism-actions,.pankeki-pc .cubism-effects{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:12px}
-.pankeki-pc .cubism-transport label,.pankeki-pc .cubism-effects label{display:flex;align-items:center;gap:4px;font-size:13px}
-.pankeki-pc .cubism-workspace button{min-height:32px;padding:5px 10px;font-size:13px}
-.pankeki-pc .cubism-workspace :is(input,select,button,summary):focus-visible{outline:2px solid var(--pc-action);outline-offset:2px}
-.pankeki-pc .cubism-inspector{max-height:calc(100vh - 190px);overflow:auto;align-self:start}
-.pankeki-pc .cubism-inspector .motion-pane-content{display:flex;flex-direction:column;gap:12px}
-.pankeki-pc .cubism-inspector h3{margin:0;font-size:14px}
-.pankeki-pc .cubism-inspector label{display:flex;flex-direction:column;gap:5px;font-size:13px}
-.pankeki-pc .cubism-inspector input[type="file"]{max-width:100%;font-size:12px;min-height:32px}
-.pankeki-pc .cubism-inspector details{border-top:1px solid var(--pc-line);padding-top:10px}
-.pankeki-pc .cubism-inspector summary{cursor:pointer;min-height:28px;font-size:13px;font-weight:650}
-.pankeki-pc .cubism-capabilities{padding-left:18px;font-size:12px;line-height:1.7}
-.pankeki-pc .cubism-status,.pankeki-pc #cubismEntryPath{font-size:13px;overflow-wrap:anywhere;line-height:1.5}
-.pankeki-pc .cubism-status[data-error="true"]{color:var(--pc-error)}
-.pankeki-pc .cubism-missing{width:100%;font-size:12px;text-align:left;border-collapse:collapse;overflow-wrap:anywhere}
-.pankeki-pc .cubism-missing :is(th,td){padding:5px 0;border-bottom:1px solid var(--pc-line)}
-.pankeki-pc .cubism-parameter{margin:10px 0}.pankeki-pc .cubism-parameter input{width:100%;accent-color:var(--pc-action)}
-.pankeki-pc .cubism-parameter output{font-size:12px;font-variant-numeric:tabular-nums}
-@media(max-width:1100px){.pankeki-pc .cubism-workspace{grid-template-columns:minmax(0,1fr) 240px;gap:12px}}
-@media(max-width:780px){.pankeki-pc .cubism-workspace{grid-template-columns:1fr}.pankeki-pc .cubism-inspector{max-height:none}.pankeki-pc .cubism-canvas-host{min-height:280px}}
-.pankeki-pc .cubism-transport :is(.button,.primary-button){width:auto;flex:none;min-height:32px;margin:0}
-.pankeki-pc .cubism-canvas-host{height:min(54vh,600px)}
-body.pankeki-pc[data-studio-screen="motion"][data-motion-workspace="cubism"] .motion-global-status{display:none}
+.pankeki-pc .motion-native-panel[hidden]{display:none!important}
 
-.pankeki-pc .cubism-hidden-file{position:absolute;width:1px;height:1px;padding:0;border:0;clip-path:inset(50%);overflow:hidden;white-space:nowrap}
-.pankeki-pc #cubismPickFolder{display:flex;align-items:center;justify-content:center;gap:6px;width:100%}
-.pankeki-pc .cubism-workspace [hidden]{display:none!important}
 
 /* Native authoring: large preview, one compact inspector, existing desktop tokens. */
 .pankeki-pc .motion-preview-page{grid-template-rows:auto minmax(0,1fr);align-content:start}

@@ -52,6 +52,6 @@ npm start
 
 `./Pankeki.command`는 공유 이미지·편집 UI를 브라우저에 엽니다. `--editor-only`는 이미지 생성 서버 없이 편집·프로젝트·자체 2D 작업에 사용합니다. 네이티브 CLI 대화 bridge는 데스크톱 앱 기능이므로 브라우저 화면이 이를 대신하지 않습니다. 서비스는 Pankeki 127.0.0.1:8190, ComfyUI 127.0.0.1:8188을 사용하며 인터넷 공개용 배포 안내가 아닙니다.
 
-Blender 가이드·로컬 영상은 별도 도구·가중치가 필요한 macOS 실험 기능입니다. Apple Vision 배경 분리는 선택 helper와 Apple 도구가 필요합니다. 공식 Cubism SDK는 포함하지 않아 `.moc3` 재생은 비활성입니다. Windows의 해당 두 macOS 기능은 비활성입니다. 이미지 품질·원화 일관성·속도·다른 Mac 호환성을 보장하지 않습니다.
+Blender 가이드·로컬 영상은 별도 도구·가중치가 필요한 macOS 실험 기능입니다. Apple Vision 배경 분리는 선택 helper와 Apple 도구가 필요합니다. 공식 Cubism SDK는 재배포할 수 없어 Live2D 기능은 넣지 않았습니다. Windows의 해당 두 macOS 기능은 비활성입니다. 이미지 품질·원화 일관성·속도·다른 Mac 호환성을 보장하지 않습니다.
 
 로그는 `runtime/macos/app.log`, `comfy.log`, Comfy 데이터는 `runtime/macos/comfy-*`에 있습니다. 모델·외부 구성요소의 이용 조건은 [THIRD_PARTY.md](THIRD_PARTY.md)를 확인하세요. 과거 복원·속도 측정 기록은 [2026-10-29 갱신 전 안내](https://github.com/pullyo/pankeki/blob/4f46797e3beb14d5cfb95feb2b21d5d675c02c09/README.macos.ko.md)의 날짜가 붙은 이력이며 현재 일반 성능 보장이 아닙니다.

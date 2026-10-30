@@ -15,8 +15,7 @@ SCRIPT_MODULES = (
     'character-export.js', 'character-motion.js',
     'character-document-v3.js', 'character-renderer-v3.js',
     'character-export-v3.js', 'character-workspace-v3.js',
-    'cubism-package.js', 'cubism-session.js', 'cubism-controller.js',
-    'cubism-workspace.js', 'project-library.js', 'app.js', 'studio.js',
+    'project-library.js', 'app.js', 'studio.js',
     'photo-editor.js', 'redesign.js', 'desktop-chat.js', 'video-workspace.js')
 SCRIPT_DEPENDENCIES = {
     'profiles.js': (), 'character-document.js': ('profiles.js',), 'character-renderer.js': (),
@@ -26,12 +25,8 @@ SCRIPT_DEPENDENCIES = {
     'character-renderer-v3.js': ('character-document-v3.js', 'character-renderer.js'),
     'character-export-v3.js': ('character-document-v3.js', 'character-renderer-v3.js'),
     'character-workspace-v3.js': ('character-document-v3.js', 'character-renderer-v3.js', 'character-export-v3.js'),
-    'cubism-package.js': (), 'cubism-session.js': (),
-    'cubism-controller.js': ('cubism-package.js', 'cubism-session.js'),
-    'cubism-runtime.js': ('cubism-package.js', 'cubism-controller.js'),
-    'cubism-workspace.js': ('cubism-package.js', 'cubism-session.js', 'cubism-controller.js'),
     'project-library.js': ('profiles.js',),
-    'app.js': ('character-motion.js', 'character-workspace-v3.js', 'cubism-workspace.js', 'project-library.js'),
+    'app.js': ('character-motion.js', 'character-workspace-v3.js', 'project-library.js'),
     'studio.js': ('app.js',), 'photo-editor.js': ('app.js', 'studio.js'),
     'redesign.js': ('app.js', 'studio.js', 'photo-editor.js'),
     'desktop-chat.js': ('app.js', 'studio.js', 'redesign.js'),
@@ -47,8 +42,6 @@ def validate_script_order(scripts):
         if name not in SCRIPT_DEPENDENCIES:
             raise ValueError('Unregistered JavaScript module: ' + name)
         dependencies = set(SCRIPT_DEPENDENCIES[name])
-        if name == 'cubism-workspace.js' and 'cubism-runtime.js' in scripts:
-            dependencies.add('cubism-runtime.js')
         if not dependencies.issubset(ready):
             raise ValueError('JavaScript dependency order invalid: ' + name)
         ready.add(name)
@@ -116,8 +109,6 @@ def build():
     logo_url = 'data:image/png;base64,' + base64.b64encode(logo.read_bytes()).decode()
     # CharacterDesign must be available before application initialization.
     script_names = list(SCRIPT_MODULES)
-    if (ROOT/'src'/'cubism-runtime.js').is_file():
-        script_names.insert(script_names.index('cubism-workspace.js'), 'cubism-runtime.js')
     validate_script_order(script_names)
     scripts = '\n;\n'.join((ROOT/'src'/name).read_text(encoding='utf-8') for name in script_names)
     # Reference artwork is encoded once at a display-appropriate size. The

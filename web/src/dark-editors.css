@@ -2,7 +2,7 @@
    Only unready preview guidance has a layout adjustment. Global tokens and
    the theme anchor live in dark-theme.css. */
 
-body.pankeki-pc[data-theme="dark"] :is(.pk-drawer,.pc-style-dialog,.motion-editor,.v3-workspace,.cubism-workspace,.video-workspace,[data-studio-page="export"],.ppe-tools,.ppe-pin-popover){
+body.pankeki-pc[data-theme="dark"] :is(.pk-drawer,.pc-style-dialog,.motion-editor,.v3-workspace,.video-workspace,[data-studio-page="export"],.ppe-tools,.ppe-pin-popover){
   color:var(--pc-ink);
   color-scheme:dark;
   caret-color:var(--pc-action);
@@ -29,18 +29,18 @@ body.pankeki-pc[data-theme="dark"] .pk-drawer :is(.pc-settings-section,.pc-more-
   background:transparent;
   border-color:var(--pc-line);
 }
-body.pankeki-pc[data-theme="dark"] :is(.motion-editor,.v3-workspace,.cubism-workspace,.video-workspace,[data-studio-page="export"]){background:var(--pc-background)}
-body.pankeki-pc[data-theme="dark"] :is(.motion-pane,.motion-workbar,.motion-global-status,.motion-state-summary,.motion-transport,.motion-precision-tools,.motion-curve-editor,.motion-export-panel,.motion-project-tools,.v3-toolbar,.v3-inspector,.v3-transport,.v3-history,.v3-timeline,.v3-value-pair,.cubism-inspector,.cubism-toolbar,.cubism-status,.image-export-options,.image-export-preview,.warm-export-status,.ppe-tabs,.ppe-body,.ppe-pin-popover){
+body.pankeki-pc[data-theme="dark"] :is(.motion-editor,.v3-workspace,.video-workspace,[data-studio-page="export"]){background:var(--pc-background)}
+body.pankeki-pc[data-theme="dark"] :is(.motion-pane,.motion-workbar,.motion-global-status,.motion-state-summary,.motion-transport,.motion-precision-tools,.motion-curve-editor,.motion-export-panel,.motion-project-tools,.v3-toolbar,.v3-inspector,.v3-transport,.v3-history,.v3-timeline,.v3-value-pair,.image-export-options,.image-export-preview,.warm-export-status,.ppe-tabs,.ppe-body,.ppe-pin-popover){
   background:var(--pc-surface);
   color:var(--pc-ink);
   border-color:var(--pc-line);
 }
-body.pankeki-pc[data-theme="dark"] :is(.motion-part-list,.motion-key-table,.v3-part-list,.v3-key-table,.v3-pair,.cubism-motion-list,.export-format,.image-project-details){
+body.pankeki-pc[data-theme="dark"] :is(.motion-part-list,.motion-key-table,.v3-part-list,.v3-key-table,.v3-pair,.export-format,.image-project-details){
   background:var(--pc-paper);
   color:var(--pc-ink);
   border-color:var(--pc-line);
 }
-body.pankeki-pc[data-theme="dark"] :is(.motion-editor,.v3-workspace,.cubism-workspace,[data-studio-page="export"]) :is(th,td,fieldset,details,.motion-param,.motion-preparation-details,.motion-future-tools,.motion-grid-controls,.planned-controls,.warm-panel-title){border-color:var(--pc-line)}
+body.pankeki-pc[data-theme="dark"] :is(.motion-editor,.v3-workspace,[data-studio-page="export"]) :is(th,td,fieldset,details,.motion-param,.motion-preparation-details,.motion-future-tools,.motion-grid-controls,.planned-controls,.warm-panel-title){border-color:var(--pc-line)}
 
 /* Source-image editing chrome is scoped to editing/compare, not the chat shell. */
 body.pankeki-pc[data-theme="dark"] .compare-panel,
@@ -69,15 +69,15 @@ body.pankeki-pc[data-theme="dark"][data-studio-screen="inpaint"] .pc-editor-rail
 }
 
 /* Transparency is a CSS frame treatment. The canvas/image itself is untouched. */
-body.pankeki-pc[data-theme="dark"] :is(.motion-canvas-frame,.v3-preview,.cubism-canvas-host){
+body.pankeki-pc[data-theme="dark"] :is(.motion-canvas-frame,.v3-preview){
   background-color:var(--pc-background);
   background-image:linear-gradient(45deg,var(--pc-paper) 25%,transparent 25%),linear-gradient(-45deg,var(--pc-paper) 25%,transparent 25%),linear-gradient(45deg,transparent 75%,var(--pc-paper) 75%),linear-gradient(-45deg,transparent 75%,var(--pc-paper) 75%);
   background-size:16px 16px;
   background-position:0 0,0 8px,8px -8px,-8px 0;
   border-color:var(--pc-control-line);
 }
-body.pankeki-pc[data-theme="dark"] :is(.motion-canvas-card,.v3-main,.cubism-preview,.video-stage){background:var(--pc-background);border-color:var(--pc-control-line)}
-body.pankeki-pc[data-theme="dark"] :is(.motion-canvas-empty,.cubism-empty,.video-empty,.planned-canvas-empty){background:var(--pc-surface);color:var(--pc-muted)}
+body.pankeki-pc[data-theme="dark"] :is(.motion-canvas-card,.v3-main,.video-stage){background:var(--pc-background);border-color:var(--pc-control-line)}
+body.pankeki-pc[data-theme="dark"] :is(.motion-canvas-empty,.video-empty,.planned-canvas-empty){background:var(--pc-surface);color:var(--pc-muted)}
 /* The unready preview's square source frame may be smaller than its guidance.
    Center only the absolute UI overlay in the existing size-container card. */
 @media(min-width:801px){
@@ -94,9 +94,9 @@ body.pankeki-pc[data-theme="dark"] .motion-editor[data-motion-ready="false"] .mo
 }
 body.pankeki-pc[data-theme="dark"] .video-result{background:var(--pc-background)}
 body.pankeki-pc[data-theme="dark"] [data-studio-page="export"] .image-export-viewport{background:var(--pc-background);border-color:var(--pc-control-line)}
-body.pankeki-pc[data-theme="dark"] :is(.motion-editor,.v3-workspace,.cubism-workspace,[data-studio-page="export"]) :is(.readiness-empty,.warm-note-card,.empty-art-icon){background:var(--pc-paper);color:var(--pc-muted);border-color:var(--pc-line)}
-body.pankeki-pc[data-theme="dark"] :is(.motion-editor,.v3-workspace,.cubism-workspace,[data-studio-page="export"]) .readiness-notice{background:var(--pc-warning-bg);color:var(--pc-warning);border-color:var(--pc-warning)}
-body.pankeki-pc[data-theme="dark"] :is(.motion-editor,.v3-workspace,.cubism-workspace,[data-studio-page="export"]) .planned-controls:disabled{opacity:1}
+body.pankeki-pc[data-theme="dark"] :is(.motion-editor,.v3-workspace,[data-studio-page="export"]) :is(.readiness-empty,.warm-note-card,.empty-art-icon){background:var(--pc-paper);color:var(--pc-muted);border-color:var(--pc-line)}
+body.pankeki-pc[data-theme="dark"] :is(.motion-editor,.v3-workspace,[data-studio-page="export"]) .readiness-notice{background:var(--pc-warning-bg);color:var(--pc-warning);border-color:var(--pc-warning)}
+body.pankeki-pc[data-theme="dark"] :is(.motion-editor,.v3-workspace,[data-studio-page="export"]) .planned-controls:disabled{opacity:1}
 
 /* Recolor fields are UI controls outside the legacy tool rail. */
 body.pankeki-pc[data-theme="dark"][data-studio-screen="inpaint"] .pc-inpaint-controls{background:var(--pc-surface);color:var(--pc-ink);border-color:var(--pc-line);color-scheme:dark}
@@ -107,7 +107,7 @@ body.pankeki-pc[data-theme="dark"][data-studio-screen="inpaint"] .pc-inpaint-con
 body.pankeki-pc[data-theme="dark"][data-studio-screen="inpaint"] .pc-source-views>button:is(.active,[aria-pressed="true"]){background:var(--pc-selected);color:var(--pc-action-hover);border-color:var(--pc-action)}
 
 /* Preserve native field values and behavior, including color swatches. */
-body.pankeki-pc[data-theme="dark"] :is(.pk-drawer,.pc-style-dialog,.motion-editor,.v3-workspace,.cubism-workspace,.video-workspace,[data-studio-page="export"],.ppe-tools,.ppe-pin-popover) :where(textarea,select,input:not([type="range"]):not([type="checkbox"]):not([type="radio"]):not([type="color"])),
+body.pankeki-pc[data-theme="dark"] :is(.pk-drawer,.pc-style-dialog,.motion-editor,.v3-workspace,.video-workspace,[data-studio-page="export"],.ppe-tools,.ppe-pin-popover) :where(textarea,select,input:not([type="range"]):not([type="checkbox"]):not([type="radio"]):not([type="color"])),
 body.pankeki-pc[data-theme="dark"][data-studio-screen="inpaint"] .pc-editor-rail :where(select,input:not([type="range"]):not([type="checkbox"]):not([type="radio"]):not([type="color"])),
 body.pankeki-pc[data-theme="dark"] .ppe-comment-input{
   background:var(--pc-paper);
@@ -115,47 +115,46 @@ body.pankeki-pc[data-theme="dark"] .ppe-comment-input{
   border-color:var(--pc-control-line);
   caret-color:var(--pc-action);
 }
-body.pankeki-pc[data-theme="dark"] :is(.pk-drawer,.motion-editor,.v3-workspace,.cubism-workspace,.video-workspace,[data-studio-page="export"],.ppe-tools,.ppe-pin-popover) :is(input,textarea)::placeholder{color:var(--pc-muted);opacity:1}
-body.pankeki-pc[data-theme="dark"] :is(.pk-drawer,.motion-editor,.v3-workspace,.cubism-workspace,.video-workspace,[data-studio-page="export"],.ppe-tools,.ppe-pin-popover) option{background:var(--pc-paper);color:var(--pc-ink)}
-body.pankeki-pc[data-theme="dark"] :is(.pk-drawer,.motion-editor,.v3-workspace,.cubism-workspace,.video-workspace,[data-studio-page="export"],.ppe-tools,.ppe-pin-popover) :is(input[type="checkbox"],input[type="radio"],input[type="range"],progress){accent-color:var(--pc-action)}
+body.pankeki-pc[data-theme="dark"] :is(.pk-drawer,.motion-editor,.v3-workspace,.video-workspace,[data-studio-page="export"],.ppe-tools,.ppe-pin-popover) :is(input,textarea)::placeholder{color:var(--pc-muted);opacity:1}
+body.pankeki-pc[data-theme="dark"] :is(.pk-drawer,.motion-editor,.v3-workspace,.video-workspace,[data-studio-page="export"],.ppe-tools,.ppe-pin-popover) option{background:var(--pc-paper);color:var(--pc-ink)}
+body.pankeki-pc[data-theme="dark"] :is(.pk-drawer,.motion-editor,.v3-workspace,.video-workspace,[data-studio-page="export"],.ppe-tools,.ppe-pin-popover) :is(input[type="checkbox"],input[type="radio"],input[type="range"],progress){accent-color:var(--pc-action)}
 body.pankeki-pc[data-theme="dark"] .ppe-field input[type="color"]{background:var(--pc-paper);border-color:var(--pc-control-line)}
 
 /* Secondary, selected and primary controls retain their existing dimensions. */
-body.pankeki-pc[data-theme="dark"] :is(.pk-drawer,.pc-style-dialog,.motion-editor,.v3-workspace,.cubism-workspace,.video-workspace,[data-studio-page="export"],.ppe-tools,.ppe-pin-popover) :where(button,.button){
+body.pankeki-pc[data-theme="dark"] :is(.pk-drawer,.pc-style-dialog,.motion-editor,.v3-workspace,.video-workspace,[data-studio-page="export"],.ppe-tools,.ppe-pin-popover) :where(button,.button){
   color:var(--pc-ink);
   background-color:var(--pc-paper);
   border-color:var(--pc-control-line);
 }
-body.pankeki-pc[data-theme="dark"] :is(.pk-drawer,.pc-style-dialog,.motion-editor,.v3-workspace,.cubism-workspace,.video-workspace,[data-studio-page="export"],.ppe-tools,.ppe-pin-popover) :where(button,.button):where(:hover:not(:disabled):not([aria-disabled="true"])){background-color:var(--pc-selected);border-color:var(--pc-control-line)}
-body.pankeki-pc[data-theme="dark"] :is(.pk-drawer,.pc-style-dialog,.motion-editor,.v3-workspace,.cubism-workspace,.video-workspace,[data-studio-page="export"],.ppe-tools,.ppe-pin-popover) button:is([aria-pressed="true"],[aria-selected="true"],.selected,.active),
+body.pankeki-pc[data-theme="dark"] :is(.pk-drawer,.pc-style-dialog,.motion-editor,.v3-workspace,.video-workspace,[data-studio-page="export"],.ppe-tools,.ppe-pin-popover) :where(button,.button):where(:hover:not(:disabled):not([aria-disabled="true"])){background-color:var(--pc-selected);border-color:var(--pc-control-line)}
+body.pankeki-pc[data-theme="dark"] :is(.pk-drawer,.pc-style-dialog,.motion-editor,.v3-workspace,.video-workspace,[data-studio-page="export"],.ppe-tools,.ppe-pin-popover) button:is([aria-pressed="true"],[aria-selected="true"],.selected,.active),
 body.pankeki-pc[data-theme="dark"] .motion-part-list [role="option"][aria-selected="true"]{
   color:var(--pc-action-hover);
   background:var(--pc-selected);
   border-color:var(--pc-action);
 }
-body.pankeki-pc[data-theme="dark"] :is(.pk-drawer,.pc-style-dialog,.motion-editor,.v3-workspace,.cubism-workspace,.video-workspace,[data-studio-page="export"],.ppe-tools,.ppe-pin-popover) :is(.primary-button,.pk-primary,.ppe-primary,.pk-settings-done),
+body.pankeki-pc[data-theme="dark"] :is(.pk-drawer,.pc-style-dialog,.motion-editor,.v3-workspace,.video-workspace,[data-studio-page="export"],.ppe-tools,.ppe-pin-popover) :is(.primary-button,.pk-primary,.ppe-primary,.pk-settings-done),
 body.pankeki-pc[data-theme="dark"] .pc-style-dialog>footer>button{
   background:var(--pc-action);
   color:var(--pc-on-action);
   border-color:var(--pc-action);
 }
-body.pankeki-pc[data-theme="dark"] :is(.pk-drawer,.pc-style-dialog,.motion-editor,.v3-workspace,.cubism-workspace,.video-workspace,[data-studio-page="export"],.ppe-tools,.ppe-pin-popover) :is(.primary-button,.pk-primary,.ppe-primary,.pk-settings-done):hover:not(:disabled),
+body.pankeki-pc[data-theme="dark"] :is(.pk-drawer,.pc-style-dialog,.motion-editor,.v3-workspace,.video-workspace,[data-studio-page="export"],.ppe-tools,.ppe-pin-popover) :is(.primary-button,.pk-primary,.ppe-primary,.pk-settings-done):hover:not(:disabled),
 body.pankeki-pc[data-theme="dark"] .pc-style-dialog>footer>button:hover:not(:disabled){background:var(--pc-action-hover);color:var(--pc-on-action);border-color:var(--pc-action-hover)}
 
 /* Help, metadata and true readiness/error states keep readable contrast. */
-body.pankeki-pc[data-theme="dark"] :is(.pk-drawer,.pc-style-dialog,.motion-editor,.v3-workspace,.cubism-workspace,.video-workspace,[data-studio-page="export"],.ppe-tools,.ppe-pin-popover) :is(.hint,.model-note,.option-heading,.availability-tag,summary,small,.motion-canvas-note,.motion-inline-status,.motion-guidance-list,.v3-hint,.cubism-hint,.video-format,.video-scene-name,.video-readiness p,.video-result-actions p,.video-guide p,.ppe-hint,.ppe-status){color:var(--pc-muted)}
-body.pankeki-pc[data-theme="dark"] :is(.pk-drawer,.pc-style-dialog,.motion-editor,.v3-workspace,.cubism-workspace,.video-workspace,[data-studio-page="export"],.ppe-tools,.ppe-pin-popover) :is(h2,h3,label,legend){color:var(--pc-ink)}
-body.pankeki-pc[data-theme="dark"] :is(.pk-drawer,.motion-editor,.v3-workspace,.cubism-workspace,.video-workspace,[data-studio-page="export"],.ppe-tools,.ppe-pin-popover) :is(.motion-danger,.ppe-error,.video-error){color:var(--pc-error)}
-body.pankeki-pc[data-theme="dark"] .cubism-status[data-error="true"]{color:var(--pc-error)}
-body.pankeki-pc[data-theme="dark"] :is(.pk-drawer,.motion-editor,.v3-workspace,.cubism-workspace,.video-workspace,[data-studio-page="export"],.ppe-tools,.ppe-pin-popover) a{color:var(--pc-action)}
+body.pankeki-pc[data-theme="dark"] :is(.pk-drawer,.pc-style-dialog,.motion-editor,.v3-workspace,.video-workspace,[data-studio-page="export"],.ppe-tools,.ppe-pin-popover) :is(.hint,.model-note,.option-heading,.availability-tag,summary,small,.motion-canvas-note,.motion-inline-status,.motion-guidance-list,.v3-hint,.video-format,.video-scene-name,.video-readiness p,.video-result-actions p,.video-guide p,.ppe-hint,.ppe-status){color:var(--pc-muted)}
+body.pankeki-pc[data-theme="dark"] :is(.pk-drawer,.pc-style-dialog,.motion-editor,.v3-workspace,.video-workspace,[data-studio-page="export"],.ppe-tools,.ppe-pin-popover) :is(h2,h3,label,legend){color:var(--pc-ink)}
+body.pankeki-pc[data-theme="dark"] :is(.pk-drawer,.motion-editor,.v3-workspace,.video-workspace,[data-studio-page="export"],.ppe-tools,.ppe-pin-popover) :is(.motion-danger,.ppe-error,.video-error){color:var(--pc-error)}
+body.pankeki-pc[data-theme="dark"] :is(.pk-drawer,.motion-editor,.v3-workspace,.video-workspace,[data-studio-page="export"],.ppe-tools,.ppe-pin-popover) a{color:var(--pc-action)}
 body.pankeki-pc[data-theme="dark"] .motion-global-status #motionError,
-body.pankeki-pc[data-theme="dark"] :is(.pk-drawer,.motion-editor,.v3-workspace,.cubism-workspace,.video-workspace,[data-studio-page="export"],.ppe-tools,.ppe-pin-popover) :is(.error,.readiness-notice.error){
+body.pankeki-pc[data-theme="dark"] :is(.pk-drawer,.motion-editor,.v3-workspace,.video-workspace,[data-studio-page="export"],.ppe-tools,.ppe-pin-popover) :is(.error,.readiness-notice.error){
   color:var(--pc-error);
   background-color:var(--pc-error-bg);
   border-color:var(--pc-error);
 }
-body.pankeki-pc[data-theme="dark"] :is(.pk-drawer,.motion-editor,.v3-workspace,.cubism-workspace,.video-workspace,[data-studio-page="export"],.ppe-tools,.ppe-pin-popover) .warning{color:var(--pc-warning);background-color:var(--pc-warning-bg);border-color:var(--pc-warning)}
-body.pankeki-pc[data-theme="dark"] :is(.pk-drawer,.motion-editor,.v3-workspace,.cubism-workspace,.video-workspace,[data-studio-page="export"],.ppe-tools,.ppe-pin-popover) .success{color:var(--pc-success);background-color:var(--pc-success-bg);border-color:var(--pc-success)}
+body.pankeki-pc[data-theme="dark"] :is(.pk-drawer,.motion-editor,.v3-workspace,.video-workspace,[data-studio-page="export"],.ppe-tools,.ppe-pin-popover) .warning{color:var(--pc-warning);background-color:var(--pc-warning-bg);border-color:var(--pc-warning)}
+body.pankeki-pc[data-theme="dark"] :is(.pk-drawer,.motion-editor,.v3-workspace,.video-workspace,[data-studio-page="export"],.ppe-tools,.ppe-pin-popover) .success{color:var(--pc-success);background-color:var(--pc-success-bg);border-color:var(--pc-success)}
 body.pankeki-pc[data-theme="dark"] .ppe-tools[aria-busy="true"] .ppe-status::before{border-color:var(--pc-line);border-top-color:var(--pc-action)}
 body.pankeki-pc[data-theme="dark"] .motion-key-table td button{color:var(--pc-error)}
 
@@ -165,20 +164,20 @@ body.pankeki-pc[data-theme="dark"] .ppe-pin-draft{background:var(--pc-paper);col
 body.pankeki-pc[data-theme="dark"] .ppe-pin-selected{outline-color:var(--pc-ink)}
 
 /* Disabled controls remain legible without dimming their whole panel/media. */
-body.pankeki-pc[data-theme="dark"] :is(.pk-drawer,.pc-style-dialog,.motion-editor,.v3-workspace,.cubism-workspace,.video-workspace,[data-studio-page="export"],.ppe-tools,.ppe-pin-popover) :is(button,input,select,textarea):disabled,
+body.pankeki-pc[data-theme="dark"] :is(.pk-drawer,.pc-style-dialog,.motion-editor,.v3-workspace,.video-workspace,[data-studio-page="export"],.ppe-tools,.ppe-pin-popover) :is(button,input,select,textarea):disabled,
 body.pankeki-pc[data-theme="dark"][data-studio-screen="inpaint"] :is(.pc-editor-rail,.pc-inpaint-controls) :is(button,input,select):disabled{
   color:var(--pc-disabled);
   background-color:var(--pc-disabled-bg);
   border-color:var(--pc-line);
   opacity:1;
 }
-body.pankeki-pc[data-theme="dark"] :is(.pk-drawer,.pc-style-dialog,.motion-editor,.v3-workspace,.cubism-workspace,.video-workspace,[data-studio-page="export"],.ppe-tools,.ppe-pin-popover) [aria-disabled="true"]{color:var(--pc-disabled);border-color:var(--pc-line)}
-body.pankeki-pc[data-theme="dark"] :is(.pk-drawer,.pc-style-dialog,.motion-editor,.v3-workspace,.cubism-workspace,.video-workspace,[data-studio-page="export"],.ppe-tools,.ppe-pin-popover) :is(button,input,select,textarea,summary,a):focus-visible,
+body.pankeki-pc[data-theme="dark"] :is(.pk-drawer,.pc-style-dialog,.motion-editor,.v3-workspace,.video-workspace,[data-studio-page="export"],.ppe-tools,.ppe-pin-popover) [aria-disabled="true"]{color:var(--pc-disabled);border-color:var(--pc-line)}
+body.pankeki-pc[data-theme="dark"] :is(.pk-drawer,.pc-style-dialog,.motion-editor,.v3-workspace,.video-workspace,[data-studio-page="export"],.ppe-tools,.ppe-pin-popover) :is(button,input,select,textarea,summary,a):focus-visible,
 body.pankeki-pc[data-theme="dark"][data-studio-screen="inpaint"] :is(.pc-editor-rail button,.pc-editor-rail label,.pc-canvas-controls button,.pc-inpaint-controls input,.pc-inpaint-controls select,.pc-source-views button):focus-visible{
   outline:2px solid var(--pc-action);
   outline-offset:3px;
 }
-body.pankeki-pc[data-theme="dark"] :is(.pk-drawer,.pc-style-dialog,.motion-editor,.v3-workspace,.cubism-workspace,.video-workspace,[data-studio-page="export"],.ppe-tools,.ppe-pin-popover)::selection{
+body.pankeki-pc[data-theme="dark"] :is(.pk-drawer,.pc-style-dialog,.motion-editor,.v3-workspace,.video-workspace,[data-studio-page="export"],.ppe-tools,.ppe-pin-popover)::selection{
   color:var(--pc-ink);
   background:var(--pc-selected);
 }
