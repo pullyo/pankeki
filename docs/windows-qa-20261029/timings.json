@@ -1,0 +1,5 @@
+{
+  "restart_ready_observed_ms": 33595,
+  "project_import_ready_observed_ms": 44216,
+  "note": "Observed wall-clock upper bounds include tool calls and the native import confirmation; these are not isolated startup/import benchmarks."
+}

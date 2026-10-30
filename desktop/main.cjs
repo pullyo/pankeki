@@ -4,10 +4,25 @@ const fs=require('node:fs');const path=require('node:path');const {randomUUID}=r
 const {isTrustedSender,makeCsp,allowRequest,createPermissionPolicy}=require('./security.cjs');
 const {createIpcController}=require('./ipc.cjs');
 
+function createConnectionLogger(file,io=fs){
+  return message=>{
+    const match=/^connect failed \(([a-z][a-z0-9-]{0,63})\):/.exec(String(message));
+    if(!match)return;
+    const row=JSON.stringify({at:new Date().toISOString(),stage:'connect',code:match[1]})+'\n';
+    try{
+      let size=0;try{size=io.statSync(file).size;}catch(error){if(error.code!=='ENOENT')return;}
+      if(size+Buffer.byteLength(row)>32768)return;
+      io.appendFileSync(file,row,{mode:0o600});
+    }catch{}
+  };
+}
+
 async function createEditorWindow({origin,html,projectRoot,contexts,results,resultsFactory,bridgeFactory,getAppStatus,allowLiveSend=false,verifyBackend=async()=>true,mapBridgeMessage,notifyUnconfirmedClose,
   partition='persist:pankeki-editor'}={}) {
   const isolated=session.fromPartition(partition);
-  const win=new BrowserWindow({title:'Pankeki',width:1360,height:920,minWidth:960,minHeight:640,backgroundColor:'#f6f2ec',
+  // Windows shows the window icon in the taskbar; macOS takes it from the app bundle.
+  const windowIcon=typeof process!=='undefined'&&process.platform==='win32'?path.join(__dirname,'assets','pankeki-256.png'):undefined;
+  const win=new BrowserWindow({title:'Pankeki',width:1360,height:920,minWidth:960,minHeight:640,backgroundColor:'#f6f2ec',...(windowIcon&&fs.existsSync(windowIcon)?{icon:windowIcon}:{}),
     webPreferences:{preload:path.join(__dirname,'preload.cjs'),nodeIntegration:false,contextIsolation:true,sandbox:true,webSecurity:true,session:isolated,spellcheck:false}});
   let closing=false,controller;
   const pickVideoScene=projectRoot?require('./video-scene-picker.cjs').createVideoScenePicker({projectRoot,
@@ -81,7 +96,7 @@ async function chooseProjectRoot(settingsDir){
   for(let attempt=0;attempt<5;attempt++){
     const ask=await dialog.showMessageBox({type:'info',buttons:['프로젝트 폴더 선택…','종료'],defaultId:0,cancelId:1,
       message:attempt?'선택한 폴더에서 Pankeki 실행 환경을 찾지 못했어요.':'Pankeki 프로젝트 폴더를 찾을 수 없어요.',
-      detail:'Pankeki 소스와 실행 환경이 있는 폴더를 골라 주세요.\n필요한 항목: '+REQUIRED.join(', ')+'\n\n선택은 이 Mac에만 저장되며 PANKEKI_PROJECT_ROOT 환경 변수로도 지정할 수 있어요.'});
+      detail:'Pankeki 소스와 실행 환경이 있는 폴더를 골라 주세요.\n필요한 항목: '+REQUIRED.join(', ')+'\n\n선택은 '+(typeof process!=='undefined'&&process.platform==='win32'?'이 PC':'이 Mac')+'에만 저장되며 PANKEKI_PROJECT_ROOT 환경 변수로도 지정할 수 있어요.'+(typeof process!=='undefined'&&process.platform==='win32'?'\n준비는 프로젝트 폴더에서 scripts\\setup-windows.ps1 로 합니다.':'')});
     if(ask.response!==0)return null;
     const picked=await dialog.showOpenDialog({title:'Pankeki 프로젝트 폴더',properties:['openDirectory'],buttonLabel:'이 폴더 사용'});
     if(picked.canceled||!picked.filePaths[0])continue;
@@ -154,7 +169,8 @@ async function boot() {
       bridgeFactory:onEvent=>{
         const shared={getCapabilities,projectRoot:paths.projectRoot,pankekiBaseUrl:'http://127.0.0.1:8190',dataDir,inputRoot:path.join(dataDir,'inputs'),
           resolveEditContext:context=>contexts.resolveEditContext(context),mcpPython:paths.mcpPython,imageForModel};
-        return createProviderBridge({onEvent,settings:chatModelSettings,factories:{codex:emit=>createCodexBridge({...shared,codexPath:paths.codexPath,onEvent:emit}),
+        const connectionLog=createConnectionLogger(path.join(dataDir,'codex-connection.log'));
+        return createProviderBridge({onEvent,settings:chatModelSettings,factories:{codex:emit=>createCodexBridge({...shared,codexPath:paths.codexPath,log:connectionLog,onEvent:emit}),
           claude:emit=>createClaudeBridge({...shared,onEvent:emit})}});
       }});
     if(stopping){await editor.close();await contexts.close();return;}
@@ -167,4 +183,4 @@ async function boot() {
   }
 }
 if(require.main===module)void boot();
-module.exports={createEditorWindow,boot};
+module.exports={createEditorWindow,boot,createConnectionLogger};

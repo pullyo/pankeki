@@ -4,7 +4,7 @@
 
 **AI와 대화하며 캐릭터를 만들고, 로컬 이미지 도구로 다듬는 제작 스튜디오입니다.** 아이디어로 후보를 생성하고, 이미지를 눌러 수정하고, 선택한 작업을 프로젝트로 관리합니다. 자체 2D 리깅·동작 편집으로 이어가거나 Blender 구도를 이용한 로컬 영상 생성을 실험할 수 있습니다.
 
-[English](README.md) · [현재 macOS 앱](https://github.com/pullyo/pankeki/tree/mac-release-20261028) · [Windows 시험 포팅](https://github.com/pullyo/pankeki/tree/windows-port-20261029)
+[English](README.md) · [macOS 안내](README.macos.ko.md) · [Windows 안내(시험)](README.windows.ko.md)
 
 주 UI 언어는 한국어입니다. Comfy.org Open Source Higgsfield 챌린지를 목표로 개발하고 있습니다.
 
@@ -17,8 +17,9 @@
 | 브랜치 | 상태 |
 | --- | --- |
 | [mac-release-20261028](https://github.com/pullyo/pankeki/tree/mac-release-20261028) | 현재 macOS 데스크톱 앱과 로컬 엔진 연결입니다. 한 대의 Apple Silicon Mac에서 검증해 왔으며 폭넓은 하드웨어 호환성을 확인한 상태는 아닙니다. |
-| [windows-port-20261029](https://github.com/pullyo/pankeki/tree/windows-port-20261029) | Windows/CUDA 시험 포팅입니다. Mac 호스트의 자동 검사 313개와 Windows 교차 빌드 기록이 있습니다. 실제 Windows PC의 설치·GPU 생성·네이티브 앱 동작은 아직 검증하지 않았습니다. |
-| `main` | 2026-10-30에 `mac-release-20261028`을 병합한 현재 macOS 앱입니다. 심사용 경로는 그 브랜치의 커밋 `016eb5e`에 고정돼 있고, `main`은 이후에도 계속 바뀔 수 있습니다. |
+| `main` | **macOS와 Windows가 한 코드베이스입니다.** 2026-10-30에 macOS 앱(`mac-release-20261028`)과 Windows/CUDA 포팅(`windows-port-20261029`)을 합쳤습니다. 엔진·화면·데스크톱 앱은 같고, 설치·실행 스크립트와 몇 군데 OS 분기만 다릅니다. |
+| [mac-release-20261028](https://github.com/pullyo/pankeki/tree/mac-release-20261028) | 대회 심사용 고정본(커밋 `016eb5e`)입니다. 더 갱신하지 않습니다. |
+| [windows-port-20261029](https://github.com/pullyo/pankeki/tree/windows-port-20261029) | `main`에 합친 옛 Windows 포팅 브랜치입니다. 더 갱신하지 않습니다. |
 
 ## 작업 흐름
 
@@ -39,14 +40,14 @@
 
 이미지 추론은 로컬 ComfyUI, 단순 색상 변경은 CPU에서 처리합니다. 데스크톱 대화는 별도로 설치한 **Codex CLI** 또는 **Claude Code CLI**와 본인 계정 로그인을 사용합니다. 대화 텍스트, 선택한 원본 이미지 문맥, 생성 결과 미리보기, 도구 요청·결과가 선택한 AI 공급자로 전송될 수 있습니다. 따라서 **대화까지 완전한 오프라인 작업은 아닙니다.** 프로젝트 저장소와 모델 가중치는 로컬에 유지합니다. 지원하는 CLI 로그인 흐름에 앱 전용 API 키를 별도로 요구하지 않습니다.
 
-로컬 서비스는 Pankeki `127.0.0.1:8190`, ComfyUI `127.0.0.1:8188`을 사용합니다. 인터넷에 직접 공개하는 서버 배포 안내가 아닙니다. 선택 기능인 MCP 도구는 같은 로컬 이미지 API를 에이전트에 연결합니다. 별도 준비는 [도구 안내](https://github.com/pullyo/pankeki/blob/mac-release-20261028/plugins/pankeki-local/README.ko.md)를 확인하세요.
+로컬 서비스는 Pankeki `127.0.0.1:8190`, ComfyUI `127.0.0.1:8188`을 사용합니다. 인터넷에 직접 공개하는 서버 배포 안내가 아닙니다. 선택 기능인 MCP 도구는 같은 로컬 이미지 API를 에이전트에 연결합니다. 별도 준비는 [도구 안내](plugins/pankeki-local/README.ko.md)를 확인하세요.
 
 ## macOS에서 시작
 
 Apple Silicon Mac, Python 3.12 또는 3.13, `curl`이 필요합니다. 데스크톱 앱에는 Node.js 24와 npm도 필요합니다. SDXL 1024×1024 작업은 메모리 32 GB와 여유 디스크 약 30 GB를 시작 기준으로 권장합니다. 영상에는 별도 도구·가중치·메모리·시간이 더 필요합니다.
 
 ```bash
-git clone --branch mac-release-20261028 https://github.com/pullyo/pankeki.git
+git clone https://github.com/pullyo/pankeki.git
 cd pankeki
 bash scripts/setup-macos.sh --models
 # 데스크톱 이미지 도구용 전용 MCP 환경 준비
@@ -68,13 +69,13 @@ npm start
 
 `configure_paths.py`는 현재 폴더의 MCP 절대경로 선언을 만듭니다. `setup_runtime.py`는 이를 읽고 `.venv-macos`를 기반으로 전용 Python 환경을 생성해 `server/requirements.txt` 설치와 `pip check`를 수행합니다. 글로벌 플러그인 등록이나 CLI 계정 설정 변경은 필요하지 않습니다. 데스크톱 bridge가 이 환경을 직접 사용합니다. 폴더를 옮기면 경로 선언을 갱신하며, 이동한 가상환경은 재생성이 필요할 수 있습니다.
 
-앱에는 외부 프로젝트 폴더와 Python·ComfyUI·모델·별도 Codex/Claude CLI가 필요합니다. 상세 설치·패키징은 [macOS 안내](https://github.com/pullyo/pankeki/blob/mac-release-20261028/README.macos.ko.md)를 확인하세요.
+앱에는 외부 프로젝트 폴더와 Python·ComfyUI·모델·별도 Codex/Claude CLI가 필요합니다. 상세 설치·패키징은 [macOS 안내](README.macos.ko.md)를 확인하세요.
 
 **브라우저 선택 경로:** `./Pankeki.command`는 공유 이미지·편집 UI를 브라우저에 열고, `./Pankeki.command --editor-only`는 생성 서버 없이 실행합니다. 네이티브 Codex/Claude 대화 bridge는 데스크톱 앱의 기능이며 브라우저 경로가 이를 대신하지 않습니다.
 
 ## Windows
 
-[Windows 브랜치의 설치 안내](https://github.com/pullyo/pankeki/blob/windows-port-20261029/README.windows.ko.md)를 사용하세요. `main`의 macOS 실행 명령과 섞지 않습니다. Windows 10/11 x64, Python 3.12/3.13, NVIDIA CUDA를 대상으로 합니다. 브라우저 편집 전용 경로와 명시적인 CPU 생성 옵션도 있습니다. 데스크톱 앱에는 생성 환경이 필요하며 엔진·모델·CLI는 외부에 준비합니다. 교차 빌드 패키지는 무서명이라 SmartScreen 경고가 나올 수 있습니다. **실제 Windows 검증 기록은 아직 없습니다.**
+`main`을 받은 뒤 위 macOS 명령 대신 [Windows 설치 안내](README.windows.ko.md)를 따르세요. Windows 10/11 x64, Python 3.12/3.13, NVIDIA CUDA를 대상으로 합니다. 브라우저 편집 전용 경로와 명시적인 CPU 생성 옵션도 있습니다. 데스크톱 앱에는 생성 환경이 필요하며 엔진·모델·CLI는 외부에 준비합니다. 교차 빌드 패키지는 무서명이라 SmartScreen 경고가 나올 수 있습니다. **실제 Windows 검증 기록은 아직 없습니다.**
 
 ## 실험 기능과 제한
 

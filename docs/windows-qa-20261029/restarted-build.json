@@ -1,0 +1,17 @@
+{
+  "native_exe": "<Pankeki workspace>\\output\\desktop-release\\windows\\artifacts\\2026-10-29T11-22-17-115Z\\Pankeki-win32-x64\\Pankeki.exe",
+  "frontend_source_id": "17db7f8d4bc3768b43c8cf884e435c3ed7f677a4163a941c7e35bcdeba75a4cb",
+  "app_asar_sha256": "bf6595c60dc16ad9a5a47051d88be4461afe4d569e0b9d48505f746037128dc4",
+  "health_comfy": true,
+  "backend_build": {
+    "schema": 1,
+    "source_id": "17db7f8d4bc3768b43c8cf884e435c3ed7f677a4163a941c7e35bcdeba75a4cb",
+    "html_source_id": "17db7f8d4bc3768b43c8cf884e435c3ed7f677a4163a941c7e35bcdeba75a4cb",
+    "html_sha256": "481ed2e1f7aa4a82637cfee8fc8c4ff82182d4acc6c8f3b844860ccbfbcd7468",
+    "desktop_source_id": "13ff9976f427a4607e299dbadc480671bb2d1719ac9e979fbf8f5f1a46b3f421",
+    "status": "match",
+    "reason": null,
+    "process_source_id": "17db7f8d4bc3768b43c8cf884e435c3ed7f677a4163a941c7e35bcdeba75a4cb",
+    "process_status": "match"
+  }
+}

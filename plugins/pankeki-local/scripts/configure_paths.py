@@ -11,7 +11,9 @@ import sys
 
 NAME = "pankeki-local"
 PLUGIN = Path(__file__).resolve().parents[1]
-RUNTIME_PYTHON = Path("runtime/macos/pankeki-mcp-20261023/release/venv/bin/python")
+# macOS keeps its dated runtime; Windows uses runtime/windows/pankeki-mcp (desktop/platform.cjs agrees).
+RUNTIME_PYTHON = (Path("runtime/windows/pankeki-mcp/venv/Scripts/python.exe") if sys.platform == "win32"
+                  else Path("runtime/macos/pankeki-mcp-20261023/release/venv/bin/python"))
 
 
 def binding(app_root, python, api_url):

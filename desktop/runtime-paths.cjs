@@ -1,6 +1,8 @@
 'use strict';
 const fs=require('node:fs');const path=require('node:path');
-const REQUIRED=['.venv-macos/bin/python','runtime/macos/config.json','runtime/macos/model-paths.yaml','vendor/ComfyUI/main.py','pankeki/__main__.py','web/index.html'];
+const platformInfo=require('./platform.cjs');
+// macOS keeps its original layout; Windows uses .venv-windows and runtime/windows (see platform.cjs).
+const REQUIRED=platformInfo.requiredFiles(process.platform);
 const SAVED_ROOT_FILE='project-root.json';
 
 function readJson(file){try{return JSON.parse(fs.readFileSync(file,'utf8'));}catch{return null;}}
@@ -18,29 +20,30 @@ function candidates({projectRoot,env=process.env,settingsDir,resourcesPath=proce
   return list;
 }
 
-function inspectRoot(configured){
+function inspectRoot(configured,platform=process.platform){
   if(typeof configured!=='string'||!path.isAbsolute(configured))return null;
   let root;try{root=fs.realpathSync(configured);}catch{return null;}
-  const p={projectRoot:root,python:path.join(root,'.venv-macos/bin/python'),config:path.join(root,'runtime/macos/config.json'),
-    modelPaths:path.join(root,'runtime/macos/model-paths.yaml'),comfyRoot:path.join(root,'vendor/ComfyUI'),
-    runtime:path.join(root,'runtime/macos/desktop-codex'),mcpPython:path.join(root,'runtime/macos/pankeki-mcp-20261023/release/venv/bin/python')};
-  for(const file of REQUIRED)if(!fs.existsSync(path.join(root,file)))return null;
+  const l=platformInfo.layout(platform),at=relative=>path.join(root,...relative.split('/'));
+  const p={projectRoot:root,python:at(l.python),config:at(l.config),modelPaths:at(l.modelPaths),comfyRoot:path.join(root,'vendor','ComfyUI'),
+    runtime:at(l.runtime),mcpPython:at(l.mcpPython),platform:platform==='win32'?'win32':'darwin'};
+  for(const file of platformInfo.requiredFiles(platform))if(!fs.existsSync(at(file)))return null;
   return p;
 }
 
-function findCodex(env=process.env){
-  for(const candidate of [path.join(env.HOME||'','.local/bin/codex'),'/opt/homebrew/bin/codex','/usr/local/bin/codex','/Applications/ChatGPT.app/Contents/Resources/codex-cli/CodexCLI.app/Contents/MacOS/codex']){
-    try{fs.accessSync(candidate,fs.constants.X_OK);return candidate;}catch{}
-  }
-  return null;
+// macOS returns the executable path (unchanged contract); Windows may need `node script.js`,
+// so it returns a {command,args} launch spec that the bridges accept.
+function findCodex(env=process.env,platform=process.platform){
+  const spec=platformInfo.findCli('codex',{env,platform});
+  if(!spec)return null;
+  return platform==='win32'?spec:spec.command;
 }
 
 function resolveRuntime(options={}){
   // An explicit argument is authoritative: it never falls through to other locations.
   const list=options.projectRoot?[{root:options.projectRoot,source:'argument'}]:candidates(options);
   for(const candidate of list){
-    const p=inspectRoot(candidate.root);
-    if(p)return {...p,rootSource:candidate.source,codexPath:options.codexPath===undefined?findCodex(options.env):options.codexPath};
+    const p=inspectRoot(candidate.root,options.platform);
+    if(p)return {...p,rootSource:candidate.source,codexPath:options.codexPath===undefined?findCodex(options.env,options.platform):options.codexPath};
   }
   throw Error('runtime-missing');
 }
@@ -53,4 +56,4 @@ function saveProjectRoot(settingsDir,projectRoot){
   fs.renameSync(temporary,file);
 }
 
-module.exports={resolveRuntime,saveProjectRoot,REQUIRED};
+module.exports={resolveRuntime,saveProjectRoot,REQUIRED,inspectRoot};

@@ -2,14 +2,14 @@
 
 # Pankeki macOS 데스크톱 시작 안내
 
-현재 앱은 [mac-release-20261028](https://github.com/pullyo/pankeki/tree/mac-release-20261028) 브랜치에 있습니다. `main` 앱 코드는 10월 20일의 역사적 스냅샷입니다. [전체 기능·제한](https://github.com/pullyo/pankeki/blob/mac-release-20261028/README.ko.md)과 [실기 미검증 Windows 시험 포팅](https://github.com/pullyo/pankeki/blob/windows-port-20261029/README.windows.ko.md)을 구분하세요.
+macOS와 Windows는 `main` 한 코드베이스에 있습니다(2026-10-30 통합). [전체 기능·제한](README.ko.md)과 [실기 미검증 Windows 안내](README.windows.ko.md)를 함께 보세요.
 
 ## 1. 실행 환경 준비
 
 Apple Silicon Mac, Python 3.12 또는 3.13, curl이 필요하며 데스크톱 앱에는 Node.js 24/npm과 별도 Codex CLI 또는 Claude Code CLI가 필요합니다. 대화 CLI에는 본인 공급자 계정으로 먼저 로그인합니다. 이미지 모델은 앱에 포함하지 않습니다. SDXL 1024² 작업은 메모리 32 GB와 여유 디스크 약 30 GB를 시작 기준으로 권장합니다.
 
 ```bash
-git clone --branch mac-release-20261028 https://github.com/pullyo/pankeki.git
+git clone https://github.com/pullyo/pankeki.git
 cd pankeki
 bash scripts/setup-macos.sh --models
 .venv-macos/bin/python plugins/pankeki-local/scripts/configure_paths.py
@@ -18,7 +18,7 @@ bash scripts/setup-macos.sh --models
 
 `--models`는 고정 ComfyUI와 SDXL Base·Animagine XL 4.0 Opt·SDXL Inpainting 0.1 UNet(합계 약 19 GB)을 준비하고 모델 SHA256을 검사합니다. 불일치한 기존 모델이나 다른 ComfyUI 소스는 덮어쓰지 않고 중단합니다. 옵션 없는 setup은 편집 환경, `--generation`은 모델 없는 생성 환경, `--sdxl`은 Base만 준비합니다. 최초 준비에는 다운로드가 필요합니다. 기존 가상환경을 옮겼다면 다시 구성해야 할 수 있습니다.
 
-MCP 준비 명령은 현재 폴더의 `mcp.json`/`.mcp.json` 경로 선언을 만들고, `.venv-macos`에서 별도 `runtime/macos/pankeki-mcp-20261023/release/venv`를 생성합니다. 서버 의존성은 그 전용 환경에 설치하고 `pip check`로 확인합니다. 데스크톱 bridge는 이 Python으로 도구를 직접 실행하므로 글로벌 플러그인 등록은 필요하지 않습니다. [MCP 사용자 안내](https://github.com/pullyo/pankeki/blob/mac-release-20261028/plugins/pankeki-local/README.ko.md)를 참고하세요.
+MCP 준비 명령은 현재 폴더의 `mcp.json`/`.mcp.json` 경로 선언을 만들고, `.venv-macos`에서 별도 `runtime/macos/pankeki-mcp-20261023/release/venv`를 생성합니다. 서버 의존성은 그 전용 환경에 설치하고 `pip check`로 확인합니다. 데스크톱 bridge는 이 Python으로 도구를 직접 실행하므로 글로벌 플러그인 등록은 필요하지 않습니다. [MCP 사용자 안내](plugins/pankeki-local/README.ko.md)를 참고하세요.
 
 ## 2. 첫 준비와 데스크톱 열기
 

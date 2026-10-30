@@ -1,0 +1,58 @@
+{
+  "observed_utc": "2026-10-29T11:48:06.9149536Z",
+  "processes": [
+    {
+      "Id": 1576,
+      "ProcessName": "Pankeki"
+    },
+    {
+      "Id": 21100,
+      "ProcessName": "Pankeki"
+    },
+    {
+      "Id": 26764,
+      "ProcessName": "Pankeki"
+    },
+    {
+      "Id": 27800,
+      "ProcessName": "Pankeki"
+    },
+    {
+      "Id": 12536,
+      "ProcessName": "python"
+    },
+    {
+      "Id": 16376,
+      "ProcessName": "python"
+    },
+    {
+      "Id": 19832,
+      "ProcessName": "python"
+    },
+    {
+      "Id": 21900,
+      "ProcessName": "python"
+    },
+    {
+      "Id": 22516,
+      "ProcessName": "python"
+    },
+    {
+      "Id": 25472,
+      "ProcessName": "python"
+    },
+    {
+      "Id": 26736,
+      "ProcessName": "python"
+    },
+    {
+      "Id": 28048,
+      "ProcessName": "python"
+    }
+  ],
+  "listeners": [
+    "TCP    127.0.0.1:8188         0.0.0.0:0              LISTENING       16376",
+    "TCP    127.0.0.1:8190         0.0.0.0:0              LISTENING       22516"
+  ],
+  "global_kill_used": false
+}

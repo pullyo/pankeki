@@ -1,0 +1,2 @@
+const {test}=require('node:test');const assert=require('node:assert/strict');const {createHash}=require('node:crypto');const {makeCsp}=require('../security.cjs');
+test('inline CSP hashes match browser newline normalization on Windows builds',()=>{const script='window.test = 1;\r\nwindow.test++;\r';const html='<script>'+script+'</script>';const expected="'sha256-"+createHash('sha256').update(script.replace(/\r\n?/g,'\n')).digest('base64')+"'";assert(makeCsp(html,'http://127.0.0.1:8190').includes(expected));});

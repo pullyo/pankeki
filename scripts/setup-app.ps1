@@ -1,11 +1,8 @@
-param([string]$Python = 'C:\Users\Administrator\.cache\codex-runtimes\codex-primary-runtime\dependencies\python\python.exe')
+﻿# 이전 진입점 (호환용). 실제 준비는 scripts\setup-windows.ps1 이 한다.
+# 예전 기본값(C:\Users\Administrator\... 고정 Python, .venv)은 다른 PC에서 동작하지 않아 제거했다.
+param([string]$Python = $env:PANKEKI_PYTHON)
 $ErrorActionPreference = 'Stop'
-$projectRoot = Split-Path -Parent $PSScriptRoot
-if (!(Test-Path -LiteralPath $Python)) { throw 'Python 3.12 실행 파일을 -Python 인수로 지정하세요. WindowsApps 별칭은 사용하지 않습니다.' }
-$venvPath = Join-Path $projectRoot '.venv'
-if (!(Test-Path -LiteralPath (Join-Path $venvPath 'Scripts\python.exe'))) {
-    & $Python -m venv $venvPath
-    if ($LASTEXITCODE -ne 0) { throw 'venv 생성 실패' }
-}
-& (Join-Path $venvPath 'Scripts\python.exe') -m pip install -r (Join-Path $projectRoot 'requirements-lock.txt')
-if ($LASTEXITCODE -ne 0) { throw '의존성 설치 실패' }
+Write-Warning 'setup-app.ps1 은 setup-windows.ps1 로 바뀌었습니다. 편집 환경(.venv-windows-editor)을 준비합니다.'
+$arguments = @{}
+if ($Python) { $arguments['Python'] = $Python }
+& (Join-Path $PSScriptRoot 'setup-windows.ps1') @arguments

@@ -28,7 +28,7 @@ function makeCsp(html,origin) {
   const hashes=[];
   for (const match of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script\s*>/gi)) {
     if (/\bsrc\s*=|type\s*=\s*["']application\/json/i.test(match[1])) continue;
-    hashes.push("'sha256-"+createHash('sha256').update(match[2]).digest('base64')+"'");
+    hashes.push("'sha256-"+createHash('sha256').update(match[2].replace(/\r\n?/g,'\n')).digest('base64')+"'");
   }
   return [`default-src 'none'`,`script-src ${hashes.join(' ')||"'none'"}`,
     `style-src 'self' 'unsafe-inline'`,`img-src 'self' data: blob:`,`font-src 'self'`,

@@ -4,7 +4,7 @@
 
 **A character-creation studio connecting an AI conversation to local image tools.** Describe an idea, compare candidates, click an image to edit it, and keep selected work in projects. Continue into self-built 2D rigging and motion, or experiment with Blender-guided local video.
 
-[한국어](README.ko.md) · [Current macOS app](https://github.com/pullyo/pankeki/tree/mac-release-20261028) · [Experimental Windows port](https://github.com/pullyo/pankeki/tree/windows-port-20261029)
+[한국어](README.ko.md) · [macOS guide](README.macos.ko.md) · [Windows guide (experimental)](README.windows.ko.md)
 
 Korean is the primary UI language. Built for the Comfy.org Open Source Higgsfield challenge.
 
@@ -17,8 +17,9 @@ Korean is the primary UI language. Built for the Comfy.org Open Source Higgsfiel
 | Branch | What it contains |
 | --- | --- |
 | [mac-release-20261028](https://github.com/pullyo/pankeki/tree/mac-release-20261028) | Current macOS desktop app and local engine integration. Local validation has used one Apple Silicon Mac; broad hardware compatibility is unverified. |
-| [windows-port-20261029](https://github.com/pullyo/pankeki/tree/windows-port-20261029) | Windows/CUDA port. 313 automated checks on a Mac host and a Windows cross-build have been recorded. Installation, GPU inference and native app behavior on an actual Windows PC remain unverified. |
-| `main` | The current macOS app, merged from `mac-release-20261028` on 2026-10-30. The contest judge path stays pinned at that branch's commit `016eb5e`; `main` may move on afterwards. |
+| `main` | **One codebase for macOS and Windows.** The macOS app (from `mac-release-20261028`) and the Windows/CUDA port (from `windows-port-20261029`) were merged on 2026-10-30. Engine, UI and desktop app are shared; only setup/launch scripts and a few OS checks differ. |
+| [mac-release-20261028](https://github.com/pullyo/pankeki/tree/mac-release-20261028) | Contest judge snapshot, pinned at commit `016eb5e`. Not updated further. |
+| [windows-port-20261029](https://github.com/pullyo/pankeki/tree/windows-port-20261029) | Historical Windows port branch, now merged into `main`. Not updated further. |
 
 ## The workspace
 
@@ -39,14 +40,14 @@ Masked compositing preserves RGB outside the mask and the source alpha; this inv
 
 ComfyUI image inference and CPU recoloring run locally. The desktop conversation uses a separately installed **Codex CLI** or **Claude Code CLI**, signed in with your own provider account. Chat text, selected image context, generated-result previews and tool requests/results can be sent to that provider. The conversation workflow is therefore **not fully offline**. Project storage and model weights remain local; the application does not require a separate API key for its supported CLI sign-in flow.
 
-Local services use loopback addresses: Pankeki at `127.0.0.1:8190`, ComfyUI at `127.0.0.1:8188`. These are not instructions for public internet hosting. Optional MCP tools expose the local image API to compatible agents; see the [tool guide](https://github.com/pullyo/pankeki/blob/mac-release-20261028/plugins/pankeki-local/README.ko.md).
+Local services use loopback addresses: Pankeki at `127.0.0.1:8190`, ComfyUI at `127.0.0.1:8188`. These are not instructions for public internet hosting. Optional MCP tools expose the local image API to compatible agents; see the [tool guide](plugins/pankeki-local/README.ko.md).
 
 ## Start on macOS
 
 Use an Apple Silicon Mac, Python 3.12 or 3.13, `curl`, and Node.js 24/npm for the desktop app. For SDXL at 1024×1024, 32 GB memory and roughly 30 GB free disk are a practical starting point; video needs additional tools, weights, memory and time.
 
 ```bash
-git clone --branch mac-release-20261028 https://github.com/pullyo/pankeki.git
+git clone https://github.com/pullyo/pankeki.git
 cd pankeki
 bash scripts/setup-macos.sh --models
 # Prepare the dedicated MCP runtime for desktop image tools
@@ -68,13 +69,13 @@ npm start
 
 `configure_paths.py` writes this checkout's absolute MCP paths; `setup_runtime.py` reads that binding, creates the dedicated Python environment using `.venv-macos`, installs `server/requirements.txt` and runs `pip check`. It does not register a global plugin or change your CLI account configuration. The desktop bridges use this runtime directly. Run path configuration again after moving the checkout; moved Python environments may need to be recreated.
 
-The desktop app needs the external project folder, Python/ComfyUI/models and a separately installed Codex or Claude CLI. For detailed setup and packaging, see the [macOS guide](https://github.com/pullyo/pankeki/blob/mac-release-20261028/README.macos.ko.md).
+The desktop app needs the external project folder, Python/ComfyUI/models and a separately installed Codex or Claude CLI. For detailed setup and packaging, see the [macOS guide](README.macos.ko.md).
 
 **Optional browser route:** `./Pankeki.command` opens the shared image/editor UI in a browser; `./Pankeki.command --editor-only` runs without image generation. The native Codex/Claude conversation bridge belongs to the desktop app. This browser path does not replace the desktop conversation workflow.
 
 ## Windows
 
-Use the [Windows branch and installation guide](https://github.com/pullyo/pankeki/blob/windows-port-20261029/README.windows.ko.md), not the macOS commands on `main`. The port targets Windows 10/11 x64, Python 3.12/3.13 and NVIDIA CUDA. A browser editor-only path and explicit CPU generation option also exist. The desktop client requires the generation runtime; Python/ComfyUI/models/CLIs remain external. Cross-built packages are unsigned, so SmartScreen may warn. **No actual Windows validation has been recorded.**
+Clone `main` and follow the [Windows installation guide](README.windows.ko.md) instead of the macOS commands above. The port targets Windows 10/11 x64, Python 3.12/3.13 and NVIDIA CUDA. A browser editor-only path and explicit CPU generation option also exist. The desktop client requires the generation runtime; Python/ComfyUI/models/CLIs remain external. Cross-built packages are unsigned, so SmartScreen may warn. **No actual Windows validation has been recorded.**
 
 ## Experimental and unavailable features
 
