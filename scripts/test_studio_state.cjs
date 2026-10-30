@@ -75,9 +75,9 @@ test('stage navigation preserves project, source, mask and sends no model reques
 test('planned screens remain labeled and their controls cannot manufacture outputs', async () => {
   const ui = workflow(); await ui.nav.parts.click();
   assert.equal(ui.pages.parts.hidden, false); assert.equal(ui.shell.hidden, true);
-  assert.match(ui.element('studioStatus').textContent, /개발 예정/);
+  assert.match(ui.element('studioStatus').textContent, /Parts preparation/);
   await ui.nav.motion.click(); assert.equal(ui.pages.motion.hidden, false);
-  assert.equal(ui.planned.disabled, true); assert.match(ui.element('studioStatus').textContent, /개발 예정/);
+  assert.equal(ui.planned.disabled, true); assert.match(ui.element('studioStatus').textContent, /Expressions and motion/);
   assert.equal(ui.requests.length, 0); assert.equal(ui.downloads.length, 0);
   assert.equal(ui.state().project.versions.length, 0);
 });
@@ -148,7 +148,7 @@ test('compare stage uses the actual selected candidates and closes through the e
   const ui = workflow(); const saved = ui.project('Compare');
   saved.versions.push({ ...plain(saved.versions[0]), id: 'other', image: BLUE });
   await ui.studio().importProject(saved); await ui.nav.compare.click();
-  assert.equal(ui.element('comparePanel').hidden, true); assert.match(ui.element('studioStatus').textContent, /두 후보/);
+  assert.equal(ui.element('comparePanel').hidden, true); assert.match(ui.element('studioStatus').textContent, /two candidates/);
   for (const id of ['parent', 'other']) {
     const card = ui.element('gallery').children.find(item => item.dataset.candidateId === id);
     await card.querySelectorAll('button').find(node => node.dataset.action === 'compare').click();
@@ -192,4 +192,29 @@ test('reading other stages during a running generation preserves its request and
   assert.deepEqual(ui.requests[0].body.request, original); assert.equal(ui.cancellations.length, 0);
   assert.equal(ui.state().project.versions[0].image, BLUE); assert.equal(ui.state().busy, false);
   assert.equal(ui.doc.body.dataset.studioScreen, 'export');
+});
+
+test('precise rigging route hides and restores the native motion panel, project tools and mode buttons', async () => {
+  const ui = workflow(); const doc = ui.doc;
+  for (const id of ['motionNativePanel', 'motionProjectTools', 'v3Workspace']) doc.body.append(ui.element(id));
+  const nativeMode = ui.element('motionNativeMode', 'button'), v3Mode = ui.element('v3Mode', 'button');
+  doc.body.append(nativeMode, v3Mode);
+  const seen = [];
+  ui.sandbox.PankekiAuthoringV3Controller = { show: screen => seen.push(['show', screen]), suspend: () => seen.push(['suspend']) };
+  vm.runInContext('authoringV3Selected = true', ui.sandbox);
+  ui.controller.go('motion');
+  assert.equal(ui.element('motionNativePanel').hidden, true);
+  assert.equal(ui.element('motionProjectTools').hidden, true);
+  assert.equal(ui.element('v3Workspace').hidden, false);
+  assert.equal(v3Mode.getAttribute('aria-pressed'), 'true');
+  assert.equal(nativeMode.getAttribute('aria-pressed'), 'false');
+  assert.deepEqual(seen, [['show', 'motion']]);
+  vm.runInContext('authoringV3Selected = false', ui.sandbox);
+  ui.controller.go('motion');
+  assert.equal(ui.element('motionNativePanel').hidden, false);
+  assert.equal(ui.element('motionProjectTools').hidden, false, 'returning to native authoring must show the project tools again');
+  assert.equal(ui.element('v3Workspace').hidden, true);
+  assert.equal(v3Mode.getAttribute('aria-pressed'), 'false');
+  assert.equal(nativeMode.getAttribute('aria-pressed'), 'true');
+  assert.deepEqual(seen.at(-1), ['suspend']);
 });

@@ -158,11 +158,11 @@ test('desktop context is an explicit scalar whitelist and never exports a projec
 });
 test('edit context requires explicit assets, a loaded source, and nonempty painted mask',async()=>{
   const ui=await app(),api=adapter(ui);
-  assert.throws(()=>capture(ui,'edit'),/원본/);
+  assert.throws(()=>capture(ui,'edit'),/source/);
   await ui.studio().importProject(ui.project());
-  assert.throws(()=>api.captureContext({intent:'edit',includeEditAssets:false}),/선택|동의/);
+  assert.throws(()=>api.captureContext({intent:'edit',includeEditAssets:false}),/Allow|selected/);
   ui.element('paint').getContext().getImageData=()=>({data:new Uint8ClampedArray([0,0,0,255])});
-  assert.throws(()=>capture(ui,'edit'),/마스크|칠/);
+  assert.throws(()=>capture(ui,'edit'),/mask|Paint/);
   ui.element('paint').getContext().getImageData=()=>({data:new Uint8ClampedArray([255,255,255,255])});ui.element('paint').snapshot=WHITE;
   const ctx=capture(ui,'edit');assert.equal(ctx.source.dataUrl,RED);assert.equal(ctx.mask.dataUrl,WHITE);
   assert.equal(ctx.sourceRevision,api.getState().sourceRevision);assert.equal(ctx.maskRevision,api.getState().maskRevision);
@@ -206,7 +206,7 @@ test('sourceRevision is an opaque composite token that changes for mask-only edi
   ui.element('paint').getContext().getImageData=()=>({data:new Uint8ClampedArray([255,255,255,0])});
   assert.equal(capture(ui,'edit').intent,'edit','alpha does not define mask meaning');
   ui.element('paint').getContext().getImageData=()=>({data:new Uint8ClampedArray([0,0,1,255])});
-  assert.throws(()=>capture(ui,'edit'),/マスク|마스크|칠/,'RGB luminance rounds to black');
+  assert.throws(()=>capture(ui,'edit'),/mask|Paint/,'RGB luminance rounds to black');
 });
 test('web mode mounts nothing and never attempts IPC',()=>{
   const api=moduleApi();assert.equal(api.mount({body:{}},{ipc:null}),null);
@@ -375,19 +375,19 @@ test('central desktop chat preserves navigation/logo and displays model HTML lit
   await ui.doc.getElementById('pkPromptForm').requestSubmit();const ref=ipc.calls.send[0];assert(ref);
   await ipc.emit({...ref,type:'message-delta',payload:{text:'<img src=x onerror=evil()>'}});
   const reply=ui.doc.querySelector('.desktop-chat-reply');assert.equal(reply.querySelector('img'),null);assert.match(reply.textContent,/<img src=x/);
-  assert.deepEqual(nav.querySelectorAll('button').map(node=>node.getAttribute('aria-label')),before);assert.equal(before.length,11);assert.equal(ui.doc.querySelector('.pk-brand img').src,logo);
+  assert.deepEqual(nav.querySelectorAll('button').map(node=>node.getAttribute('aria-label')),before);assert.equal(before.length,8);assert.equal(ui.doc.querySelector('.pk-brand img').src,logo);
   view.destroy();assert.equal(ui.doc.getElementById('desktopChatIntent'),null);assert.equal(ui.requests.length,0);
 });
 
-test('a bridge usage-limit error shows a Korean limit notice and title without the raw URL',async()=>{
+test('a bridge usage-limit error shows an English limit notice and title without the raw URL',async()=>{
   const ui=await app(),{instance,ipc}=await controller(ui);
   await ipc.emit({type:'status',payload:{state:'ready',toolsReady:true}});await instance.send({text:'Hello'});const ref=ipc.calls.send[0];
   await ipc.emit({...ref,type:'error',payload:{code:'codex',message:"You've hit your usage limit. Visit https://chatgpt.com/settings/usage to purchase more credits or try again at Oct 31st, 2026 8:37 AM."}});
   await ipc.emit({...ref,type:'turn-completed',payload:{status:'failed'}});
   const state=instance.getState();
-  assert.equal(state.phase,'limited');assert.match(state.notice,/사용 한도/);assert.match(state.notice,/Oct 31st, 2026 8:37 AM/);
-  assert.equal(/https?:|chatgpt\.com|usage limit/i.test(state.notice),false);
-  assert.equal(moduleApi().statusTitle(state),'Codex 사용 한도');
+  assert.equal(state.phase,'limited');assert.match(state.notice,/usage limit/);assert.match(state.notice,/Oct 31st, 2026 8:37 AM/);
+  assert.equal(/https?:|chatgpt\.com|purchase more credits/i.test(state.notice),false);
+  assert.equal(moduleApi().statusTitle(state),'Codex usage limit');
   assert.equal(await instance.send({text:'Again'}),false);assert.equal(ipc.calls.send.length,1);
   instance.destroy();
 });
@@ -395,30 +395,30 @@ test('switching project clears a request error notice but keeps an account-wide 
   const ui=await app(),{instance,ipc}=await controller(ui);
   await ipc.emit({type:'status',payload:{state:'ready',toolsReady:true}});await instance.send({text:'Hello'});let ref=ipc.calls.send[0];
   await ipc.emit({...ref,type:'error',payload:{code:'codex',message:'Something broke'}});
-  assert.equal(instance.getState().phase,'error');assert.equal(moduleApi().statusTitle(instance.getState()),'Codex 요청 오류');
+  assert.equal(instance.getState().phase,'error');assert.equal(moduleApi().statusTitle(instance.getState()),'Codex request error');
   ui.studio().resetProject();await settle();
   let state=instance.getState();
-  assert.equal(state.phase,'idle');assert.equal(state.notice.includes('Something broke'),false);assert.equal(moduleApi().statusTitle(state),'Codex 준비됨');
+  assert.equal(state.phase,'idle');assert.equal(state.notice.includes('Something broke'),false);assert.equal(moduleApi().statusTitle(state),'Codex ready');
   await instance.send({text:'Again'});ref=ipc.calls.send.at(-1);
   await ipc.emit({...ref,type:'error',payload:{code:'rate_limited',message:'Limit reached'}});
   ui.studio().resetProject();await settle();
-  state=instance.getState();assert.equal(state.phase,'limited');assert.match(state.notice,/사용 한도/);
+  state=instance.getState();assert.equal(state.phase,'limited');assert.match(state.notice,/usage limit/);
   instance.destroy();
 });
-test('switching to Claude clears the Codex limit, renames the status and shows the Claude limit in Korean',async()=>{
+test('switching to Claude clears the Codex limit, renames the status and shows the Claude limit in English',async()=>{
   const ui=await app(),{instance,ipc}=await controller(ui);const selected=[];
   ipc.selectProvider=async value=>{selected.push(value);return {state:'ready',provider:value.provider,toolsReady:true};};
   await ipc.emit({type:'status',payload:{state:'ready',toolsReady:true}});await instance.send({text:'Hello'});let ref=ipc.calls.send[0];
   await ipc.emit({...ref,type:'error',payload:{code:'codex',message:"You've hit your usage limit. Try again at Oct 31st, 2026 8:37 AM."}});
-  assert.equal(moduleApi().statusTitle(instance.getState()),'Codex 사용 한도');
+  assert.equal(moduleApi().statusTitle(instance.getState()),'Codex usage limit');
   assert.equal(await instance.selectProvider('gpt'),false);assert.equal(selected.length,0);
   assert.equal(await instance.selectProvider('claude'),true);assert.deepEqual(selected,[{provider:'claude'}]);
-  let state=instance.getState();assert.equal(state.phase,'idle');assert.equal(moduleApi().statusTitle(state),'Claude 준비됨');
+  let state=instance.getState();assert.equal(state.phase,'idle');assert.equal(moduleApi().statusTitle(state),'Claude ready');
   assert.equal(await instance.send({text:'Again'}),true);ref=ipc.calls.send.at(-1);
   assert.equal(instance.getState().messages.at(-1).provider,'Claude');
   await ipc.emit({...ref,type:'error',payload:{code:'rate-limit',message:'Claude usage limit reached. Try again at Oct 25, 2026, 3:00 PM.'}});
-  state=instance.getState();assert.equal(state.phase,'limited');assert.equal(moduleApi().statusTitle(state),'Claude 사용 한도');
-  assert.match(state.notice,/^Claude 사용 한도에 도달했어요\. Oct 25, 2026, 3:00 PM 이후 다시 시도해주세요\.$/);
+  state=instance.getState();assert.equal(state.phase,'limited');assert.equal(moduleApi().statusTitle(state),'Claude usage limit');
+  assert.match(state.notice,/^Claude usage limit reached\. Oct 25, 2026, 3:00 PM or later, try again\.$/);
   instance.destroy();
 });
 test('the provider cannot change while a request is active',async()=>{
@@ -454,9 +454,9 @@ test('a finished reply still waiting for its image releases the panel after the 
   assert.equal(await instance.send({text:'사과',intent:'generate'}),true);const ref=ipc.calls.send[0];
   await ipc.emit({...ref,type:'tool-started',payload:{tool:'pankeki_generate'}});
   await ipc.emit({...ref,type:'turn-completed',payload:{status:'completed'}});
-  let state=instance.getState();assert.equal(state.phase,'waiting-job');assert.match(state.notice,/요청을 취소하세요/);assert.ok(state.activeRequestId);
+  let state=instance.getState();assert.equal(state.phase,'waiting-job');assert.match(state.notice,/cancel the request/);assert.ok(state.activeRequestId);
   await new Promise(resolve=>setTimeout(resolve,60));
-  state=instance.getState();assert.equal(state.phase,'error');assert.equal(state.activeRequestId,null);assert.match(state.notice,/이미지 결과를 받지 못해/);
+  state=instance.getState();assert.equal(state.phase,'error');assert.equal(state.activeRequestId,null);assert.match(state.notice,/image result/);
   assert.equal(await instance.send({text:'다시'}),true);assert.equal(ipc.calls.send.length,2);
   instance.destroy();
 });
@@ -477,11 +477,11 @@ for(const [provider,name] of [['Claude','Claude'],[undefined,'Codex'],['<b>evil<
     assert.equal(api.beginRequest({requestId:'request-1',context,provider}).accepted,true);
     const ref={requestId:'request-1',projectId:context.projectId,sourceRevision:context.sourceRevision,context};
     await api.receiveEvent(event(ref,'job',{jobId:'job-1',state:'running'}));
-    assert.equal(ui.element('status').textContent,name+' 이미지 작업을 진행하고 있어요.');
+    assert.equal(ui.element('status').textContent,name+' image task is running.');
     const {label,...unlabeled}=result(ui,ref).payload;
     assert.equal((await api.receiveEvent(event(ref,'result',unlabeled))).accepted,true);
     assert.equal(ui.state().project.versions.at(-1).label,name+' 후보');
-    assert.equal(ui.element('status').textContent,name+' 작업 결과를 후보에 추가했어요.');
+    assert.equal(ui.element('status').textContent,name+' result added to candidates.');
   });
 }
 test('the chat controller tells the app which model the request uses',async()=>{

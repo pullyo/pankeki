@@ -62,7 +62,7 @@ for(const nextView of ['same','other','closed'])test(`photo result ${nextView} p
 test('closing a pending photo view keeps a reachable photo cancel and rejects its late result without touching the draft',async()=>{
  const ui=await photoOperations();try{
   const before=ui.studio().exportProject(),pending=ui.doc.querySelector('[data-ppe-tool="background-remove"]').click();await until(()=>ui.operations.length,'pending photo');await ui.doc.getElementById('pcCanvasClose').click();await type(ui,'취소 후 남길 초안');
-  const cancel=ui.doc.getElementById('pkCancel');assert.equal(cancel.hidden,false);assert.match(cancel.textContent,/사진 편집 취소/);assert.equal(ui.doc.getElementById('pkGenerate').disabled,true);await cancel.click();await until(()=>!ui.workspace.composer.isPhotoBusy(),'photo cancel');
+  const cancel=ui.doc.getElementById('pkCancel');assert.equal(cancel.hidden,false);assert.match(cancel.textContent,/Cancel image edit/);assert.equal(ui.doc.getElementById('pkGenerate').disabled,true);await cancel.click();await until(()=>!ui.workspace.composer.isPhotoBusy(),'photo cancel');
   ui.finish();await pending;assert.equal(ui.studio().exportProject(),before);assert.equal(ui.doc.querySelector('.pc-image-workspace').dataset.pcEditor,'closed');assert.equal(ui.doc.getElementById('pcPrompt').value,'취소 후 남길 초안');assert.equal(ui.doc.getElementById('pkGenerate').disabled,false);assert.equal(ui.ipc.calls.cancel.length,0);assert.equal(ui.requests.length,0);
  }finally{ui.view.destroy();}
 });
@@ -80,7 +80,7 @@ test('reference workspace opens an actual header rail stage and candidate strip 
 test('photo workspace keeps its tool footer outside the image and retains explicit viewing gallery and settings access',async()=>{
  const ui=await withImage();try{
   assert.equal(ui.doc.body.classList.contains('pankeki-photo-tools'),true);const footer=ui.doc.getElementById('pcPhotoTools'),viewport=ui.doc.getElementById('canvasViewport');assert(footer,'dedicated photo tool footer');assert.equal(viewport.contains(footer),false);assert.equal(footer.closest('.canvas-card')===viewport.closest('.canvas-card'),true);assert.deepEqual(Array.from(footer.querySelectorAll('[data-ppe-tool]'),node=>node.dataset.ppeTool),['markup','comments','background-remove','erase','resize']);
-  assert.equal(ui.doc.querySelector('.pc-image-workspace').dataset.pcEditor,'closed');await loaded(ui);assert.equal(ui.doc.querySelector('.pc-image-workspace').dataset.pcEditor,'open');assert.equal(ui.doc.getElementById('workspace').dataset.candidateId,'parent');assert.equal(ui.doc.querySelector('.pk-navigation').querySelectorAll('button').length,11);
+  assert.equal(ui.doc.querySelector('.pc-image-workspace').dataset.pcEditor,'closed');await loaded(ui);assert.equal(ui.doc.querySelector('.pc-image-workspace').dataset.pcEditor,'open');assert.equal(ui.doc.getElementById('workspace').dataset.candidateId,'parent');assert.equal(ui.doc.querySelector('.pk-navigation').querySelectorAll('button').length,8);
   await ui.doc.getElementById('pkGalleryOpen').click();assert.equal(ui.doc.querySelector('.pk-gallery-dialog').open,true);ui.doc.querySelector('.pk-gallery-dialog').close();await ui.doc.getElementById('pcResolution').click();assert.equal(ui.doc.getElementById('pkSettings').open,true);
  }finally{ui.view.destroy();}
 });
@@ -139,9 +139,9 @@ test('accepted automatic edit result identifies the actual core result without o
 test('native negative prompt scope is explicit inside settings and restores the original web label hint and value',async()=>{
  const ui=await mounted();let destroyed=false;try{
   const field=ui.doc.getElementById('negative'),label=ui.doc.querySelector('label[for="negative"]'),hint=field.closest('.field').querySelector('.hint'),value=field.value;
-  assert.equal(field.closest('#pkSettings')?.id,'pkSettings');assert.match(label.textContent,/이미지 생성 전용/);assert.match(hint.textContent,/현재 AI 부분 수정에는 적용되지 않습니다/);assert.equal(field.hidden,false);assert.equal(field.value,value);assert.equal(ui.doc.querySelector('.pk-composer-dock').textContent.includes('현재 AI 부분 수정'),false);
+  assert.equal(field.closest('#pkSettings')?.id,'pkSettings');assert.match(label.textContent,/Image generation only/);assert.match(hint.textContent,/Not used for current AI image edits/);assert.equal(field.hidden,false);assert.equal(field.value,value);assert.equal(ui.doc.querySelector('.pk-composer-dock').textContent.includes('current AI local edit'),false);
   field.value='keep negative value';await field.dispatchEvent(new ui.Event('input',{bubbles:true}));const captured=ui.studio().desktopChat.captureContext({intent:'auto',visibleCandidateId:null});assert.equal(captured.automatic.generation.settings.negative,'keep negative value');assert.equal(Object.hasOwn(captured.automatic.edit.regenerate.settings||{},'negative'),false);
-  ui.view.destroy();destroyed=true;assert.equal(label.textContent,'제외 프롬프트');assert.equal(hint.textContent,'CFG 1에서는 제외 프롬프트가 적용되지 않습니다. 모델 기본 설정에서 시작해 조절하세요.');assert.equal(field.value,'keep negative value');assert.equal(ui.requests.length,0);
+  ui.view.destroy();destroyed=true;assert.equal(label.textContent,'Negative prompt');assert.equal(hint.textContent,'Negative prompts do not apply at CFG 1. Start with the model defaults and adjust as needed.');assert.equal(field.value,'keep negative value');assert.equal(ui.requests.length,0);
  }finally{if(!destroyed)ui.view.destroy();}
 });
 
@@ -189,13 +189,13 @@ test('automatic view F with a prepared source and mask G stages only the referen
   const before=ui.studio().exportProject();await type(ui,'이 그림 수정해줘');await ui.doc.getElementById('pkPromptForm').requestSubmit();const wire=ui.ipc.calls.send[0];
   assert.equal(wire.automatic.target.visibleCandidateId,'parent');assert.equal(wire.automatic.target.sourceCandidateId,'G');assert.equal(wire.automatic.edit.ready,false);assert.equal(wire.automatic.edit.reason,'target');
   assert.equal(ui.ipc.calls.prepare.length,1);assert.equal(wire.context.sourceId,'source-local');assert.equal(wire.context.maskId,undefined);assert.equal(ui.ipc.calls.prepare[0].sourceDataUrl,RED);assert.equal(ui.ipc.calls.prepare[0].maskDataUrl,undefined);assert.equal(wire.automatic.target.referenceCandidateId,'parent');
-  await ui.ipc.emit({...wire,type:'needs-input',payload:{reason:'target'}});assert.match(ui.view.controller.getState().notice,/지금 보고 있는 이미지/);assert.equal(ui.studio().exportProject(),before);assert.equal(ui.state().sourceId,'G');assert.equal(ui.element('paint').snapshot,WHITE);assert.equal(ui.requests.length,0);
+  await ui.ipc.emit({...wire,type:'needs-input',payload:{reason:'target'}});assert.match(ui.view.controller.getState().notice,/visible image/);assert.equal(ui.studio().exportProject(),before);assert.equal(ui.state().sourceId,'G');assert.equal(ui.element('paint').snapshot,WHITE);assert.equal(ui.requests.length,0);
  }finally{ui.view.destroy();}
 });
 
 test('generation has one conversation/composer and the original right image workspace with truthful empty state',async()=>{
  const ui=await mounted();assert(ui.doc.querySelector('.pc-image-workspace'));assert.equal(ui.doc.querySelectorAll('#pcPrompt').length,1);assert.equal(ui.doc.getElementById('desktopChatPanel'),null);assert(ui.doc.getElementById('pcCanvasTitle'));assert.equal(ui.doc.getElementById('pcCanvasFit').disabled,true);assert.equal(ui.doc.getElementById('pcCanvasEdit').disabled,true);
- assert.equal(ui.doc.querySelector('.pk-brand img').src,ui.doc.querySelector('.app-header .brand-logo').src);assert.equal(ui.doc.querySelector('.pk-navigation').querySelectorAll('button').length,11);assert.equal(ui.requests.length,0);ui.view.destroy();
+ assert.equal(ui.doc.querySelector('.pk-brand img').src,ui.doc.querySelector('.app-header .brand-logo').src);assert.equal(ui.doc.querySelector('.pk-navigation').querySelectorAll('button').length,8);assert.equal(ui.requests.length,0);ui.view.destroy();
 });
 test('candidate image and big-view controls activate the original canvas without opening a second viewer',async()=>{
  const ui=await withImage(),before=ui.studio().exportProject();await ui.doc.querySelector('.pc-image-open').click();assert.equal(ui.doc.querySelector('.pc-image-workspace').dataset.pcPane,'canvas');assert.equal(ui.doc.activeElement,ui.doc.getElementById('workspace'));assert.equal(ui.element('result').src,RED);assert.equal(ui.doc.querySelector('.pc-image-viewer'),null);
@@ -239,7 +239,7 @@ test('partial edit entry synchronizes the existing desktop action before the nex
 
 test('changing image does not reuse old natural dimensions before the newly selected image finishes loading',async()=>{
  const ui=await withImage(),{img}=await loaded(ui);img.complete=false;const next=ui.project('Next project');next.versions.push({...plain(next.versions[0]),id:'next-image',label:'Next image',image:WHITE});await ui.studio().importProject(next);ui.workspace.go('design');await openImage(ui,'next-image');
- assert.equal(ui.doc.getElementById('pcCanvasActual').disabled,true);assert.equal(ui.doc.getElementById('pcCanvasInfo').textContent.includes('1024 × 1536'),false);assert.equal(ui.doc.getElementById('pcCanvasScale').textContent,'');assert.match(ui.doc.getElementById('pcCanvasStatus').textContent,/불러오고/);
+ assert.equal(ui.doc.getElementById('pcCanvasActual').disabled,true);assert.equal(ui.doc.getElementById('pcCanvasInfo').textContent.includes('1024 × 1536'),false);assert.equal(ui.doc.getElementById('pcCanvasScale').textContent,'');assert.match(ui.doc.getElementById('pcCanvasStatus').textContent,/Loading/);
  Object.assign(img,{complete:true,naturalWidth:512,naturalHeight:512});await img.dispatchEvent(new ui.Event('load'));assert.match(ui.doc.getElementById('pcCanvasInfo').textContent,/512 × 512/);assert.equal(ui.doc.getElementById('pcCanvasActual').disabled,false);ui.view.destroy();
 });
 
@@ -373,7 +373,7 @@ test('closed-viewer Korean whole-pose followup completes and links its new candi
   assert.equal(ui.ipc.calls.prepare.length,1);assert.equal(ui.ipc.calls.prepare[0].sourceDataUrl,RED);assert.equal(ui.ipc.calls.prepare[0].maskDataUrl,undefined);
   assert.equal(ui.state().sourceId,before.sourceId);assert.equal(ui.state().sourceDataURL,before.source);assert.equal(ui.element('paint').snapshot,before.mask);
   await ui.ipc.emit({...wire,type:'intent-resolved',payload:{intent:'edit',operation:'recompose'}});
-  assert.match(ui.view.controller.getState().notice,/새 후보/);
+  assert.match(ui.view.controller.getState().notice,/new composition candidate/);
   await ui.ipc.emit({...wire,type:'tool-started',payload:{tool:'pankeki_edit'}});
   await ui.ipc.emit({...wire,type:'tool-completed',payload:{tool:'pankeki_edit',ok:true,jobId:'recompose-result',jobStatus:'queued'}});
   ui.ipc.resolveResult=async()=>({imageDataUrl:WHITE,label:'구도 변경 후보',request:{...plain(wire.automatic.recompose.settings),mode:'img2img',width:64,height:64},metrics:{model_calls:1}});

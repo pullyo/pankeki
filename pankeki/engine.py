@@ -209,9 +209,6 @@ class Engine:
             self.client_software = {'python': platform.python_version(), 'numpy': np.__version__, 'pillow': pillow_version}
             if client is not None:
                 self.client = client
-            elif self.config.get('transport', 'direct') == 'sdk':
-                from .sdk_adapter import SDKComfyClient
-                self.client = SDKComfyClient(base_url, root=self.root)
             elif self.config.get('transport', 'direct') == 'direct':
                 self.client = ComfyClient(base_url)
             else:
@@ -496,8 +493,8 @@ class Engine:
                             atomic_source_verified=validate_atomic_attestation(self.root, attestation,base_url=self.client.base_url))
                 execute_options = dict(cancel=job.cancel, on_preview=on_preview if r['preview'] else None,
                                        on_submitted=submitted)
-                # Preserve older injected/SDK clients. Direct transport durably stores its
-                # own client ID before POST; unsupported transports never pretend it did.
+                # Injected test clients may not accept these callbacks. Direct transport durably
+                # stores its own client ID before POST; a client without the hook never pretends it did.
                 parameters = inspect.signature(self.client.execute).parameters
                 if 'on_submitting' in parameters:
                     execute_options['on_submitting'] = getattr(job, 'persist_submission', None)

@@ -57,7 +57,6 @@ def capability_snapshot(engine, *, build=None, preflight=None):
     rows = copy.deepcopy(preflight) if preflight is not None else [
         {'id':'comfy','state':'unknown','reason':'Not contacted by the pure capability snapshot'},
         {'id':'vision','state':'ready' if vision else 'unavailable','reason':available['background-remove'][1]},
-        {'id':'sdk','state':'unknown','reason':'Optional dedicated SDK runtime has not been probed'},
         {'id':'cli-login','state':'unknown','reason':'Optional CLI sign-in is not required for local readiness'},
         {'id':'image-review','state':'unavailable','reason':'Optional remote image review is not enabled'},
         {'id':'visual-quality','state':'unknown','reason':'No visual quality acceptance is inferred from installation or metrics'},

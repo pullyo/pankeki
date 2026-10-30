@@ -16,32 +16,32 @@
   var FALLBACK_PALETTE = ['#B89166', '#385C59', '#E9DCC8'];
   var profiles = {
     original: {
-      label: '자유 창작', description: '세계관과 개성이 드러나는 나만의 캐릭터를 구상해요.',
-      detailLabel: '세계관과 소품', detailHint: '살아가는 장소, 직업, 꼭 필요한 소품을 적어주세요.', boardLabel: '캐릭터 콘셉트 보드',
+      label: 'Original character', description: 'Create an original character with a distinct world and personality.',
+      detailLabel: 'World and props', detailHint: 'Describe the setting, role and essential props.', boardLabel: 'Character concept board',
       guidance: 'Original character concept art, a distinctive coherent silhouette, readable outfit and meaningful accessories, one character.',
       example: { name: '사막의 연금술사', brief: 'An original desert alchemist who collects rare minerals and travels between oasis towns.', appearance: 'A young adult with short dark curly hair, a sand-colored layered cloak, teal gloves, and a practical leather satchel.', detail: 'A small brass distillation flask and mineral samples hang from the belt. Warm desert light, simple uncluttered background.', palette: ['#C49A6C', '#2F6C68', '#E7D7B8'], notes: '소품과 옷의 실루엣을 비교해보세요.', prompt: 'Full body character concept art of an original desert alchemist, sand cloak, teal gloves, brass flask, clear silhouette, warm light.' }
     },
     comic: {
-      label: '웹툰·웹소설', description: '웹툰과 웹소설의 이야기 속 역할과 개성이 드러나는 캐릭터를 구상해요.',
-      detailLabel: '역할과 표정', detailHint: '이야기에서 맡은 역할, 성격, 대표 표정을 적어주세요.', boardLabel: '웹툰·웹소설 캐릭터 보드',
+      label: 'Comics and fiction', description: 'Design a character whose role and personality fit a comic or story.',
+      detailLabel: 'Role and expressions', detailHint: 'Describe the story role, personality and signature expression.', boardLabel: 'Comics and fiction character board',
       guidance: 'Character concept for a webtoon or web novel, expressive personality and readable facial expression, distinctive costume and silhouette suited to the story, one character.',
       example: { name: '새벽 배달부', brief: 'An optimistic comic protagonist who delivers letters through a seaside town before sunrise.', appearance: 'A young adult with a short auburn bob, a blue delivery jacket, rolled sleeves, and a bright yellow shoulder bag.', detail: 'A confident friendly smile, a windblown scarf, clear expressive eyes, simple seaside background.', palette: ['#457B9D', '#F4C95D', '#E8A490'], notes: '작은 컷에서도 읽히는 표정과 옷을 확인하세요.', prompt: 'Comic character design of a cheerful seaside letter courier, auburn bob, blue jacket, yellow shoulder bag, clean linework, expressive smile.' }
     },
     avatar: {
-      label: '버튜버', description: '프로필이나 방송 화면에서 인상이 잘 드러나는 디자인이에요.',
-      detailLabel: '방송 콘셉트와 포인트', detailHint: '활동 콘셉트와 눈에 띄는 헤어·장식 요소를 적어주세요.', boardLabel: '아바타 콘셉트 보드',
+      label: 'Virtual creator', description: 'Create a design that reads clearly in a profile or broadcast.',
+      detailLabel: 'Broadcast concept and details', detailHint: 'Describe the concept and distinctive hair or accessories.', boardLabel: 'Avatar concept board',
       guidance: 'Avatar concept portrait, clear face and eye shapes, readable head silhouette, restrained decorative details, one character, not a rigged asset.',
       example: { name: '달빛 라디오', brief: 'An original virtual radio host with a calm moonlit astronomy theme.', appearance: 'An adult character with silver-blue shoulder-length hair, amber eyes, a navy high-collar jacket, and a crescent hair clip.', detail: 'A warm welcoming expression, soft portrait lighting, a simple midnight-blue background.', palette: ['#24324F', '#B8CDE0', '#E5B66A'], notes: '이 결과는 디자인 이미지이며 리깅된 모델이 아닙니다.', prompt: 'Original virtual radio host character portrait, silver-blue hair, amber eyes, navy jacket, crescent hair clip, welcoming smile, clean face design.' }
     },
     mascot: {
-      label: '마스코트', description: '작게 보아도 기억하기 쉬운 친근한 캐릭터를 탐색해요.',
-      detailLabel: '브랜드 성격과 상징', detailHint: '전하고 싶은 분위기와 대표할 사물·동물을 적어주세요.', boardLabel: '마스코트 디자인 보드',
+      label: 'Mascot', description: 'Explore a friendly character that remains recognizable at small sizes.',
+      detailLabel: 'Brand personality and symbols', detailHint: 'Describe the mood and the objects or animals it represents.', boardLabel: 'Mascot design board',
       guidance: 'Mascot character concept, bold simple geometric silhouette, limited color areas, friendly expression, easy to read at a small size, no lettering or logos.',
       example: { name: '정원 친구 모모', brief: 'A friendly original seedling mascot for a community gardening club.', appearance: 'A round cream-colored body, two broad green leaf ears, tiny boots, and simple dark eyes.', detail: 'A cheerful wave, a small watering can, flat clean shapes on a plain light background, no text.', palette: ['#5B8C5A', '#F3E7CB', '#D99559'], notes: '축소했을 때의 실루엣과 색 구분을 확인하세요.', prompt: 'Friendly seedling mascot, round cream body, green leaf ears, tiny boots, small watering can, bold simple shapes, plain background, no text.' }
     },
     game: {
-      label: '게임', description: '역할과 장비가 구분되는 게임용 캐릭터 콘셉트를 만들어요.',
-      detailLabel: '클래스와 장비', detailHint: '플레이 역할, 장비, 움직임을 떠올릴 수 있는 특징을 적어주세요.', boardLabel: '게임 캐릭터 콘셉트 보드',
+      label: 'Game character', description: 'Create a game character concept with a clear role and equipment.',
+      detailLabel: 'Class and equipment', detailHint: 'Describe the play style, equipment and features that suggest movement.', boardLabel: 'Game character concept board',
       guidance: 'Game character concept art, readable full-body silhouette, functional layered equipment, visual cues for the character role, one character, not a finished 3D asset.',
       example: { name: '구름섬 탐험가', brief: 'An original agile scout exploring floating islands in a lighthearted fantasy game.', appearance: 'An adult explorer with braided dark hair, a teal short cape, fitted brown travel clothes, and lightweight boots.', detail: 'A compact folding glider on the back, a brass compass, an alert balanced standing pose, simple sky background.', palette: ['#367C80', '#865C43', '#D7B56D'], notes: '장비와 역할이 실루엣으로 읽히는지 비교하세요.', prompt: 'Full body fantasy game scout character concept, teal short cape, practical brown travel clothes, folding glider, brass compass, clear silhouette.' }
     }
@@ -332,7 +332,7 @@
   function legacyCapabilities(catalog) {
     if(!plain(catalog)||!Array.isArray(catalog.models)||catalog.edit_models!==undefined&&!Array.isArray(catalog.edit_models))throw new Error('Invalid legacy model catalog');
     var legacy={'sdxl-base':['generate','regenerate','recompose'],'sd-turbo':['generate','regenerate'],'animagine-xl-4.0-opt':['generate','recompose'],'sdxl-inpaint-v01':['regenerate']};
-    var models=catalog.models.concat(catalog.edit_models||[]).filter(function(row){return row&&Object.prototype.hasOwnProperty.call(legacy,row.id);}).map(function(row){return Object.assign({},cloneValue(row,0),{installed:row.available===true,operations:legacy[row.id].slice(),reason:row.available===true?null:'미설치 또는 현재 사용할 수 없는 모델입니다.'});});
+    var models=catalog.models.concat(catalog.edit_models||[]).filter(function(row){return row&&Object.prototype.hasOwnProperty.call(legacy,row.id);}).map(function(row){return Object.assign({},cloneValue(row,0),{installed:row.available===true,operations:legacy[row.id].slice(),reason:row.available===true?null:'This model is not installed or is currently unavailable.'});});
     var operations=CAPABILITY_OPERATIONS.map(function(id){var model_ids=models.filter(function(row){return row.operations.indexOf(id)>=0;}).map(function(row){return row.id;}),cpu=['recolor','markup','comments','resize'].indexOf(id)>=0,ready=cpu||models.some(function(row){return row.installed&&row.operations.indexOf(id)>=0;});return {id:id,lane:cpu?'cpu':'gpu',ready:ready,reason:ready?null:'Legacy server does not publish readiness for this operation',model_ids:model_ids,experimental:false};});
     return freeze({schema:1,revision:null,source:'legacy',reason:'Legacy fallback: server capability snapshot unavailable',default_model_id:catalog.default_model_id,models:models,operations:operations});
   }

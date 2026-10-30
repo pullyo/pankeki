@@ -99,7 +99,7 @@ function createProviderBridge({factories, initial = 'codex', onEvent, settings})
     const snapshot = bridges[provider].status();
     return {provider, selectedModelId: selectedModels[provider], modelRevision,
       state: snapshot.state, cliVersion: snapshot.codexVersion || snapshot.version || null, source: catalog?.source || null, availability: 'unverified',
-      options: catalog ? [...(provider === 'codex' ? [{id: 'default', displayName: 'Codex 기본값'}] : []), ...catalog.models.map(({id, displayName}) => ({id, displayName}))] : [], errorCode};
+      options: catalog ? [...(provider === 'codex' ? [{id: 'default', displayName: 'Codex default'}] : []), ...catalog.models.map(({id, displayName}) => ({id, displayName}))] : [], errorCode};
   }
   async function setChatModel({provider, modelId} = {}) {
     if (!PROVIDERS.includes(provider) || !validModelId(modelId)) fail('invalid-input');

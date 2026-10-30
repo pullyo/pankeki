@@ -8,7 +8,7 @@ const path = require('node:path');
 const vm = require('node:vm');
 const nodeTest = require('node:test');
 const test = (name, fn) => nodeTest(name, { timeout: 4000 }, fn);
-const scripts = ['profiles.js', 'app.js'].map(name => ({
+const scripts = ['ui-strings.js', 'profiles.js', 'app.js'].map(name => ({
   name, source: readFileSync(path.join(__dirname, '../web/src', name), 'utf8'),
 }));
 const png = value => 'data:image/png;base64,' + value;
@@ -312,7 +312,7 @@ test('unavailable model catalog blocks generation instead of silently using Turb
   await settle();
   assert.equal(await ui.studio().generate(), false);
   assert.equal(ui.requests.length, 0);
-  assert.match(ui.element('status').textContent, /모델/);
+  assert.match(ui.element('status').textContent, /models/);
 });
 
 test('newest source wins when decode and original-file reads finish out of order', async () => {
@@ -519,10 +519,10 @@ test('empty-mask copy is labeled as original copy rather than AI generation', as
   const item = ui.state().project.versions[0];
   const card = ui.element('gallery').children.find(node => node.dataset?.candidateId === item.id);
   assert.equal(item.metrics.cache, 'empty-mask-skip'); assert.equal(item.metrics.model_calls, 0);
-  assert(ui.element('resultLabel').textContent.includes('원본 복사'));
-  assert(card.textContent.includes('원본 복사'));
-  assert(ui.element('status').textContent.includes('원본 복사'));
-  assert(!card.textContent.includes('생성 결과'));
+  assert(ui.element('resultLabel').textContent.includes('Source copy'));
+  assert(card.textContent.includes('Source copy'));
+  assert(ui.element('status').textContent.includes('source copies'));
+  assert(!card.textContent.includes('Generated result'));
 });
 
 test('new generation wins when an older result download finishes late', async () => {
@@ -565,11 +565,11 @@ test('gallery comparison and editing retain original images and persist selectio
     const button = card.querySelectorAll('button').find(item => item.textContent === label);
     assert(button, `missing candidate action ${label}`); return button.onclick();
   };
-  await action('parent', '비교 선택'); await action('other', '비교 선택');
+  await action('parent', 'Add to comparison'); await action('other', 'Add to comparison');
   await ui.element('compareSelected').onclick();
   assert.deepEqual(ui.state().selectedIds, ['parent', 'other']);
   assert.deepEqual(ui.element('compareGrid').querySelectorAll('img').map(item => item.src), [RED, BLUE]);
-  await action('parent', '이어서 수정');
+  await action('parent', 'Continue editing');
   assert.equal(ui.state().sourceId, 'parent'); assert.equal(ui.state().sourceDataURL, RED);
   assert.deepEqual(ui.state().project.selectionHistory.map(item => [item.candidateId, item.action]),
     [['parent', 'compare'], ['other', 'compare'], ['parent', 'edit']]);
@@ -721,23 +721,23 @@ test('candidate compare toggles and view preserve keyboard focus on the same can
   await ui.studio().importProject(saved);
   const action = label => ui.element('gallery').children.find(card => card.dataset.candidateId === 'parent')
     .querySelectorAll('button').find(button => button.textContent === label);
-  const compare = action('비교 선택'); compare.focus();
+  const compare = action('Add to comparison'); compare.focus();
   assert(ui.sandbox.document.activeElement === compare);
   await compare.click();
-  const unselect = action('비교 선택 해제');
+  const unselect = action('Remove from comparison');
   assert.notEqual(unselect, compare, 'the gallery rebuilt the focused button');
   assert(ui.sandbox.document.activeElement === unselect, 'focus stays on the first candidate compare toggle');
   assert.equal(unselect.focusOptions?.preventScroll, true, 'focus restoration must not jump the page');
   assert.equal(unselect.getAttribute('aria-pressed'), 'true');
   assert.deepEqual(ui.state().selectedIds, ['parent']);
   await unselect.click();
-  assert(ui.sandbox.document.activeElement === action('비교 선택'), 'unselect also preserves focus');
-  assert.equal(action('비교 선택').focusOptions?.preventScroll, true);
+  assert(ui.sandbox.document.activeElement === action('Add to comparison'), 'unselect also preserves focus');
+  assert.equal(action('Add to comparison').focusOptions?.preventScroll, true);
   assert.deepEqual(ui.state().selectedIds, []);
-  const view = action('크게 보기'); view.focus(); await view.click();
-  assert.notEqual(action('크게 보기'), view);
-  assert(ui.sandbox.document.activeElement === action('크게 보기'), 'view preserves its corresponding rebuilt button');
-  assert.equal(action('크게 보기').focusOptions?.preventScroll, true);
+  const view = action('View larger'); view.focus(); await view.click();
+  assert.notEqual(action('View larger'), view);
+  assert(ui.sandbox.document.activeElement === action('View larger'), 'view preserves its corresponding rebuilt button');
+  assert.equal(action('View larger').focusOptions?.preventScroll, true);
   assert.equal(ui.state().latestUrl, RED);
 });
 
@@ -778,9 +778,9 @@ test('empty canvas instructions follow generation and editing mode', async () =>
   const description = ui.element('emptyDescription').textContent;
   assert(heading && description);
   await ui.input('mode', 'inpaint');
-  assert(ui.element('emptyHeading').textContent.includes('원본'));
-  assert(ui.element('emptyDescription').textContent.includes('업로드'));
-  assert(ui.element('emptyDescription').textContent.includes('칠'));
+  assert(ui.element('emptyHeading').textContent.includes('source'));
+  assert(ui.element('emptyDescription').textContent.includes('Upload'));
+  assert(ui.element('emptyDescription').textContent.includes('paint'));
   assert.notEqual(ui.element('emptyHeading').textContent, heading);
   await ui.input('mode', 'txt2img');
   assert.equal(ui.element('emptyHeading').textContent, heading);

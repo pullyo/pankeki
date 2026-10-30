@@ -44,3 +44,5 @@ body.pc-central-chat[data-studio-screen=inpaint] .pc-thread-inner{min-height:0;p
 .pc-build-information dl{display:grid;grid-template-columns:minmax(100px,auto) minmax(0,1fr);gap:6px 12px;font-size:12px}
 .pc-build-information dt{font-weight:600}
 .pc-build-information dd{margin:0;overflow-wrap:anywhere;font-family:ui-monospace,monospace}
+/* Image results: show only the Pankeki card, not the chat model header or reply. */
+.pc-ai-turn.pc-ai-image-only>.pc-response>.pc-message-author,.pc-ai-turn.pc-ai-image-only>.pc-response>.desktop-chat-reply,.pc-ai-turn.pc-ai-image-only>.pc-response>.pc-message-actions>[data-pc-copy-reply]{display:none!important}
