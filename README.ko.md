@@ -8,9 +8,9 @@
 
 주 UI 언어는 한국어입니다. Comfy.org Open Source Higgsfield 챌린지를 목표로 개발하고 있습니다.
 
-![Pankeki 홈 화면](docs/images/pankeki-home-20261029.jpg)
+![Pankeki 홈 화면](docs/images/pankeki-home-20261030.jpg)
 
-*Pankeki 홈 화면 — 2026년 10월 29일 사용자 제공 이미지.*
+*Pankeki 홈 화면 — 2026년 10월 30일 사용자 제공 이미지.*
 
 ## 사용할 브랜치
 
@@ -18,7 +18,7 @@
 | --- | --- |
 | [mac-release-20261028](https://github.com/pullyo/pankeki/tree/mac-release-20261028) | 현재 macOS 데스크톱 앱과 로컬 엔진 연결입니다. 한 대의 Apple Silicon Mac에서 검증해 왔으며 폭넓은 하드웨어 호환성을 확인한 상태는 아닙니다. |
 | [windows-port-20261029](https://github.com/pullyo/pankeki/tree/windows-port-20261029) | Windows/CUDA 시험 포팅입니다. Mac 호스트의 자동 검사 313개와 Windows 교차 빌드 기록이 있습니다. 실제 Windows PC의 설치·GPU 생성·네이티브 앱 동작은 아직 검증하지 않았습니다. |
-| `main` | 앱 코드는 10월 20일의 역사적 체크포인트입니다. 이 소개 갱신이 앱 코드를 최신화하지는 않습니다. 현재 앱은 위 브랜치를 지정해 받으세요. |
+| `main` | 2026-10-30에 `mac-release-20261028`을 병합한 현재 macOS 앱입니다. 심사용 경로는 그 브랜치의 커밋 `016eb5e`에 고정돼 있고, `main`은 이후에도 계속 바뀔 수 있습니다. |
 
 ## 작업 흐름
 
@@ -74,7 +74,7 @@ npm start
 
 ## Windows
 
-[Windows 브랜치의 설치 안내](https://github.com/pullyo/pankeki/blob/windows-port-20261029/README.windows.ko.md)를 사용하세요. 과거 main의 실행 명령과 섞지 않습니다. Windows 10/11 x64, Python 3.12/3.13, NVIDIA CUDA를 대상으로 합니다. 브라우저 편집 전용 경로와 명시적인 CPU 생성 옵션도 있습니다. 데스크톱 앱에는 생성 환경이 필요하며 엔진·모델·CLI는 외부에 준비합니다. 교차 빌드 패키지는 무서명이라 SmartScreen 경고가 나올 수 있습니다. **실제 Windows 검증 기록은 아직 없습니다.**
+[Windows 브랜치의 설치 안내](https://github.com/pullyo/pankeki/blob/windows-port-20261029/README.windows.ko.md)를 사용하세요. `main`의 macOS 실행 명령과 섞지 않습니다. Windows 10/11 x64, Python 3.12/3.13, NVIDIA CUDA를 대상으로 합니다. 브라우저 편집 전용 경로와 명시적인 CPU 생성 옵션도 있습니다. 데스크톱 앱에는 생성 환경이 필요하며 엔진·모델·CLI는 외부에 준비합니다. 교차 빌드 패키지는 무서명이라 SmartScreen 경고가 나올 수 있습니다. **실제 Windows 검증 기록은 아직 없습니다.**
 
 ## 실험 기능과 제한
 

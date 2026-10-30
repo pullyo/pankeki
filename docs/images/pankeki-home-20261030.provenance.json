@@ -1,0 +1,17 @@
+{
+  "received": "2026-10-30",
+  "source": "user-provided attachment",
+  "sourceSize": [
+    2000,
+    1306
+  ],
+  "sourceMime": "image/webp",
+  "sha256": "b82e5a4447066cd70821a5324e8e6e5a4853e1b7fad03bcda5dccf9de43263fd",
+  "width": 1280,
+  "height": 836,
+  "mime": "image/jpeg",
+  "actualCaptureTime": null,
+  "buildVersion": null,
+  "OS": null,
+  "WindowsValidation": null
+}

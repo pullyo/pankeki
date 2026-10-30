@@ -8,9 +8,9 @@
 
 Korean is the primary UI language. Built for the Comfy.org Open Source Higgsfield challenge.
 
-![Pankeki home screen](docs/images/pankeki-home-20261029.jpg)
+![Pankeki home screen](docs/images/pankeki-home-20261030.jpg)
 
-*Pankeki home screen — user-provided image received on October 29, 2026.*
+*Pankeki home screen — user-provided image received on October 30, 2026.*
 
 ## Choose the right branch
 
@@ -18,7 +18,7 @@ Korean is the primary UI language. Built for the Comfy.org Open Source Higgsfiel
 | --- | --- |
 | [mac-release-20261028](https://github.com/pullyo/pankeki/tree/mac-release-20261028) | Current macOS desktop app and local engine integration. Local validation has used one Apple Silicon Mac; broad hardware compatibility is unverified. |
 | [windows-port-20261029](https://github.com/pullyo/pankeki/tree/windows-port-20261029) | Windows/CUDA port. 313 automated checks on a Mac host and a Windows cross-build have been recorded. Installation, GPU inference and native app behavior on an actual Windows PC remain unverified. |
-| `main` | Historical application code from the October 20 checkpoint. Updating this README does not update that code; clone one of the branches above for the current app. |
+| `main` | The current macOS app, merged from `mac-release-20261028` on 2026-10-30. The contest judge path stays pinned at that branch's commit `016eb5e`; `main` may move on afterwards. |
 
 ## The workspace
 
@@ -74,7 +74,7 @@ The desktop app needs the external project folder, Python/ComfyUI/models and a s
 
 ## Windows
 
-Use the [Windows branch and installation guide](https://github.com/pullyo/pankeki/blob/windows-port-20261029/README.windows.ko.md), not the historical `main` commands. The port targets Windows 10/11 x64, Python 3.12/3.13 and NVIDIA CUDA. A browser editor-only path and explicit CPU generation option also exist. The desktop client requires the generation runtime; Python/ComfyUI/models/CLIs remain external. Cross-built packages are unsigned, so SmartScreen may warn. **No actual Windows validation has been recorded.**
+Use the [Windows branch and installation guide](https://github.com/pullyo/pankeki/blob/windows-port-20261029/README.windows.ko.md), not the macOS commands on `main`. The port targets Windows 10/11 x64, Python 3.12/3.13 and NVIDIA CUDA. A browser editor-only path and explicit CPU generation option also exist. The desktop client requires the generation runtime; Python/ComfyUI/models/CLIs remain external. Cross-built packages are unsigned, so SmartScreen may warn. **No actual Windows validation has been recorded.**
 
 ## Experimental and unavailable features
 
