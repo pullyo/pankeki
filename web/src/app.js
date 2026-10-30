@@ -1445,7 +1445,7 @@ function mountAuthoringV3Workspace() {
   $('v3ExportPng')?.addEventListener('click',action(() => authoringV3.exportPosePng()));
   $('v3ExportZip')?.addEventListener('click',action(() => authoringV3.exportFrames()));
   $('v3Mode')?.addEventListener('click',action(() => setAuthoringV3Mode(true)));
-  for (const id of ['motionNativeMode']) $(id)?.addEventListener('click',action(() => setAuthoringV3Mode(false)));
+  $('motionNativeMode')?.addEventListener('click',action(() => setAuthoringV3Mode(false)));
   $('v3CopyFromMotion')?.addEventListener('click',action(async () => {
     if (!motionController) throw Error('기본 제작에서 부위와 메시를 먼저 준비해주세요.');
     const raw = await motionController.snapshotProject();

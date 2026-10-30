@@ -193,3 +193,28 @@ test('reading other stages during a running generation preserves its request and
   assert.equal(ui.state().project.versions[0].image, BLUE); assert.equal(ui.state().busy, false);
   assert.equal(ui.doc.body.dataset.studioScreen, 'export');
 });
+
+test('precise rigging route hides and restores the native motion panel, project tools and mode buttons', async () => {
+  const ui = workflow(); const doc = ui.doc;
+  for (const id of ['motionNativePanel', 'motionProjectTools', 'v3Workspace']) doc.body.append(ui.element(id));
+  const nativeMode = ui.element('motionNativeMode', 'button'), v3Mode = ui.element('v3Mode', 'button');
+  doc.body.append(nativeMode, v3Mode);
+  const seen = [];
+  ui.sandbox.PankekiAuthoringV3Controller = { show: screen => seen.push(['show', screen]), suspend: () => seen.push(['suspend']) };
+  vm.runInContext('authoringV3Selected = true', ui.sandbox);
+  ui.controller.go('motion');
+  assert.equal(ui.element('motionNativePanel').hidden, true);
+  assert.equal(ui.element('motionProjectTools').hidden, true);
+  assert.equal(ui.element('v3Workspace').hidden, false);
+  assert.equal(v3Mode.getAttribute('aria-pressed'), 'true');
+  assert.equal(nativeMode.getAttribute('aria-pressed'), 'false');
+  assert.deepEqual(seen, [['show', 'motion']]);
+  vm.runInContext('authoringV3Selected = false', ui.sandbox);
+  ui.controller.go('motion');
+  assert.equal(ui.element('motionNativePanel').hidden, false);
+  assert.equal(ui.element('motionProjectTools').hidden, false, 'returning to native authoring must show the project tools again');
+  assert.equal(ui.element('v3Workspace').hidden, true);
+  assert.equal(v3Mode.getAttribute('aria-pressed'), 'false');
+  assert.equal(nativeMode.getAttribute('aria-pressed'), 'true');
+  assert.deepEqual(seen.at(-1), ['suspend']);
+});

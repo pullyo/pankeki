@@ -6,7 +6,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from pankeki.capabilities import capability_snapshot, targeted_cancel_status, validate_snapshot
+from pankeki.capabilities import capability_snapshot, content_revision, targeted_cancel_status, validate_snapshot
 from pankeki.engine import Engine
 from pankeki.model_presets import MODEL_PRESETS
 
@@ -69,3 +69,14 @@ class CapabilityTests(unittest.TestCase):
             input=json.dumps(snapshot,ensure_ascii=False),capture_output=True,text=True,timeout=10,check=False)
         self.assertEqual(process.returncode,0,process.stderr)
         self.assertEqual(process.stdout,snapshot['revision'])
+
+
+class CapabilityFixtureTests(unittest.TestCase):
+    def test_shared_fixture_revision_matches_its_content(self):
+        # The JS tests validate this fixture through profiles.js, which rejects a stale
+        # revision with an unrelated "Invalid execution trace" error. Fail here, by name, instead.
+        path = Path(__file__).parent / 'fixtures' / 'system-capabilities.json'
+        snapshot = json.loads(path.read_text(encoding='utf-8'))
+        self.assertEqual(snapshot['revision'], content_revision(snapshot),
+                         'tests/fixtures/system-capabilities.json 의 revision 을 content_revision() 으로 다시 계산해 넣어야 한다')
+        validate_snapshot(snapshot)

@@ -120,7 +120,7 @@ test('the mounted composer preserves Korean IME input and real project import re
   nodes.videoPrompt.value='가을 숲을 천천히 걷는 인물';nodes.videoPrompt.emit('compositionend');assert.equal(controller.getState().prompt,'가을 숲을 천천히 걷는 인물');
   const previous=controller.getState().project_id;notify({},'import');assert.notEqual(controller.getState().project_id,previous);assert.equal(controller.getState().scene,null);assert.equal(controller.getState().prompt,'');
 });
-test('motion header keeps video entry and all three rig mode controls in row one above the unchanged row-two body',()=>{
+test('motion header keeps video entry and both rig mode controls in row one above the unchanged row-two body',()=>{
   const fs=require('node:fs'),path=require('node:path'),html=fs.readFileSync(path.join(__dirname,'../src/index.template.html'),'utf8');
   // Parse the source element hierarchy. Template icons are text and do not
   // affect which elements become direct CSS grid items.

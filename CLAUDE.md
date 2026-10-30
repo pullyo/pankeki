@@ -54,7 +54,7 @@ Ruff 기본 규칙 전체에는 기존 위반 39건이 있다. 자동 수정(`--
 - `workflows.py`: ComfyUI API 그래프(`txt2img`, `inpaint`, `inpaint_sdxl`). `model_presets.py`: 모델 ID(`sdxl-base` 기본, `sd-turbo`, 수정 전용 `sdxl-inpaint-v01`은 `sdxl-base`의 CLIP/VAE를 함께 사용).
 - `model_lease.py`: Windows 읽기 잠금 fingerprint 정책(`windows_read_lock`). Mac은 `stat_cache`(`run_macos.py`가 설정): 프로세스당 처음 한 번 모델 전체 SHA256을 읽고, 이후 장치·inode·크기·mtime·ctime이 같으면 그 값을 재사용한다(`engine.ModelDigestCache`, metrics의 `fingerprint_reused`). `strict`는 매 요청 전체를 다시 읽는다.
 
-**프론트엔드 (`web/`).** 번들러가 없다. `web/build.py`가 `web/src/*.js`를 **고정 순서**로 이어 붙이고 CSS·폰트·로고·`assets/redesign/*.png`(WebP 변환)·Lucide 아이콘·움직임 데모를 모두 인라인해 단일 `web/index.html`을 만든다. 새 JS 파일은 `build.py`의 목록에 추가해야 포함되고, 해결되지 않은 `{{TOKEN}}`이 있으면 빌드가 실패한다. 브라우저 저장소 키는 버전별로 분리돼 있다(`pankeki-authoring-v3` 등). 기존 v2 프로젝트·저장소를 바꾸지 않도록 주의한다. `character-*-v3.js`는 정밀 리깅, `cubism-*.js`는 Live2D 재생(공식 SDK 미준비로 비활성)이다.
+**프론트엔드 (`web/`).** 번들러가 없다. `web/build.py`가 `web/src/*.js`를 **고정 순서**로 이어 붙이고 CSS·폰트·로고·`assets/redesign/*.png`(WebP 변환)·Lucide 아이콘·움직임 데모를 모두 인라인해 단일 `web/index.html`을 만든다. 새 JS 파일은 `build.py`의 목록에 추가해야 포함되고, 해결되지 않은 `{{TOKEN}}`이 있으면 빌드가 실패한다. 브라우저 저장소 키는 버전별로 분리돼 있다(`pankeki-authoring-v3` 등). 기존 v2 프로젝트·저장소를 바꾸지 않도록 주의한다. `character-*-v3.js`는 정밀 리깅이다. Live2D/Cubism 코드는 0.x 정리 때 제거했다(공식 SDK 재배포 불가).
 
 **MCP 플러그인 (`plugins/pankeki-local/`).** 앱의 HTTP API를 MCP 도구(`pankeki_generate_image`, `pankeki_edit_image` 등)로 노출한다. 계약은 `server/CONTRACT.md`. 전용 venv `runtime/macos/pankeki-mcp-20261023/release/venv`를 쓰며 `.venv-macos`에 의존성을 추가하지 않는다. `mcp.json`/`.mcp.json`은 `scripts/configure_paths.py`가 현재 체크아웃 위치로 생성한다(`--check`로 차이만 확인). 실행기는 `/usr/bin/python3`(Xcode 라이선스 동의 전에는 실패) 대신 전용 venv Python으로 띄운다.
 
