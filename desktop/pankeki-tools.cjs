@@ -8,6 +8,7 @@
 // Same behaviour as the tool code in codex-bridge.cjs, which stays frozen until
 // its Codex path is re-tested; it should then import this module instead.
 const {spawn} = require('node:child_process');
+const platformInfo = require('./platform.cjs');
 const fs = require('node:fs');
 const path = require('node:path');
 // Packaged bytes and development bytes use the same shared browser/Node validator.
@@ -374,6 +375,7 @@ function opaque(value, name) {
 
 // Environment for children: no API keys, so CLIs use their own managed sign-in.
 function childEnv(base, extra = {}) {
+  if (process.platform === 'win32') return {...platformInfo.minimalEnv(base, 'win32'), ...extra};
   const env = {};
   for (const key of ['HOME', 'PATH', 'USER', 'LOGNAME', 'LANG', 'LC_ALL', 'TMPDIR', 'SHELL']) if (base[key]) env[key] = base[key];
   return {...env, ...extra};
@@ -424,6 +426,9 @@ function rpc(proc, {onRequest, onNotification, log, label}) {
 
 async function stopProcess(proc, ms) {
   if (!proc || proc.exitCode !== null || proc.signalCode !== null) return;
+  // Signals are emulated on Windows and would end only the launcher; stop the whole tree and reject
+  // (code process-not-stopped) if it is still alive, so the caller keeps its handle.
+  if (process.platform === 'win32') return platformInfo.stopProcessTree(proc, ms);
   await new Promise(resolve => {
     const kill = setTimeout(() => { try { proc.kill('SIGKILL'); } catch {} }, ms);
     proc.once('exit', () => { clearTimeout(kill); resolve(); });
@@ -444,14 +449,20 @@ function createToolRunner({projectRoot, paths, pankekiBaseUrl, resolveEditContex
   const inflight = new Set();                // submit sequences (POST + late-job cancel) close() must drain
 
   async function mcpFor(projectId) {
-    if (mcp.has(projectId)) return mcp.get(projectId).ready;
+    const existing = mcp.get(projectId);
+    if (existing) {
+      // An adapter whose initialize failed stays owned until its process is confirmed gone (the 'exit'
+      // handler then drops it). While it is still alive, never start a second one beside it.
+      if (existing.failed) throw new BridgeError('stop-failed', 'Previous Pankeki tools process is still stopping');
+      return existing.ready;
+    }
     const inputs = path.join(paths.inputs, projectId);
     fs.mkdirSync(inputs, {recursive: true});
     fs.mkdirSync(paths.state, {recursive: true});
     const spec = mcpCommand ? mcpCommand({inputs, state: paths.state}) : {
       command: paths.mcpPython, args: [paths.launcher, '--input-root', inputs, '--state-dir', paths.state],
       env: {PANKEKI_APP_ROOT: projectRoot, PANKEKI_PYTHON: paths.mcpPython, PANKEKI_API_URL: pankekiBaseUrl}};
-    const proc = spawnImpl(spec.command, spec.args, {cwd: paths.work, env: childEnv(process.env, spec.env), stdio: ['pipe', 'pipe', 'pipe']});
+    const proc = spawnImpl(spec.command, spec.args, {cwd: paths.work, env: childEnv(process.env, spec.env), stdio: ['pipe', 'pipe', 'pipe'], ...(process.platform === 'win32' ? {windowsHide: true} : {})});
     const client = rpc(proc, {label: 'mcp', log, onNotification() {}, onRequest: m => client.write({jsonrpc: '2.0', id: m.id, error: {code: -32601, message: 'unsupported'}})});
     const entry = {proc, rpc: client};
     proc.on('error', error => { log('mcp spawn error: ' + redact(error.message)); client.failAll(new BridgeError('mcp', 'Pankeki tools could not start')); });
@@ -461,7 +472,12 @@ function createToolRunner({projectRoot, paths, pankekiBaseUrl, resolveEditContex
       client.write({jsonrpc: '2.0', method: 'notifications/initialized'});
       return entry;
     })();
-    entry.ready.catch(() => { mcp.delete(projectId); stopProcess(proc, limits.close); });
+    entry.ready.catch(() => {
+      entry.failed = true;
+      // Keep the entry (and its handle) until the stop is proven; close() retries and reports a live one.
+      stopProcess(proc, limits.close).then(() => { if (mcp.get(projectId) === entry) mcp.delete(projectId); },
+        error => log('mcp stop failed: ' + redact(error.message)));
+    });
     mcp.set(projectId, entry);
     return entry.ready;
   }
@@ -672,9 +688,12 @@ function createToolRunner({projectRoot, paths, pankekiBaseUrl, resolveEditContex
       }
     }
     for (const [jobId, entry] of ledger) if (!TERMINAL.has(entry.state) && mcp.has(entry.projectId)) await adapterCancel(entry.projectId, jobId);
-    const stops = [...mcp.values()].map(entry => stopProcess(entry.proc, limits.close));
+    // Forget an adapter only after its process is confirmed gone; a failed stop keeps it and fails close.
+    const entries = [...mcp.entries()];
     mcp.clear();
-    await Promise.all(stops);
+    const results = await Promise.allSettled(entries.map(([, entry]) => stopProcess(entry.proc, limits.close)));
+    results.forEach((result, i) => { if (result.status === 'rejected' && !mcp.has(entries[i][0])) mcp.set(entries[i][0], entries[i][1]); });
+    if (results.some(result => result.status === 'rejected')) throw new BridgeError('stop-failed', 'Pankeki tools could not be stopped');
     ledger.clear();
     return unconfirmedSubmissions;
   }

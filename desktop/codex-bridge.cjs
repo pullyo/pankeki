@@ -11,6 +11,7 @@
 // source/mask paths are resolved through the app's resolver and never reach the
 // remote model. Verified against codex-cli 0.164.0 (output/desktop-codex-20261024/claude).
 const {spawn} = require('node:child_process');
+const platformInfo = require('./platform.cjs');
 const fs = require('node:fs');
 const path = require('node:path');
 const {TOOLS,createToolSchemas,authorizeTool,normalizedCapabilities,INSTRUCTIONS,generationSettingsFromMessage,automaticFromMessage,resolveAutomaticChat,reserveAutomaticSubmission,consumeAutomaticSubmission,failAutomaticSubmission,bindAutomaticSettings,automaticOwnsJob,automaticNote,sourceImageBytes,resultImageBytes,imageForModel: defaultImageForModel} = require('./pankeki-tools.cjs');
@@ -23,9 +24,6 @@ const DISABLED_FEATURES = ['shell_tool', 'unified_exec', 'unified_exec_tty', 'sh
   'plugin_sharing', 'browser_use', 'browser_use_external', 'in_app_browser', 'computer_use', 'hooks', 'memories', 'chronicle',
   'multi_agent', 'image_generation', 'view_image', 'skill_mcp_dependency_install', 'skill_search', 'tool_suggest', 'goals',
   'workspace_dependencies', 'in_app_local_automation'];
-// Global MCP servers known on this machine; connect() refuses to run if any MCP
-// server is still enabled in the child's effective config.
-const INHERITED_MCP = ['node_repl', 'pankeki-local'];
 const FORBIDDEN_ITEMS = new Set(['commandExecution', 'fileChange', 'webSearch', 'imageGeneration', 'imageView',
   'collabAgentToolCall', 'subAgentActivity', 'mcpToolCall']);
 const ID = /^[A-Za-z0-9_-]{1,80}$/;
@@ -91,6 +89,7 @@ function opaque(value, name) {
 }
 
 function defaultCodexPath() {
+  if (process.platform === 'win32') return platformInfo.findCli('codex');
   const home = process.env.HOME || '';
   for (const candidate of [path.join(home, '.local/bin/codex'), '/opt/homebrew/bin/codex', '/usr/local/bin/codex']) {
     try { fs.accessSync(candidate, fs.constants.X_OK); return candidate; } catch {}
@@ -98,11 +97,13 @@ function defaultCodexPath() {
   return null;
 }
 
-function childArgs(disabledSkills = []) {
+function childArgs(disabledSkills = [], disabledMcpCommand) {
   const args = ['app-server'];
   for (const feature of DISABLED_FEATURES) args.push('--disable', feature);
   const config = {web_search: 'disabled', notify: [], approval_policy: 'never', sandbox_mode: 'read-only', 'skills.bundled.enabled': false};
-  for (const name of INHERITED_MCP) config[`mcp_servers.${name}.enabled`] = false;
+  // An enabled-only override can create an invalid transport for an absent server.
+  // A complete disabled definition parses on Windows and cannot launch a tool.
+  for (const name of ['node_repl','pankeki-local']) config[`mcp_servers.${name}`] = {command:disabledMcpCommand,enabled:false};
   // User skills cannot be switched off as a group; connect() lists them and
   // restarts the child once with each one disabled by name.
   if (disabledSkills.length) config['skills.config'] = disabledSkills.map(name => ({name, enabled: false}));
@@ -112,6 +113,7 @@ function childArgs(disabledSkills = []) {
 
 // Environment for children: no API keys, so Codex uses its managed ChatGPT login.
 function childEnv(base, extra = {}) {
+  if (process.platform === 'win32') return {...platformInfo.minimalEnv(base, 'win32'), ...extra};
   const env = {};
   for (const key of ['HOME', 'PATH', 'USER', 'LOGNAME', 'LANG', 'LC_ALL', 'TMPDIR', 'SHELL']) if (base[key]) env[key] = base[key];
   return {...env, ...extra};
@@ -162,6 +164,9 @@ function rpc(proc, {onRequest, onNotification, log, label}) {
 
 async function stopProcess(proc, ms) {
   if (!proc || proc.exitCode !== null || proc.signalCode !== null) return;
+  // Signals are emulated on Windows and would end only the launcher; stop the whole tree and reject
+  // (code process-not-stopped) if it is still alive, so the caller keeps its handle.
+  if (process.platform === 'win32') return platformInfo.stopProcessTree(proc, ms);
   await new Promise(resolve => {
     const kill = setTimeout(() => { try { proc.kill('SIGKILL'); } catch {} }, ms);
     proc.once('exit', () => { clearTimeout(kill); resolve(); });
@@ -183,9 +188,11 @@ function createCodexBridge({projectRoot, codexPath, onEvent, resolveEditContext,
     // pankeki_mcp.py only accepts a state dir under <app-root>/runtime, whatever dataDir is.
     state: mcpStateDir || path.join(projectRoot, 'runtime/desktop-codex/mcp-state'),
     launcher: path.join(projectRoot, 'plugins/pankeki-local/scripts/launch.py'),
-    mcpPython: mcpPython || path.join(projectRoot, 'runtime/macos/pankeki-mcp-20261023/release/venv/bin/python')
+    mcpPython: mcpPython || path.join(projectRoot, ...platformInfo.layout(process.platform).mcpPython.split('/'))
   };
   const codex = codexPath === undefined ? defaultCodexPath() : codexPath;
+  // A plain path (macOS, tests) or a Windows {command,args} launch spec for an npm .cmd shim.
+  const codexLaunch = platformInfo.launchSpec(codex);
   const {normalizeModels, validModelId} = require('./chat-model-settings.cjs');
   let modelCatalog = null, modelChoice = null, capabilitySnapshot=null, toolSchemas=TOOLS;
 
@@ -219,14 +226,20 @@ function createCodexBridge({projectRoot, codexPath, onEvent, resolveEditContext,
 
   // ---- local MCP client of the existing Pankeki adapter (one per project) ----
   async function mcpFor(projectId) {
-    if (mcp.has(projectId)) return mcp.get(projectId).ready;
+    const existing = mcp.get(projectId);
+    if (existing) {
+      // An adapter whose initialize failed stays owned until its process is confirmed gone (the 'exit'
+      // handler then drops it). While it is still alive, never start a second one beside it.
+      if (existing.failed) throw new BridgeError('stop-failed', 'Previous Pankeki tools process is still stopping');
+      return existing.ready;
+    }
     const inputs = path.join(paths.inputs, projectId);
     fs.mkdirSync(inputs, {recursive: true});
     fs.mkdirSync(paths.state, {recursive: true});
     const spec = mcpCommand ? mcpCommand({inputs, state: paths.state}) : {
       command: paths.mcpPython, args: [paths.launcher, '--input-root', inputs, '--state-dir', paths.state],
       env: {PANKEKI_APP_ROOT: projectRoot, PANKEKI_PYTHON: paths.mcpPython, PANKEKI_API_URL: pankekiBaseUrl}};
-    const proc = spawnImpl(spec.command, spec.args, {cwd: paths.work, env: childEnv(process.env, spec.env), stdio: ['pipe', 'pipe', 'pipe']});
+    const proc = spawnImpl(spec.command, spec.args, {cwd: paths.work, env: childEnv(process.env, spec.env), stdio: ['pipe', 'pipe', 'pipe'], ...(process.platform === 'win32' ? {windowsHide: true} : {})});
     const client = rpc(proc, {label: 'mcp', log, onNotification() {}, onRequest: m => client.write({jsonrpc: '2.0', id: m.id, error: {code: -32601, message: 'unsupported'}})});
     const entry = {proc, rpc: client};
     proc.on('error', error => { log('mcp spawn error: ' + redact(error.message)); client.failAll(new BridgeError('mcp', 'Pankeki tools could not start')); });
@@ -236,7 +249,12 @@ function createCodexBridge({projectRoot, codexPath, onEvent, resolveEditContext,
       client.write({jsonrpc: '2.0', method: 'notifications/initialized'});
       return entry;
     })();
-    entry.ready.catch(() => { mcp.delete(projectId); stopProcess(proc, limits.close); });
+    entry.ready.catch(() => {
+      entry.failed = true;
+      // Keep the entry (and its handle) until the stop is proven; close() retries and reports a live one.
+      stopProcess(proc, limits.close).then(() => { if (mcp.get(projectId) === entry) mcp.delete(projectId); },
+        error => log('mcp stop failed: ' + redact(error.message)));
+    });
     mcp.set(projectId, entry);
     return entry.ready;
   }
@@ -570,7 +588,9 @@ function createCodexBridge({projectRoot, codexPath, onEvent, resolveEditContext,
   }
 
   async function start(disabledSkills) {
-    const proc = spawnImpl(codex, childArgs(disabledSkills), {cwd: paths.work, env: childEnv(process.env), stdio: ['pipe', 'pipe', 'pipe']});
+    const disabledMcpCommand=path.join(paths.work,'disabled-mcp-command.exe');
+    if(fs.existsSync(disabledMcpCommand))throw new BridgeError('isolation','Disabled MCP placeholder must not exist');
+    const proc = spawnImpl(codexLaunch.command, [...codexLaunch.args, ...childArgs(disabledSkills,disabledMcpCommand)], {cwd: paths.work, env: childEnv(process.env), stdio: ['pipe', 'pipe', 'pipe'], ...(process.platform === 'win32' ? {windowsHide: true} : {})});
     child = proc;
     codexRpc = rpc(proc, {label: 'codex', log, onRequest: onServerRequest, onNotification});
     proc.on('error', error => { log('spawn error: ' + redact(error.message)); if (child === proc) onExit(null, 'spawn-error'); });
@@ -587,7 +607,13 @@ function createCodexBridge({projectRoot, codexPath, onEvent, resolveEditContext,
     child = null;
     if (codexRpc) codexRpc.failAll(new BridgeError('exited', 'Codex restarted'));
     codexRpc = null;
-    await stopProcess(proc, limits.close);
+    try { await stopProcess(proc, limits.close); }
+    catch (error) {
+      // Still running: keep owning it so connect() does not start a second Codex beside it.
+      if (proc && proc.exitCode === null && proc.signalCode === null && child === null) child = proc;
+      setState('error', new BridgeError('stop-failed', 'Codex could not be stopped'));
+      throw new BridgeError('stop-failed', 'Codex could not be stopped');
+    }
   }
 
   async function enabledSkills() {
@@ -616,7 +642,7 @@ function createCodexBridge({projectRoot, codexPath, onEvent, resolveEditContext,
   async function connect() {
     if (child) return snapshot();
     closing = false;
-    if (!codex) { setState('missing', new BridgeError('missing', 'Codex is not installed')); return snapshot(); }
+    if (!codexLaunch) { setState('missing', new BridgeError('missing', 'Codex is not installed')); return snapshot(); }
     for (const dir of [paths.work, paths.inputs]) fs.mkdirSync(dir, {recursive: true});
     setState('starting');
     try {
@@ -636,6 +662,7 @@ function createCodexBridge({projectRoot, codexPath, onEvent, resolveEditContext,
       state.toolsReady = true;
       setState('ready');
     } catch (error) {
+      log('connect failed ('+String(error.code||'codex')+'): '+redact(error.message));
       await close();
       setState('error', error instanceof BridgeError ? error : new BridgeError('codex', error.message));
     }
@@ -775,16 +802,19 @@ function createCodexBridge({projectRoot, codexPath, onEvent, resolveEditContext,
     for (const [jobId, entry] of ledger) if (!TERMINAL.has(entry.state) && mcp.has(entry.projectId)) await adapterCancel(entry.projectId, jobId);
     threads.clear();
     state.toolsReady = false;
-    const stops = [...mcp.values()].map(entry => stopProcess(entry.proc, limits.close));
+    const entries = [...mcp.entries()];
     mcp.clear();
-    await Promise.all([stopChild(), ...stops]);
+    const results = await Promise.allSettled([stopChild(), ...entries.map(([, entry]) => stopProcess(entry.proc, limits.close))]);
+    // Re-own any adapter whose process is still alive, so a later close can retry it.
+    results.slice(1).forEach((result, i) => { if (result.status === 'rejected' && !mcp.has(entries[i][0])) mcp.set(entries[i][0], entries[i][1]); });
+    if (results.some(result => result.status === 'rejected')) throw new BridgeError('stop-failed', 'Codex or Pankeki tools could not be stopped');
     ledger.clear();
     if (state.state !== 'missing') state.state = 'idle';
     return {unconfirmedSubmissions};
   }
 
   return {status: snapshot, connect, send, cancel, close, getModels, setModel, getSubmittedRequest, getResultDescriptor, protocolVersion: PROTOCOL_VERSION,
-    _debug: {childArgs, paths, verifyIsolation, get tools(){return toolSchemas;}}};
+    _debug: {childArgs:skills=>childArgs(skills,path.join(paths.work,'disabled-mcp-command.exe')), paths, verifyIsolation, get tools(){return toolSchemas;}}};
 }
 
 module.exports = {createCodexBridge, BridgeError, TOOL_NAMES, DISABLED_FEATURES, PROTOCOL_VERSION};

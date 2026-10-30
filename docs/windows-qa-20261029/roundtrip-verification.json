@@ -1,0 +1,12 @@
+{
+  "original_file_sha256": "d8933a771419db69a6f653568d13032b07f59c0d38ed3f433451d4668000b566",
+  "reopened_export_sha256": "d8933a771419db69a6f653568d13032b07f59c0d38ed3f433451d4668000b566",
+  "original_candidates": 8,
+  "reopened_candidates": 8,
+  "all_candidate_ids_match": true,
+  "all_8_image_hashes_match": true,
+  "brief_matches": true,
+  "selection_history_matches": true,
+  "project_json_equal": true,
+  "saved_png_matches_edited_png": true
+}

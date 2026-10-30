@@ -327,18 +327,29 @@ test('connect: ChatGPT sign-in, no MCP servers, isolation verified, user skills 
     assert.ok(!JSON.stringify(status).includes('example.com'), 'account email is not exposed');
     const starts = t.log().filter(e => e.role === 'codex' && e.argv);
     assert.equal(starts.length, 2);
+    assert.deepEqual(t.bridge._debug.childArgs(),starts[0].argv);
     const joined = starts[1].argv.join(' ');
     for (const feature of DISABLED_FEATURES) assert.ok(starts[1].argv.includes(feature), feature);
     assert.ok(!joined.includes('code_mode_host'));
-    for (const pattern of [/approval_policy="never"/, /sandbox_mode="read-only"/, /web_search="disabled"/, /mcp_servers\.node_repl\.enabled=false/,
-      /mcp_servers\.pankeki-local\.enabled=false/, /skills\.bundled\.enabled=false/, /skills\.config=\[\{"name"="user-skill","enabled"=false\}\]/]) assert.match(joined, pattern);
-    assert.ok(!/mcp_servers\.[a-z_]+=\{/.test(joined), 'no MCP server is added to the child');
+    for(const name of ['node_repl','pankeki-local'])assert(starts[1].argv.includes('mcp_servers.'+name+'={"command"='+JSON.stringify(path.join(t.dataDir,'work','disabled-mcp-command.exe'))+',"enabled"=false}'));
+    for (const pattern of [/approval_policy="never"/, /sandbox_mode="read-only"/, /web_search="disabled"/,
+      /skills\.bundled\.enabled=false/, /skills\.config=\[\{"name"="user-skill","enabled"=false\}\]/]) assert.match(joined, pattern);
+    assert.ok(!/mcp_servers\.[^. ]+\.enabled=false/.test(joined), 'absent servers must not become enabled-only invalid transport entries');
+    assert.ok(!/mcp_servers\.[^ ]+enabled"?=true/.test(joined), 'no MCP server is enabled in the child');
     for (const start of starts) assert.ok(!start.envKeys.includes('OPENAI_API_KEY'));
     assert.equal(t.received('codex', 'initialize')[0].params.capabilities.experimentalApi, true);
   } finally {
     await t.bridge.close();
     if (saved === undefined) delete process.env.OPENAI_API_KEY; else process.env.OPENAI_API_KEY = saved;
   }
+});
+
+test('connect refuses a disabled MCP placeholder that already exists',async()=>{
+  const t=setup('ok');fs.mkdirSync(path.join(t.dataDir,'work'),{recursive:true});
+  fs.writeFileSync(path.join(t.dataDir,'work','disabled-mcp-command.exe'),'fixture; must never execute');
+  const status=await t.bridge.connect();
+  assert.equal(status.state,'error');assert.equal(status.lastError.code,'isolation');
+  assert.equal(t.log().filter(e=>e.role==='codex'&&e.argv).length,0);
 });
 
 for (const [scenario, expected] of [['signed-out', 'signed-out'], ['apikey', 'error'], ['extra-mcp', 'error'], ['hooks', 'error']]) {
