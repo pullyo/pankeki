@@ -10,16 +10,16 @@
   }
 })(typeof globalThis === 'object' ? globalThis : this,function () {
   'use strict';
-  const labels = Object.freeze({home:'프로젝트 홈',design:'이미지 생성 · 기존 기능 · 실행 환경 확인 필요',
+  const labels = Object.freeze({home:'프로젝트 홈',projects:'프로젝트',design:'이미지 생성 · 기존 기능 · 실행 환경 확인 필요',
     compare:'후보 비교 · 기존 기능',inpaint:'부분 수정 · 기존 기능 · 실행 환경 확인 필요',
-    parts:'부위 편집 · 개발 예정',motion:'표정과 동작 · 개발 예정',export:'저장과 출력 · 기본 저장 사용 가능'});
+    parts:'부위 편집 · 개발 예정',motion:'표정과 동작 · 개발 예정',video:'Blender 영상',export:'저장과 출력 · 기본 저장 사용 가능'});
   const workspace = new Set(['design','compare','inpaint']);
   function mount(doc,studio) {
     const find = id => doc.getElementById(id), nodes = selector => Array.from(doc.querySelectorAll(selector));
     const pages = nodes('[data-studio-page]'), nav = nodes('[data-studio-go]'), headings = nodes('[data-studio-heading]');
     const shells = nodes('.app-shell'), disposers = [];
     let screen = Object.hasOwn(labels,doc.body.dataset.studioScreen) ? doc.body.dataset.studioScreen : 'home';
-    let previous = null, switching = false;
+    let previous = null, switching = false, lastWorkspaceRoute = null;
     function text(id,value) { const node = find(id); if (node) node.textContent = value; }
     function show(message = labels[screen]) {
       const motion = rootMotion();
@@ -28,12 +28,32 @@
       for (const page of pages) page.hidden = page.dataset.studioPage !== screen;
       for (const shell of shells) shell.hidden = !workspace.has(screen);
       for (const button of nav) {
-        const active = button.dataset.studioGo === screen;
+        const active = button.dataset.studioGo === (screen === 'video' && button.dataset.studioGo === 'motion' ? 'motion' : screen);
         button.classList.toggle('active',active);
         if (active) button.setAttribute('aria-current','step'); else button.removeAttribute('aria-current');
       }
       text('studioStatus',message);
-      motion?.show(screen);
+      const cubism = typeof globalThis === 'object' ? globalThis.PankekiCubismWorkspaceController : null;
+      const cubismActive = screen === 'motion' && cubism?.getSummary().mode === 'cubism';
+      const precise = typeof globalThis === 'object' ? globalThis.PankekiAuthoringV3Controller : null;
+      const preciseActive = !!precise && ['motion','export'].includes(screen) && !cubismActive && studio.getAuthoringMode?.() === 'v3';
+      const route = screen + ':' + (cubismActive ? 'cubism' : preciseActive ? 'v3' : 'native');
+      if (route !== lastWorkspaceRoute) {
+        if (cubismActive || preciseActive) motion?.suspend();
+        if (!preciseActive && lastWorkspaceRoute?.endsWith(':v3')) precise?.suspend();
+        else if (lastWorkspaceRoute?.endsWith(':cubism')) cubism?.suspend();
+        lastWorkspaceRoute = route;
+      }
+      if (!cubismActive && !preciseActive) motion?.show(screen);
+      cubism?.show(screen);
+      if (preciseActive) precise.show(screen);
+      if (find('v3Workspace')) find('v3Workspace').hidden = !preciseActive || screen !== 'motion';
+      if (find('v3ExportActions')) find('v3ExportActions').hidden = !preciseActive || screen !== 'export';
+      if (find('motionExportDetails') && screen === 'export') find('motionExportDetails').hidden = preciseActive;
+      if (find('motionNativePanel')) find('motionNativePanel').hidden = cubismActive || preciseActive;
+      if (find('motionProjectTools') && preciseActive) find('motionProjectTools').hidden = true;
+      if (find('v3Mode')) find('v3Mode').setAttribute('aria-pressed',String(preciseActive));
+      if (find('motionNativeMode') && preciseActive) find('motionNativeMode').setAttribute('aria-pressed','false');
     }
     function rootMotion() { return typeof globalThis === 'object' ? globalThis.PankekiMotionController : null; }
     function refresh(summary,reason) {
@@ -77,7 +97,7 @@
       } finally { switching = false; }
     }
     async function action(name) {
-      if (name === 'new') { if (studio.resetProject()) go('design'); return; }
+      if (name === 'new') { if (await (studio.requestNewProject ? studio.requestNewProject() : studio.resetProject())) go('design'); return; }
       if (name === 'continue') { go('design'); return; }
       if (name === 'upload') { go('inpaint'); return find('upload')?.click(); }
       if (name === 'import') { go('design'); return find('loadProject')?.click(); }

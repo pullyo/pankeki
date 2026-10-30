@@ -35,9 +35,9 @@ const MODEL_CATALOG = { default_model_id: 'sd-turbo', models: [
   { id:'sd-turbo',label:'SD Turbo · 빠른 초안',available:true,description:'빠른 초안',defaults:{width:512,height:512,steps:1,cfg:1,denoise:1,sampler:'euler',scheduler:'normal'} },
   { id:'sdxl-base',label:'SDXL Base 1.0',available:true,description:'세부 묘사 비교',defaults:{width:1024,height:1024,steps:25,cfg:6,denoise:.55,sampler:'dpmpp_2m',scheduler:'karras'} }
 ] };
-function page({ autoJobs = false, holdRestore = false, catalog = MODEL_CATALOG } = {}) {
+function page({ autoJobs = false, holdRestore = false, catalog = MODEL_CATALOG, capabilities = null, holdWrites = false, localStorageImpl } = {}) {
   const elements = new Map(), blobs = new Map(), images = new Map(), heldImages = new Set();
-  const requests = [], polls = new Map(), cancellations = [], revoked = [], writes = [], restores = [];
+  const requests = [], polls = new Map(), cancellations = [], revoked = [], writes = [], restores = [], pendingWrites = [];
   const objectURLs = new Map(), downloads = [], exportCanvases = [];
   let uuid = 0;
   class Event {
@@ -133,7 +133,7 @@ function page({ autoJobs = false, holdRestore = false, catalog = MODEL_CATALOG }
   }
   const values = { mode: 'txt2img', seed: '42', steps: '1', width: '512', height: '512', cfg: '1',
     denoise: '1', halo: '32', feather: '4', brush: '40', candidateCount: '2', profile: 'original',
-    palette1: '#112233', palette2: '#445566', palette3: '#778899' };
+    palette1: '#112233', palette2: '#445566', palette3: '#778899', sampler: 'dpmpp_2m', scheduler: 'karras' };
   for (const [id, value] of Object.entries(values)) element(id).value = value;
   for (const id of ['useBrief', 'cache', 'previewOn']) element(id).checked = true;
   const document = new Element('document');
@@ -166,7 +166,8 @@ function page({ autoJobs = false, holdRestore = false, catalog = MODEL_CATALOG }
         },
         put(value) {
           writes.push(plain(value)); const request = {};
-          queueMicrotask(() => { request.onsuccess?.({ target: request }); transaction.oncomplete?.(); });
+          const complete=()=>{request.onsuccess?.({target:request});transaction.oncomplete?.();};
+          if(holdWrites)pendingWrites.push({value,complete,abort(){transaction.error=Error('Controlled current transaction abort');transaction.onabort?.();}});else queueMicrotask(complete);
           return request;
         },
         delete() { const request = {}; queueMicrotask(() => { request.onsuccess?.(); transaction.oncomplete?.(); }); return request; },
@@ -175,10 +176,10 @@ function page({ autoJobs = false, holdRestore = false, catalog = MODEL_CATALOG }
     },
   };
   const sandbox = {
-    document, Event, console, Blob, structuredClone: realm, TextEncoder, TextDecoder,
+    document, Event, console, Blob, atob, structuredClone: realm, TextEncoder, TextDecoder,
     setTimeout, clearTimeout, queueMicrotask, requestAnimationFrame: callback => setImmediate(callback),
     crypto: { randomUUID: () => `uuid-${++uuid}` }, confirm: () => true,
-    localStorage: { getItem: () => null, setItem() {}, removeItem() {} },
+    localStorage: localStorageImpl || { getItem: () => null, setItem() {}, removeItem() {} },
     indexedDB: { open() { const request = {}; queueMicrotask(() => { request.result = database; request.onsuccess?.({ target: request }); }); return request; } },
     URL: {
       createObjectURL(file) { if (file.url) return file.url; const url = `blob:download-${++uuid}`; objectURLs.set(url, file); return url; },
@@ -203,10 +204,11 @@ function page({ autoJobs = false, holdRestore = false, catalog = MODEL_CATALOG }
       readAsText(blob) { blob.text().then(text => { this.result = text; this.onload?.(); }, error => { this.error = error; this.onerror?.(error); }); }
     },
     fetch: async (url, options = {}) => {
+      if (url === '/api/capabilities') return capabilities ? response(await capabilities) : {ok:false,status:404,json:async()=>({error:'Not found'})};
       if (url === '/api/health') return response({ comfy: true });
       if (url === '/api/models') {
         if (catalog === null) throw Error('catalog offline');
-        return response(catalog);
+        return response(await catalog);
       }
       if (url === '/api/jobs') {
         const pending = { ...deferred(), id: 'job-' + (requests.length + 1), body: JSON.parse(options.body) };
@@ -287,7 +289,7 @@ function page({ autoJobs = false, holdRestore = false, catalog = MODEL_CATALOG }
     return plain(sandbox.CharacterDesign.parseProject(JSON.stringify(raw)));
   }
   return { sandbox, studio, state, element, file, decode, finishSource, readySource, upload, accept, complete,
-    input, project, response, images, heldImages, blobs, requests, polls, cancellations, revoked, restores, writes,
+    input, project, response, images, heldImages, blobs, requests, polls, cancellations, revoked, restores, writes, pendingWrites,
     downloads, exportCanvases, Event };
 }
 

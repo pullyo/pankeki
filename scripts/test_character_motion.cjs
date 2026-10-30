@@ -34,3 +34,27 @@ test('empty_v1_startup_is_preparation_state_without_source_or_renderer_error',as
 test('import_rebuilds_motion_options_even_when_loading_and_commit_share_revision_zero',async()=>{const root=domSurface(),legacy=require('../web/src/profiles.js').createProject({},[],[]),initial=await D.fromV1(legacy,{decodeAsset}),editor=D.createEditor(initial,{decodeAsset}),c=api().mount(root,{editor,renderer:R,decodeAsset,clock:clock()});await c.ready;const d=clone(fixture);d.motions=[{id:'imported-cycle',duration:2,fps:24,rigHashes:d.rigs.map(r=>r.rigHash),curves:[{parameterId:'breath',keys:[{t:0,value:0},{t:1,value:1},{t:2,value:0}]}]}];await c.loadDocument(d);assert.deepEqual(root.nodes.get('motionMotionSelect').children.map(o=>o.value),['imported-cycle']);assert.equal(root.nodes.get('motionMotionSelect').value,'imported-cycle');assert.equal(c.getSummary().revision,0);c.destroy();});
 
 
+// Task9: parameter string drafts; these are DOM contracts, not browser pixels.
+async function parameterUI(options={}){
+ const root=domSurface(),n=root.createElement('input');n.type='text';n.dataset.motionParam='mouthOpen';n.dataset.motionInputKind='number';n.selectionStart=0;n.selectionEnd=0;n.attrs={};n.setAttribute=(k,v)=>n.attrs[k]=v;n.removeAttribute=k=>delete n.attrs[k];n.focus=()=>root.activeElement=n;
+ root.nodes.set('draftMouth',n);root.activeElement=n;
+ const editor=D.createEditor(await D.parseDocument(clone(fixture),{decodeAsset}),{decodeAsset});
+ const c=api().mount(root,{editor,renderer:R,decodeAsset,clock:clock(),...options});await c.ready;
+ const fire=async(event,value)=>{if(value!==undefined)n.value=value;await n.events.get(event)?.({key:event,preventDefault(){}});for(let i=0;i<8;i++)await new Promise(r=>setImmediate(r));};
+ return{c,root,n,fire};
+}
+test('parameter_draft_string_cursor_refresh_enter_blur_escape',async()=>{
+ const{c,n,fire}=await parameterUI();await fire('input','0');await fire('input','0.');n.selectionStart=n.selectionEnd=2;c.refreshSources();assert.equal(n.value,'0.');assert.equal(n.selectionStart,2);
+ await fire('input','0.5');assert.equal(c.getSummary().revision,0);await n.events.get('keydown')?.({key:'Enter',preventDefault(){}});await fire('idle');assert.equal(c.getSummary().revision,1);assert.equal(c.getSummary().values.mouthOpen,.5);
+ await fire('input','0.7');await n.events.get('keydown')?.({key:'Escape',preventDefault(){}});await fire('idle');assert.equal(n.value,'0.5');assert.equal(c.getSummary().values.mouthOpen,.5);
+ await fire('input','0.3');await fire('blur');assert.equal(c.getSummary().values.mouthOpen,.3);assert.equal(c.getSummary().revision,2);c.destroy();
+});
+test('parameter_invalid_draft_blocks_all_persistence_and_export_entries',async()=>{
+ let calls=0;const{c,fire}=await parameterUI({exporter:{exportPosePng(){calls++;},exportFrames(){calls++;}}});await fire('input','-');
+ await assert.rejects(c.saveProject(),/입력|숫자|draft|number/i);await assert.rejects(c.snapshotProject(),/입력|숫자|draft|number/i);await assert.rejects(c.exportPosePng(),/입력|숫자|draft|number/i);await assert.rejects(c.exportFrames(),/입력|숫자|draft|number/i);assert.equal(calls,0);c.destroy();
+});
+test('parameter_snapshot_commits_valid_draft_and_same_preset_restores_preview',async()=>{
+ const{c,n,fire}=await parameterUI();await c.savePreset('same','same');await fire('input','0.8');await c.applyPreset('same');assert.equal(n.value,'0');assert.equal(c.getSummary().values.mouthOpen,0);
+ await fire('input','0.6');const saved=JSON.parse(await c.snapshotProject());assert.equal(saved.parameters.find(p=>p.id==='mouthOpen').value,.6);assert.equal(c.getSummary().revision,2);c.destroy();
+});
+test('final M1 valid draft commit cancel preset and load clear stale numeric help',async()=>{let success=0;const {c,n,fire}=await parameterUI({onSuccess:()=>success++});await fire('input','-');await assert.rejects(c.saveProject());assert(n.attrs.title);await fire('input','.37');assert.equal(n.attrs.title,undefined);await c.saveProject();assert.equal(n.attrs['aria-invalid'],undefined);assert(success>0);await c.savePreset('valid','Valid');await fire('input','-');await c.applyPreset('valid');assert.equal(n.attrs.title,undefined);await fire('input','-');await n.events.get('keydown')({key:'Escape',preventDefault(){}});assert.equal(n.attrs.title,undefined);await fire('input','-');await c.loadDocument(clone(fixture));assert.equal(n.attrs.title,undefined);assert.equal(n.attrs['aria-invalid'],undefined);c.destroy();});

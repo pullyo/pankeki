@@ -39,6 +39,54 @@ test('v1_conversion_keeps_candidate_lineage_and_unknown_provenance',async()=>{
   assert(!Object.hasOwn(doc.candidates[0],'kind'));assert(!Object.hasOwn(doc.candidates[0].request,'model_id'));
 });
 
+function legacyWithPhotoMetadata(){
+  const v1=clone(fixture.legacyV1),source=v1.versions[0],output=fixture.document.assets[1];
+  source.annotations=[{id:'source-note',x:.25,y:.75,text:'원본 스카프 확인',createdAt:'2026-10-29T00:00:00.000Z'}];
+  const child={...clone(source),id:'photo-resize',label:'Synthetic resize',image:output.data,kind:'derived',parentId:'source-fixture',request:null,
+    derivation:{operation:'resize',sourceId:'source-fixture',sourceSha256:'32b80b1d9b7b3d1bca7fd4066672c335b6a633e69dd0cac9df65dc2ab0098795',inputWidth:32,inputHeight:32,outputWidth:8,outputHeight:8,algorithm:'pillow-lanczos',algorithmVersion:'1',parameters:{width:8,height:8,keepAspect:true}},
+    execution:{schema:1,traceId:'synthetic-cpu-resize',jobId:'e'.repeat(32),resultSha256:'a83bfbbde1c3988877b50c77c58821f122f40a50e97fa9c0af5653bf136f3ea9',runRef:'runs/'+'e'.repeat(32)}};
+  delete child.annotations;
+  v1.versions.push(child,{...clone(child),id:'photo-resize-copy'});
+  v1.selectionHistory=[{candidateId:'photo-resize-copy',action:'view',at:'2026-10-29T00:00:00.000Z'}];
+  return v1;
+}
+
+test('photo_metadata_survives_v1_to_motion_v2_serialization_with_real_asset_lineage',async()=>{
+  const D=api(),v1=legacyWithPhotoMetadata(),before=JSON.stringify(v1);
+  assert.equal(require('../web/src/profiles.js').parseProject(v1).versions.length,3,'fixture must be accepted by the current image-project schema');
+  const converted=await D.fromV1(v1,options),reopened=await D.parseDocument(await D.serializeDocument(converted),options);
+  assert.deepEqual(reopened,converted);assert.equal(JSON.stringify(v1),before);
+  assert.equal(reopened.assets.length,2,'equal PNG bytes share an asset without dropping candidate metadata');
+  assert.deepEqual(reopened.candidates.map(c=>c.id),['source-fixture','photo-resize','photo-resize-copy']);
+  assert.equal(reopened.sourceCandidateId,'photo-resize-copy');assert.deepEqual(reopened.selectionHistory,v1.selectionHistory);
+  const source=reopened.candidates[0];assert.deepEqual(source.annotations,v1.versions[0].annotations);
+  assert.equal(source.assetId,'sha256:32b80b1d9b7b3d1bca7fd4066672c335b6a633e69dd0cac9df65dc2ab0098795');
+  assert.equal(reopened.assets.find(a=>a.id===source.assetId).data,v1.versions[0].image);
+  for(const child of reopened.candidates.slice(1)){
+    assert.equal(child.kind,'derived');assert.equal(child.request,null);assert.equal(child.parentId,'source-fixture');
+    assert.equal(child.assetId,'sha256:a83bfbbde1c3988877b50c77c58821f122f40a50e97fa9c0af5653bf136f3ea9');
+    assert.deepEqual(child.derivation,v1.versions[1].derivation);assert.deepEqual(child.execution,v1.versions[1].execution);
+    assert.equal(reopened.assets.find(a=>a.id===child.assetId).data,v1.versions[1].image);
+  }
+});
+
+test('photo_metadata_rejects_forged_provenance_and_unsupported_fields_without_mutation',async()=>{
+  const D=api(),good=await D.fromV1(legacyWithPhotoMetadata(),options),before=JSON.stringify(good);
+  const cases=[
+    ['unknown candidate metadata',d=>{d.candidates[1].externalPath='/tmp/not-an-asset';}],
+    ['unknown derivation metadata',d=>{d.candidates[1].derivation.externalPath='/tmp/not-an-asset';}],
+    ['invalid annotation coordinates',d=>{d.candidates[0].annotations[0].x=-.1;}],
+    ['forged execution image SHA',d=>{d.candidates[1].execution.resultSha256='f'.repeat(64);}],
+    ['derived parent disagreement',d=>{d.candidates[1].parentId='photo-resize-copy';}],
+    ['forged derived source SHA',d=>{d.candidates[1].derivation.sourceSha256='f'.repeat(64);}],
+    ['derived input size disagrees with parent PNG',d=>{d.candidates[1].derivation.inputWidth=31;}],
+    ['derived output size disagrees with PNG',d=>{d.candidates[1].derivation.outputWidth=7;}],
+  ];
+  for(const [label,mutate]of cases){const bad=clone(good);mutate(bad);const input=JSON.stringify(bad);await assert.rejects(D.parseDocument(bad,options),undefined,label);assert.equal(JSON.stringify(bad),input,label);assert.equal(JSON.stringify(good),before);}
+  const accessor=clone(good);let called=false;Object.defineProperty(accessor.candidates[0],'annotations',{enumerable:true,get(){called=true;return [];}});
+  await assert.rejects(D.parseDocument(accessor,options),/Accessor/);assert.equal(called,false);assert.equal(JSON.stringify(good),before);
+});
+
 test('reject_hash_dimensions_and_limits_without_replacing_current',async()=>{
   const D=api();const current=await D.parseDocument(fixture.document,options), before=JSON.stringify(current);
   const mutations=[

@@ -1,0 +1,13 @@
+{
+  "asset": "template-postman.png",
+  "generator": "built-in image_gen",
+  "intent": "generate",
+  "reference_image": "/var/folders/mr/p6nxppgs1nld79dtrhl4_zjw0000gn/T/codex-clipboard-93862e93-a636-4d45-8bff-ecd32cc13142.png",
+  "reference_role": "Style and composition reference: red-haired male character portrait",
+  "source_output": "~/.codex/generated_images/01a16368-8c2b-7e00-a9bb-59ecd80b7991/exec-28d76592-272f-428e-b806-8abc0b13dcc4.png",
+  "width": 1536,
+  "height": 1024,
+  "prompt": "Use case: illustration-story.\nAsset type: standalone landscape 3:2 character template portrait for a desktop illustration app. Thumbnail display approximately 165 by 100 pixels.\nInput image: screenshot is ONLY a visual reference for its red-haired young adult male anime portrait (the second recent-project thumbnail and male template). Recreate the character artwork only, never the interface.\nPrimary request: a handsome young adult anime man with tousled reddish-brown hair, amber eyes, a cream shirt and rust-orange neck scarf. Friendly relaxed smile, warm peach background, close-up head and shoulders. Painterly anime illustration matching the warm softly detailed portraits in the reference. Warm golden light, expressive eyes, natural light skin, intentional clean linework, soft brush-textured highlights and shadows.\nComposition: landscape 3:2, centered face and visible scarf, full hair silhouette fits inside frame, shoulders crop at bottom. Distinct character silhouette readable at thumbnail size.\nConstraints: one adult male only; no UI, no labels, no text, no watermarks, no card borders, no frames. Opaque background.",
+  "inspection": "Verified: warm anime portrait of a young adult male with reddish-brown tousled hair, amber eyes, cream shirt, rust orange scarf, friendly smile; opaque peach background; no UI, labels, text, borders or watermark.",
+  "generated_date": "2026-10-22"
+}

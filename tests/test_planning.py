@@ -61,6 +61,37 @@ class ROIPlanningTests(unittest.TestCase):
         with self.assertRaises(ValueError): self.p.canvas_to_image(0, 0, image_size=(10, 10), display_size=(0, 1))
 
 
+class ModelScaleTests(unittest.TestCase):
+    def setUp(self):
+        from pankeki import planning
+        self.p = planning
+
+    def test_small_crop_is_upscaled_to_model_area_keeping_aspect(self):
+        self.assertEqual(self.p.model_scale_size((448, 368), 1024 * 1024), (1128, 928))
+        self.assertEqual(self.p.model_scale_size((256, 256), 1024 * 1024), (1024, 1024))
+
+    def test_large_crop_is_never_downscaled_and_factor_is_capped(self):
+        self.assertEqual(self.p.model_scale_size((1024, 1024), 1024 * 1024), (1024, 1024))
+        self.assertEqual(self.p.model_scale_size((1200, 900), 1024 * 1024), (1200, 900))
+        self.assertEqual(self.p.model_scale_size((64, 64), 1024 * 1024), (256, 256))
+        width, height = self.p.model_scale_size((1600, 256), 1024 * 1024)
+        self.assertLessEqual(max(width, height), 2048)
+        self.assertEqual((width % 8, height % 8), (0, 0))
+
+    def test_scaled_mask_keeps_every_edited_pixel_and_is_binary(self):
+        import numpy as np
+        mask = Image.new('L', (40, 40)); mask.putpixel((13, 27), 255)
+        scaled = np.asarray(self.p.scale_for_model(mask, (160, 160), is_mask=True))
+        self.assertTrue(set(np.unique(scaled)) <= {0, 255})
+        self.assertTrue(scaled[27 * 4:28 * 4, 13 * 4:14 * 4].all())
+
+    def test_restore_returns_padded_plan_size(self):
+        mask = Image.new('L', (768, 512)); mask.paste(255, (300, 200, 320, 220))
+        plan = self.p.plan_roi(mask, halo=16, min_size=256)
+        restored = self.p.restore_model_output(Image.new('RGB', (1024, 1024)), plan)
+        self.assertEqual(restored.size, plan.padded_size)
+
+
 class ExperimentalPlanningTests(unittest.TestCase):
     def setUp(self):
         from pankeki import planning

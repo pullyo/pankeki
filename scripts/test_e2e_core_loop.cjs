@@ -1,0 +1,11 @@
+'use strict';
+const test=require('node:test'),assert=require('node:assert/strict');
+const {queueState,validateRequest,resumeLedger,run,runPersistence}=require('./e2e_core_loop.cjs');
+const base=index=>({request:{mode:index?'inpaint':'txt2img',model_id:'sdxl-base',width:512,height:512,steps:2,seed:2026102801+index,denoise:1,cache:false,roi:false,preview:false,...(index?{feather:0,source:'data:image/png;base64,source',mask:'data:image/png;base64,mask'}:{})}});
+test('unknown queue is never treated as idle',()=>{for(const value of [null,{}, {queue_running:[],queue_pending:null}])assert.throws(()=>queueState(value));assert.equal(queueState({queue_running:[],queue_pending:[]}), 'idle');assert.equal(queueState({queue_running:[[0,'foreign']],queue_pending:[]}), 'busy');});
+test('only fixed single-candidate SDXL generation and sampled edit are accepted',()=>{validateRequest(base(0),0);validateRequest(base(1),1);for(const change of [{model_id:'sd-turbo'},{steps:1},{cache:true},{seed:42},{width:1024},{mode:'img2img'}])assert.throws(()=>validateRequest({request:{...base(0).request,...change}},0));assert.throws(()=>validateRequest({request:{...base(1).request,feather:4}},1));});
+test('GPU and protected original ports are rejected before browser/runtime loading',async()=>{await assert.rejects(run({allowGpu:false}),/GPU gate/);await assert.rejects(run({allowGpu:true,baseUrl:'http://127.0.0.1:8190'}),/Protected/);await assert.rejects(run({allowGpu:true,baseUrl:'http://127.0.0.1:8188'}),/Protected/);});
+
+test('resume preserves spent generation and refuses uncertain or two-spent ledgers',()=>{const previous={job_posts:1,stages:{generation:'PASS'},jobs:[{state:'succeeded',result:{result_sha256:'a'.repeat(64)}}],requests:[base(0)],events:[],error:'candidate selector'};const next=resumeLedger(previous);assert.equal(next.job_posts,1);assert.equal(next.requests.length,1);assert.equal(next.events.at(-1).consumed_posts,1);assert.throws(()=>resumeLedger({...previous,job_posts:2}));assert.throws(()=>resumeLedger({...previous,jobs:[{state:'uncertain'}]}));});
+
+test('persistence-only mode refuses any GPU permission before browser loading',async()=>{await assert.rejects(runPersistence({allowGpu:true}),/forbids GPU/);await assert.rejects(runPersistence({allowGpu:false,baseUrl:'http://127.0.0.1:8190'}),/Protected/);});

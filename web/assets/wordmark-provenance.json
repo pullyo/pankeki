@@ -1,0 +1,12 @@
+{
+  "created": "2026-10-19",
+  "tool": "built-in image_gen.imagegen",
+  "model": "Not exposed by tool; no model/version claim",
+  "mode": "reference image edit with transparent_background=true",
+  "reference": "D:\\Pankeki\\docs\\handoffs\\logo-reference-20261019\\user-preferred-pankeki-wordmark.png",
+  "output": "D:\\Pankeki\\web\\assets\\pankeki-main-wordmark-v1.png",
+  "source": "C:\\Users\\Administrator\\.codex\\generated_images\\01a1542a-1b43-7ae3-8691-7706589f9fb6\\exec-c606d232-318b-4998-9340-80c9c5d406e3.png",
+  "prompt": "Use case: background-extraction / logo-brand production refinement.\nThe provided image is the USER'S PREFERRED Pankeki main logo and is the direct visual source, not merely a loose inspiration. Preserve its warm richly illustrated identity: THREE fluffy round golden-brown pancakes stacked in direct contact at the left, beautifully toasted surfaces and soft pale sides, glossy translucent amber syrup flowing naturally over the stack, a dimensional pale-yellow butter square, and the exact word Pankeki in large plump rounded cream letters with warm golden lower shading and a rich dark-chocolate outline. Preserve the small warm coral heart over the i as in the reference. The pancakes and wordmark form one coherent horizontal logo. Keep the attractive depth, highlights, delicious textures and professional illustrative finish. DO NOT flatten this into a generic icon or reduce it to plain ellipses.\nRefine this into a production-ready wide horizontal master logo. Preserve the spelling exactly Pankeki (P-a-n-k-e-k-i), readable at header size. Maintain a deliberate continuous warm cream outer keyline around the whole mark, edged with a fine caramel accent, as in the reference. Remove the plain white background OUTSIDE that keyline completely, with true transparent alpha. Keep the cream highlights, cream lettering, butter and cream outer keyline intact and opaque. Clean smooth external contours with no isolated pixels, yellow/red fringe or detached white fragments. Center the full complete logo on a wide approximately 3:1 transparent canvas with compact even 4-6 percent margins. No new words, no slogan, no plate, no extra decorations. This is the main illustrated brand lockup, not the small app icon.",
+  "processing": "Original bytes copied unchanged; no raster processing",
+  "status": "browser visual verification pending, not user approved"
+}

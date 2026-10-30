@@ -1,0 +1,46 @@
+/* Installed app: the existing central workspace is the only AI composer. */
+.pc-central-chat .pc-ai-controls{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 10px;min-width:0}
+.pc-ai-controls>label{font-size:12px;color:var(--pc-muted);line-height:1.5}
+.pc-central-chat .pc-ai-controls select{min-height:34px;max-width:100%;padding:5px 8px;border:1px solid var(--pc-line);border-radius:8px;background:var(--pc-paper);color:var(--pc-ink);font:inherit;font-size:13px}
+.pc-central-chat #desktopChatSelectedModel{margin-left:auto;white-space:normal;overflow-wrap:anywhere;text-align:left;max-width:min(100%,400px)}
+.pc-central-chat #desktopChatConnect{white-space:normal}
+.pc-ai-consent{display:flex;align-items:flex-start;gap:8px;margin-bottom:10px;font-size:12px;line-height:1.5;color:var(--pc-muted)}
+.pc-ai-consent input{flex-shrink:0;margin-top:3px;accent-color:var(--pc-action)}
+.pc-ai-model-settings{display:flex;flex-direction:column;gap:16px;margin-bottom:24px;min-width:0}
+.pc-ai-model-settings fieldset{display:grid;grid-template-columns:minmax(90px,auto) minmax(0,1fr);align-items:center;gap:8px 12px;margin:0;padding:12px 0 0;border:0;border-top:1px solid var(--pc-line);min-width:0}
+.pc-ai-model-settings legend{padding:0 8px 0 0;font-size:14px;line-height:1.5;font-weight:650;color:var(--pc-ink)}
+.pc-ai-model-settings label{font-size:13px;line-height:1.5;color:var(--pc-ink)}
+.pc-ai-model-settings select{width:100%;min-width:0;min-height:36px;padding:6px 8px;border:1px solid var(--pc-line);border-radius:8px;background:var(--pc-paper);font:inherit;font-size:13px;color:var(--pc-ink)}
+.pc-ai-model-settings .hint,.pc-ai-model-settings .text-button{grid-column:1/-1;margin:0;font-size:12px;line-height:1.6;overflow-wrap:anywhere}
+.pc-ai-model-settings .text-button{justify-self:start;min-height:32px;color:var(--pc-action)}
+.pc-ai-model-settings select:disabled,.pc-ai-controls select:disabled{color:var(--pc-muted);background:var(--pc-background);cursor:not-allowed}
+.pc-ai-model-settings select:focus-visible,.pc-ai-model-settings button:focus-visible,.pc-ai-controls select:focus-visible{outline:2px solid var(--pc-action);outline-offset:2px}
+.pc-ai-turn{min-width:0}
+.pc-ai-turn .desktop-chat-reply{font-size:15px;line-height:1.6;overflow-wrap:anywhere;max-width:75ch;margin-top:12px;color:var(--pc-ink)}
+.desktop-chat-reply p{margin:0 0 12px;white-space:pre-wrap}
+.desktop-chat-reply p:last-child{margin-bottom:0}
+.desktop-chat-reply ul,.desktop-chat-reply ol{margin:0 0 12px;padding-left:24px}
+.desktop-chat-reply li{margin:4px 0}
+.desktop-chat-reply b{font-weight:650}
+.desktop-chat-reply code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:.88em;padding:1px 4px;border-radius:4px;background:var(--pc-background)}
+.pc-ai-results:empty{display:none}
+.pc-ai-results>.pc-turn{margin-top:16px}
+.pc-central-chat .pc-pending{padding-block:16px}
+.pc-central-chat .pc-thread .pc-message-author{flex-wrap:wrap}
+.pc-central-chat .pc-thread .pc-message-author>strong{overflow-wrap:anywhere}
+body.pc-central-chat[data-studio-screen=inpaint] .pc-thread[data-has-chat=true]{display:block;flex:0 0 auto;max-height:30dvh;min-height:80px;padding-top:12px}
+body.pc-central-chat[data-studio-screen=inpaint] .app-shell{overflow-y:auto;overflow-x:hidden;overscroll-behavior-y:contain;scroll-padding-block:16px}
+body.pc-central-chat[data-studio-screen=inpaint] .pk-generation-workspace{flex:1 0 auto;overflow:visible}
+body.pc-central-chat[data-studio-screen=inpaint] .pk-generation-workspace>.canvas-stack{flex:1 0 auto;overflow:visible}
+body.pc-central-chat[data-studio-screen=inpaint] .pk-generation-workspace .canvas-card{flex:1 0 auto;overflow:visible}
+body.pc-central-chat[data-studio-screen=inpaint] .pk-generation-workspace .canvas-viewport{flex:1 0 320px;min-height:320px}
+body.pc-central-chat[data-studio-screen=inpaint] .pc-thread .pc-welcome{display:none}
+body.pc-central-chat[data-studio-screen=inpaint] .pc-thread-inner{min-height:0;padding-bottom:12px}
+@media(max-width:1100px){.pc-central-chat #desktopChatSelectedModel{margin-left:0;max-width:calc(100% - 80px)}.pc-ai-controls{gap:6px}}
+@media(max-width:800px){.pc-ai-model-settings fieldset{grid-template-columns:minmax(0,1fr)}.pc-ai-model-settings .hint,.pc-ai-model-settings .text-button{grid-column:auto}.pc-central-chat #desktopChatSelectedModel{max-width:100%}.pc-central-chat .pc-ai-controls{align-items:flex-start}}
+@media(prefers-reduced-motion:reduce){.pc-central-chat *{scroll-behavior:auto}}
+.pc-build-information{margin-top:16px;border-top:1px solid var(--line,#ddd4c8);padding-top:12px}
+.pc-build-information summary{cursor:pointer;font-weight:600}
+.pc-build-information dl{display:grid;grid-template-columns:minmax(100px,auto) minmax(0,1fr);gap:6px 12px;font-size:12px}
+.pc-build-information dt{font-weight:600}
+.pc-build-information dd{margin:0;overflow-wrap:anywhere;font-family:ui-monospace,monospace}

@@ -1,0 +1,17 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/mcp.schema.json",
+  "mcpServers": {
+    "pankeki-local": {
+      "type": "stdio",
+      "command": "/Volumes/Samsung 970 EVO Plus/V/restored-20261020/Pankeki/runtime/macos/pankeki-mcp-20261023/release/venv/bin/python",
+      "args": [
+        "/Volumes/Samsung 970 EVO Plus/V/restored-20261020/Pankeki/plugins/pankeki-local/scripts/launch.py"
+      ],
+      "env": {
+        "PANKEKI_APP_ROOT": "/Volumes/Samsung 970 EVO Plus/V/restored-20261020/Pankeki",
+        "PANKEKI_PYTHON": "/Volumes/Samsung 970 EVO Plus/V/restored-20261020/Pankeki/runtime/macos/pankeki-mcp-20261023/release/venv/bin/python",
+        "PANKEKI_API_URL": "http://127.0.0.1:8190"
+      }
+    }
+  }
+}

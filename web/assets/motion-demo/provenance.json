@@ -91,6 +91,6 @@
       "mime": "image/png"
     }
   },
-  "projectSha256": "f66cb7462833a7414f156b818be9c67bafca0d9373a6e0f9bf943a24ed707b70",
+  "projectSha256": "d804c6f9e3ff714b4b307010ee05812ffa798a2fe1db748eb5a7b6c14b051c27",
   "sourceInvariant": "Original PNG bytes and UV/topology are never rewritten by parameters. The app validates references, geometry and hashes before accepting poses."
 }

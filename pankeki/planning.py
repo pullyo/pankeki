@@ -110,6 +110,44 @@ def unpad_generated(generated: Image.Image, plan: ROIPlan) -> Image.Image:
     return generated.crop((left, top, left + x1 - x0, top + y1 - y0))
 
 
+def model_scale_size(size: tuple[int, int], target_area: int, *, multiple: int = 8,
+                     max_factor: float = 4., max_side: int = 2048) -> tuple[int, int]:
+    """Size at which a small ROI crop is sampled so the model sees its native area.
+
+    Only upscales: a crop already at or above the target area keeps its size.
+    The aspect ratio is kept up to rounding to ``multiple``.
+    """
+    width, height = size
+    _positive_int(width, 'width')
+    _positive_int(height, 'height')
+    _positive_int(target_area, 'target_area')
+    _positive_int(multiple, 'multiple')
+    if not math.isfinite(max_factor) or max_factor < 1:
+        raise ValueError('max_factor must be finite and >= 1')
+    factor = min(max_factor, math.sqrt(target_area / (width * height)), max_side / max(width, height))
+    if factor <= 1:
+        return size
+    return tuple(max(multiple, min(max_side // multiple * multiple, round(v * factor / multiple) * multiple))
+                 for v in size)
+
+
+def scale_for_model(image: Image.Image, size: tuple[int, int], *, is_mask: bool = False) -> Image.Image:
+    """Resize a padded model input. A mask is widened so every edited pixel stays editable."""
+    if image.size == tuple(size):
+        return image.copy()
+    if is_mask:
+        resized = image.convert('L').resize(size, Image.Resampling.BILINEAR)
+        return resized.point(lambda v: 255 if v > 0 else 0)
+    return image.resize(size, Image.Resampling.LANCZOS)
+
+
+def restore_model_output(generated: Image.Image, plan: ROIPlan) -> Image.Image:
+    """Bring a scaled model output back to the padded plan size before unpadding."""
+    if generated.size == plan.padded_size:
+        return generated
+    return generated.resize(plan.padded_size, Image.Resampling.LANCZOS)
+
+
 def canvas_to_image(x: float, y: float, *, image_size: tuple[int, int],
                     display_size: tuple[float, float], zoom: float = 1.,
                     pan: tuple[float, float] = (0., 0.), clamp: bool = False) -> tuple[float, float]:

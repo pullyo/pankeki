@@ -1,0 +1,457 @@
+{
+  "scope": "Pankeki user workflow and official competitive documentation research, followed by Live2D patterns",
+  "checked_date": "2026-10-20",
+  "timezone": "Asia/Seoul",
+  "collected_at_utc": "2026-10-20T01:57:51.905658+00:00",
+  "status": "first_results_awaiting_coordinator_review",
+  "destination_policy": {
+    "D_drive_write_allowed_in_this_chat": false,
+    "fallback_outputs": "C:/Users/Administrator/Documents/Codex/2026-10-20/pankeki-product-research/outputs",
+    "D_drive_write_attempted": false
+  },
+  "methods": {
+    "interviews": 0,
+    "user_tests": 0,
+    "new_gpu_jobs": 0,
+    "live_browser_tests": 0,
+    "competitor_installs": 0,
+    "native_Live2D_UI_observed_by_this_researcher": false,
+    "official_docs_opened_in_web_tool": true,
+    "production_files_modified": false
+  },
+  "live2d": {
+    "installed_version_reported_by_coordinator": "5.3.04",
+    "official_release_date": "2026-09-03",
+    "official_beta_version": "5.3.05 beta1",
+    "official_beta_date": "2026-10-13",
+    "installed_version_independently_measured": false
+  },
+  "local_sources": [
+    {
+      "role": "governance",
+      "path": "D:/Pankeki/docs/TEAM-OPERATIONS.ko.md",
+      "bytes": 9905,
+      "sha256": "765b9644cd76c22402750ea4377823967e20288a4a97621faa59ff4cb182f254",
+      "mtime_utc": "2026-10-20T01:44:53.165764+00:00"
+    },
+    {
+      "role": "latest_checkpoint",
+      "path": "D:/Pankeki/docs/handoffs/shutdown-checkpoint.md",
+      "bytes": 9647,
+      "sha256": "b9ef4b8e18d88a63a39b5127638246410fa9dd969142692ce7ddf8a77b64b68a",
+      "mtime_utc": "2026-10-19T14:21:00+00:00"
+    },
+    {
+      "role": "user_decisions",
+      "path": "D:/Pankeki/docs/TEAM-CONTEXT.ko.md",
+      "bytes": 12222,
+      "sha256": "22932d2db10485ba7014076dbb0988159b12d9faa3a94f71fa02347f41d0ac9c",
+      "mtime_utc": "2026-10-19T13:59:40+00:00"
+    },
+    {
+      "role": "decision_history",
+      "path": "D:/Pankeki/docs/decisions.ko.md",
+      "bytes": 6267,
+      "sha256": "e70f23e39086ddb610b5422f68a888954b6840272a53c3a6320f2f437382d58c",
+      "mtime_utc": "2026-10-19T12:31:56+00:00"
+    },
+    {
+      "role": "chat_contract",
+      "path": "D:/Pankeki/docs/handoffs/chat-ui-contract.md",
+      "bytes": 4125,
+      "sha256": "0e0901b6549e161a805490a96b5f7deb021cd525644cbbe18baf61d014120d37",
+      "mtime_utc": "2026-10-19T13:43:56+00:00"
+    },
+    {
+      "role": "chat_generation_contract",
+      "path": "D:/Pankeki/docs/handoffs/chat-generation-contract.md",
+      "bytes": 2802,
+      "sha256": "4902500312188df102392f50cd4f677ab7eaa15251a03f6e667f11dfccb15e7a",
+      "mtime_utc": "2026-10-19T13:29:48+00:00"
+    },
+    {
+      "role": "historical_live_validation",
+      "path": "D:/Pankeki/docs/handoffs/function-live-validation.md",
+      "bytes": 8449,
+      "sha256": "2a4e425cf2bea0975bd5f05162eef45bad7e504b916dafaf4de93f1efa138b52",
+      "mtime_utc": "2026-10-19T13:14:26+00:00"
+    },
+    {
+      "role": "planning_alignment",
+      "path": "D:/Pankeki/docs/product/resume-product-priorities.ko.md",
+      "bytes": 14604,
+      "sha256": "f4aaf322f8262c744714ab4b57208895c641d134c3138c0341e239ce479cd3e5",
+      "mtime_utc": "2026-10-20T01:53:48.981098+00:00"
+    },
+    {
+      "role": "current_frontend",
+      "path": "D:/Pankeki/web/src/app.js",
+      "bytes": 50574,
+      "sha256": "b2539a8986c7d7a8afced411ee69e9429a30c348d0a51bd5b739f779a2ea26ce",
+      "mtime_utc": "2026-10-19T14:09:52+00:00"
+    },
+    {
+      "role": "current_project_schema",
+      "path": "D:/Pankeki/web/src/profiles.js",
+      "bytes": 21845,
+      "sha256": "eb519e90f36b3cdcc5ef36b8ea1c4f76feec83c588585be384b2656373f833b8",
+      "mtime_utc": "2026-10-19T14:09:34+00:00"
+    },
+    {
+      "role": "current_template",
+      "path": "D:/Pankeki/web/src/index.template.html",
+      "bytes": 26085,
+      "sha256": "6608a0d0bb0024e589cd41479f8ffcd90e8ab8c3509815e4f04c521009e38d10",
+      "mtime_utc": "2026-10-20T01:46:10.172406+00:00"
+    },
+    {
+      "role": "model_ui_check",
+      "path": "D:/Pankeki/work/quality-improvement/model-ui/report.json",
+      "bytes": 2707,
+      "sha256": "f5c85bd3f0d9702fd7c8de45286045632309f64bea53ff60c43fdf30a9ed6163",
+      "mtime_utc": "2026-10-19T14:15:36+00:00"
+    },
+    {
+      "role": "historical_visual_review",
+      "path": "D:/Pankeki/work/character-studio/design-revision/visual-review.md",
+      "bytes": 7406,
+      "sha256": "43fffd810eb45d6462e2d7724a8ac019b1216d0839c502a060c51a24d0fe2199",
+      "mtime_utc": "2026-10-19T13:47:00+00:00"
+    },
+    {
+      "role": "comparison_record",
+      "path": "D:/Pankeki/work/quality-improvement/app-model-comparison-first/report.json",
+      "bytes": 48619,
+      "sha256": "aecf4914ab56cb4aa60b7e7d9c5b8c246941a1fc2c82addc1a7e020858cd9cdb",
+      "mtime_utc": "2026-10-19T14:17:40+00:00"
+    }
+  ],
+  "images_directly_viewed": [
+    {
+      "role": "latest_saved_model_ui",
+      "path": "D:/Pankeki/work/quality-improvement/model-ui/1440.png",
+      "bytes": 72824,
+      "sha256": "1b5433aae34963fd2cd724bff4324d772075f06a07eb9d9d7c207a5eb2e6b48f",
+      "mtime_utc": "2026-10-19T14:15:34+00:00"
+    },
+    {
+      "role": "saved_restored_comparison",
+      "path": "D:/Pankeki/work/character-studio/design-revision/1440x900-compare.png",
+      "bytes": 519503,
+      "sha256": "8edcfe5efd1366b45e9ffb137d4980c27bf05d6a2bf14be035ae0542f05a3b6c",
+      "mtime_utc": "2026-10-19T13:45:52+00:00"
+    },
+    {
+      "role": "saved_comparison_to_edit",
+      "path": "D:/Pankeki/work/character-studio/design-revision/1440x900-comparison-to-edit.png",
+      "bytes": 528243,
+      "sha256": "4e03502134a0635ed8d6efef06a3f64bd7eaff41bb86d3a909898dcd0c8b6145",
+      "mtime_utc": "2026-10-19T13:45:52+00:00"
+    },
+    {
+      "role": "saved_board",
+      "path": "D:/Pankeki/work/character-studio/visual-check/verified-board.png",
+      "bytes": 2205895,
+      "sha256": "6e12e2d21d90cd287fe6dd0a92904c0cfa540fae19317ba1821f1e0d4a3ca085",
+      "mtime_utc": "2026-10-19T12:57:30+00:00"
+    },
+    {
+      "role": "actual_generated_output",
+      "path": "D:/Pankeki/work/quality-improvement/app-model-comparison-first/B-sdxl-compact-601020/result.png",
+      "bytes": 961443,
+      "sha256": "ebb2166b1f8ee2eb9b24368e7c40a0e144a426ff54225cb26c3da10e6999a948",
+      "mtime_utc": "2026-10-19T14:16:44+00:00"
+    },
+    {
+      "role": "actual_generated_output",
+      "path": "D:/Pankeki/work/quality-improvement/app-model-comparison-first/C-sdxl-refined-bundle-601019/result.png",
+      "bytes": 1092673,
+      "sha256": "1274a9e24174444cc756bfe8ec62aca0b21fadedbedfb698697f581e12976d1a",
+      "mtime_utc": "2026-10-19T14:17:12+00:00"
+    },
+    {
+      "role": "actual_generated_output",
+      "path": "D:/Pankeki/work/quality-improvement/app-model-comparison-first/C-sdxl-refined-bundle-601020/result.png",
+      "bytes": 929391,
+      "sha256": "ca32538cfbf654a6d9ef3bd73a2f64857eca6453f8e2b026583ed2a169f84773",
+      "mtime_utc": "2026-10-19T14:17:26+00:00"
+    },
+    {
+      "role": "actual_generated_output",
+      "path": "D:/Pankeki/work/quality-improvement/app-model-comparison-first/C-sdxl-refined-bundle-601021/result.png",
+      "bytes": 721851,
+      "sha256": "e5cbd879524df447e7cd90f29ca41bf2d36d7869de066af54446f7b92ab4bbe9",
+      "mtime_utc": "2026-10-19T14:17:40+00:00"
+    }
+  ],
+  "saved_comparison_readback": {
+    "state": "succeeded",
+    "cases": 9,
+    "case_ids": [
+      "A-turbo-compact-601019",
+      "A-turbo-compact-601020",
+      "A-turbo-compact-601021",
+      "B-sdxl-compact-601019",
+      "B-sdxl-compact-601020",
+      "B-sdxl-compact-601021",
+      "C-sdxl-refined-bundle-601019",
+      "C-sdxl-refined-bundle-601020",
+      "C-sdxl-refined-bundle-601021"
+    ],
+    "quality_all_requirements_passed": {
+      "value": 0,
+      "denominator": 9,
+      "basis": "shutdown-checkpoint.md historical assessment; not rescored all 9 by this researcher"
+    },
+    "directly_viewed_generated_outputs": 4,
+    "directly_viewed_saved_screens_and_board": 4
+  },
+  "observations": [
+    {
+      "id": "O1",
+      "fact": "Chat send disabled with disconnected status; detailed settings route exists.",
+      "source": "web/src/index.template.html"
+    },
+    {
+      "id": "O2",
+      "fact": "Candidate parentId is image-version provenance, not a live deformation hierarchy.",
+      "source": "web/src/app.js and web/src/profiles.js"
+    },
+    {
+      "id": "O3",
+      "fact": "Exported requests omit source/mask; import resets mask and warns to repaint.",
+      "source": "web/src/profiles.js validateRequest and web/src/app.js importProject"
+    },
+    {
+      "id": "O4",
+      "fact": "Compare captions show candidate/kind/seed; no structured requirement review fields in current strict v1 schema.",
+      "source": "web/src/app.js compare handler and web/src/profiles.js candidate/project"
+    },
+    {
+      "id": "O5",
+      "fact": "Board uses current project brief; candidates retain their own generation brief.",
+      "source": "web/src/app.js exportBoard/generate"
+    }
+  ],
+  "hypothesis": {
+    "id": "H1",
+    "status": "not_tested",
+    "claim": "Source + edit target + up to three manual criteria improve correct next-action decisions and avoid false completion.",
+    "followup": "Coordinator owns cross-product synthesis and validation priority after scope reduction; no pilot performed"
+  },
+  "external_official_sources": [
+    {
+      "id": "C1",
+      "title": "ComfyUI App Mode",
+      "url": "https://docs.comfy.org/interface/app-mode",
+      "checked_date": "2026-10-20",
+      "timezone": "Asia/Seoul",
+      "method": "official body read with web tool",
+      "supports": "Custom inputs/outputs allow running without editing nodes."
+    },
+    {
+      "id": "C2",
+      "title": "ComfyUI Assets",
+      "url": "https://docs.comfy.org/interface/assets",
+      "checked_date": "2026-10-20",
+      "timezone": "Asia/Seoul",
+      "method": "official body read with web tool",
+      "supports": "Generated/imported assets, previews, reuse; distinguish Cloud-only controls."
+    },
+    {
+      "id": "C3",
+      "title": "ComfyUI Mask Editor",
+      "url": "https://docs.comfy.org/interface/maskeditor",
+      "checked_date": "2026-10-20",
+      "timezone": "Asia/Seoul",
+      "method": "official body read with web tool",
+      "supports": "Mask/paint/base layers and editor entry points in Graph and App Mode."
+    },
+    {
+      "id": "C4",
+      "title": "ComfyUI Workflows",
+      "url": "https://docs.comfy.org/basic-concepts/workflow",
+      "checked_date": "2026-10-20",
+      "timezone": "Asia/Seoul",
+      "method": "official body read with web tool",
+      "supports": "Workflow JSON and optional workflow metadata in saved media."
+    },
+    {
+      "id": "K1",
+      "title": "Krita AI First Steps",
+      "url": "https://docs.interstice.cloud/basics/",
+      "checked_date": "2026-10-20",
+      "timezone": "Asia/Seoul",
+      "method": "official body read with web tool",
+      "supports": "History selection/comparison; preview and explicit Apply as a new layer."
+    },
+    {
+      "id": "K2",
+      "title": "Krita AI Selection Fill",
+      "url": "https://docs.interstice.cloud/selections/",
+      "checked_date": "2026-10-20",
+      "timezone": "Asia/Seoul",
+      "method": "official body read with web tool",
+      "supports": "Selection operations, context area, denoise and blend masks."
+    },
+    {
+      "id": "K3",
+      "title": "Krita KRA file format",
+      "url": "https://docs.krita.org/en/general_concepts/file_formats/file_kra.html",
+      "checked_date": "2026-10-20",
+      "timezone": "Asia/Seoul",
+      "method": "official body read with web tool",
+      "supports": "Krita native document format."
+    },
+    {
+      "id": "K4",
+      "title": "Krita AI persistence source",
+      "url": "https://raw.githubusercontent.com/Acly/krita-ai-diffusion/main/ai_diffusion/persistence.py",
+      "checked_date": "2026-10-20",
+      "timezone": "Asia/Seoul",
+      "method": "official body read with web tool",
+      "supports": "Official source persists state/history annotations and prunes history by configured storage limit."
+    },
+    {
+      "id": "I1",
+      "title": "InvokeAI Gallery",
+      "url": "https://invoke.ai/features/gallery/",
+      "checked_date": "2026-10-20",
+      "timezone": "Asia/Seoul",
+      "method": "official body read with web tool",
+      "supports": "Gallery Boards, image metadata and reuse actions. Boards are not a character presentation PNG."
+    },
+    {
+      "id": "I2",
+      "title": "InvokeAI Bounding Box",
+      "url": "https://invoke.ai/features/canvas/bounding-box/",
+      "checked_date": "2026-10-20",
+      "timezone": "Asia/Seoul",
+      "method": "official body read with web tool",
+      "supports": "Generation context box differs from an inpaint mask."
+    },
+    {
+      "id": "I3",
+      "title": "InvokeAI Canvas Projects",
+      "url": "https://invoke.ai/features/canvas/canvas-projects/",
+      "checked_date": "2026-10-20",
+      "timezone": "Asia/Seoul",
+      "method": "official body read with web tool",
+      "supports": "Canvas/masks/parameters in .invk; embedded bytes conditional on successful fetch; models and outside-gallery/workflow state excluded."
+    },
+    {
+      "id": "L0",
+      "title": "Live2D Release History",
+      "url": "https://docs.live2d.com/en/cubism-editor-manual/new-feature-introduction-title/",
+      "checked_date": "2026-10-20",
+      "timezone": "Asia/Seoul",
+      "method": "official body read with web tool",
+      "supports": "5.3.04 released 2026-09-03; 5.3.05 beta1 released 2026-10-13."
+    },
+    {
+      "id": "L0a",
+      "title": "Live2D Official Editor Download version labels",
+      "url": "https://www.live2d.com/zh-CHS/cubism/download/editor/",
+      "checked_date": "2026-10-20",
+      "timezone": "Asia/Seoul",
+      "method": "official body read with web tool",
+      "supports": "Latest official release 5.3.04 and separate 5.3.05 beta1 at time of check; read only."
+    },
+    {
+      "id": "L1",
+      "title": "Live2D Parts palette",
+      "url": "https://docs.live2d.com/en/cubism-editor-manual/partspalatte/",
+      "checked_date": "2026-10-20",
+      "timezone": "Asia/Seoul",
+      "method": "official body read with web tool",
+      "supports": "PSD order, grouping, selection/filter/show/lock and selection sync; lock is not universal edit prohibition."
+    },
+    {
+      "id": "L2",
+      "title": "Live2D Deformer palette",
+      "url": "https://docs.live2d.com/en/cubism-editor-manual/deformerpalatte/",
+      "checked_date": "2026-10-20",
+      "timezone": "Asia/Seoul",
+      "method": "official body read with web tool",
+      "supports": "Object hierarchy management and selection sync."
+    },
+    {
+      "id": "L3",
+      "title": "Live2D Parent Child Hierarchy",
+      "url": "https://docs.live2d.com/en/cubism-editor-manual/system-of-parent-child-relation/",
+      "checked_date": "2026-10-20",
+      "timezone": "Asia/Seoul",
+      "method": "official body read with web tool",
+      "supports": "Parent deformation affects children, child deformation does not affect parent."
+    },
+    {
+      "id": "L4",
+      "title": "Live2D About Parameters",
+      "url": "https://docs.live2d.com/en/cubism-editor-manual/parameter/",
+      "checked_date": "2026-10-20",
+      "timezone": "Asia/Seoul",
+      "method": "official body read with web tool",
+      "supports": "Movement mapped to values and interpolation between registered forms."
+    },
+    {
+      "id": "L5",
+      "title": "Live2D Parameter palette",
+      "url": "https://docs.live2d.com/en/cubism-editor-manual/palametorpalatte/",
+      "checked_date": "2026-10-20",
+      "timezone": "Asia/Seoul",
+      "method": "official body read with web tool",
+      "supports": "Related-parameter filtering, reset to defaults and default-form lock."
+    },
+    {
+      "id": "L6",
+      "title": "Live2D Add Delete Keys",
+      "url": "https://docs.live2d.com/en/cubism-editor-manual/edit-parameters/",
+      "checked_date": "2026-10-20",
+      "timezone": "Asia/Seoul",
+      "method": "official body read with web tool",
+      "supports": "Select object and parameter; add two, three or manual keys."
+    },
+    {
+      "id": "L7",
+      "title": "Live2D Physics Settings",
+      "url": "https://docs.live2d.com/en/cubism-editor-manual/switch-viewer-setting/",
+      "checked_date": "2026-10-20",
+      "timezone": "Asia/Seoul",
+      "method": "official body read with web tool",
+      "supports": "Physics/Playlist tabs and preview; combined scenes in linked same CAN3."
+    },
+    {
+      "id": "L8",
+      "title": "Live2D About Physics",
+      "url": "https://docs.live2d.com/en/cubism-editor-manual/physics-operation/",
+      "checked_date": "2026-10-20",
+      "timezone": "Asia/Seoul",
+      "method": "official body read with web tool",
+      "supports": "Input, physical model, output and pendulum preview."
+    },
+    {
+      "id": "L9",
+      "title": "Live2D About Playlist",
+      "url": "https://docs.live2d.com/en/cubism-editor-manual/about-playlists/",
+      "checked_date": "2026-10-20",
+      "timezone": "Asia/Seoul",
+      "method": "official body read with web tool",
+      "supports": "Expression and body scenes combined for playback; playlist state in CAN3."
+    },
+    {
+      "id": "L10",
+      "title": "Live2D Expression Settings and Export",
+      "url": "https://docs.live2d.com/en/cubism-editor-manual/setting-and-exporting-facial-expressions/",
+      "checked_date": "2026-10-20",
+      "timezone": "Asia/Seoul",
+      "method": "official body read with web tool",
+      "supports": "Viewer for OW model/expression import, fade and parameter check, explicit export."
+    }
+  ],
+  "excluded_as_evidence": [
+    "Unverified marketing adjectives",
+    "Community anecdotes as current feature proof",
+    "Unperformed user tests",
+    "Image comparison as proof of rigging or continuous semantic control"
+  ]
+}

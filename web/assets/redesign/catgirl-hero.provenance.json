@@ -1,0 +1,14 @@
+{
+  "generator": "built-in image_gen",
+  "intent": "generate using user screenshot as visual reference",
+  "reference": "/var/folders/mr/p6nxppgs1nld79dtrhl4_zjw0000gn/T/codex-clipboard-93862e93-a636-4d45-8bff-ecd32cc13142.png",
+  "source": "~/.codex/generated_images/01a16368-65f5-76d3-8a8c-76c19428db46/exec-e06e8279-7910-473f-acdb-b6f52e9c48d2.png",
+  "output": "web/assets/redesign/catgirl-hero.png",
+  "dimensions": [
+    1536,
+    1024
+  ],
+  "prompt": "Use case: illustration-story.\nAsset type: warm anime character artwork for the existing Pankeki desktop app hero and portrait thumbnail.\nInput image 1 is a visual reference, not a UI to recreate. Recreate only the large cat-eared character illustration from the center-right of the supplied reference. No interface or screenshot elements.\nSubject: an adult anime cat-eared woman, honey-brown hair and matching fluffy cat ears, amber eyes, ivory knitted sweater with long sleeves, small rust-red ribbons in her hair. Her head rests on folded arms on cream linen; a calm friendly gentle smile, looking at viewer.\nScene: softly sunlit room with delicate out-of-focus leafy greenery, pale curtains, warm natural morning light. Painterly detailed anime illustration, delicate pencil-like contours, watercolour and soft gouache textures, nuanced hair strands, soft creamy peach and honey tones. Faithfully match the reference illustration's airy warm rendering.\nComposition: landscape 3:2 image, with face near the right third of the canvas. Include the cat ears and folded sleeves without awkward clipping. Left third is softly lit cream negative space blending naturally from pale curtains and bedding, suitable for UI copy placed by actual HTML. Right side is detailed character artwork. Entire output is just continuous artwork, full bleed.\nConstraints: no text, typography, lettering, logos, watermarks, frames, cards, borders, buttons, panels, UI, screenshot components, extra characters. Preserve the reference's soothing natural charm. Avoid photorealism, plastic rendering, bright neon colors, exaggerated body proportions or sexualization.",
+  "inspection": "Viewed full generated image; warm painterly cat-eared woman matches reference, full continuous artwork without UI or text, right-positioned face and cream negative space at left.",
+  "date": "2026-10-22"
+}
