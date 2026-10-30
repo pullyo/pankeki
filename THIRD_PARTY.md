@@ -39,7 +39,6 @@ product use.
 | [MCP Python SDK](https://github.com/modelcontextprotocol/python-sdk) 2.3.0 | MIT | Dedicated runtime of the `plugins/pankeki-local` tool server. |
 | Electron 45.0.0 | MIT | Desktop shell (`desktop/`), installed by npm. |
 | @electron/packager 20.3.0 | BSD-2-Clause | Desktop packaging only. |
-| comfy-sdk 0.5.0 / comfy-api-proxy 0.1.6 | MIT | Optional Windows transport; texts in `integrations/comfy-sdk/licenses/`. |
 | [Pretendard](https://github.com/orioncactus/pretendard) Variable | SIL Open Font License 1.1 | UI font; license in `web/vendor/pretendard/LICENSE`. |
 | [Lucide](https://lucide.dev) icons | ISC | UI icons; license in `web/vendor/lucide/LICENSE`. |
 

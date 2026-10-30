@@ -220,11 +220,6 @@
       "reason": "Local foreground helper is not installed"
     },
     {
-      "id": "sdk",
-      "state": "unknown",
-      "reason": "Optional dedicated SDK runtime has not been probed"
-    },
-    {
       "id": "cli-login",
       "state": "unknown",
       "reason": "Optional CLI sign-in is not required for local readiness"

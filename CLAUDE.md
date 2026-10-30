@@ -50,7 +50,7 @@ Ruff 기본 규칙 전체에는 기존 위반 39건이 있다. 자동 수정(`--
 - `composite.py`: 마스크 밖 RGB와 원본 alpha를 그대로 보존하는 것이 핵심 불변식이다. 테스트가 오차 0을 검증한다.
 - `planning.py`: ROI crop(문맥 여백 포함, 처리 면적 75% 이상이면 전체 경로로 전환). 작은 crop은 모델 기본 면적(SDXL 1024², Turbo 512², 최대 4배)으로 키워 생성한 뒤 원래 크기로 줄여 합성한다(`model_scale_size`, metrics의 `roi_scale`). 원래 크기 그대로 넣으면 SDXL 결과가 깨진다. 타일·LOD 계획은 실험용이고 실행 경로에 연결되지 않았다.
 - `cache.py`: SQLite 정확 결과 캐시(256MiB 논리 제한). workflow·입력·모델 hash로 키를 만들며 hash할 수 없으면 캐시하지 않는다. Mac의 direct 연결에서는 캐시를 우회한다.
-- `comfy_adapter.py`(HTTP+WebSocket 직접 연결) / `sdk_adapter.py`(공식 Comfy SDK 하위 프로세스, Windows) — `config['transport']`로 선택. 직접 연결은 POST 전에 client_id·숫자 정규화 workflow SHA를 영속화하고 응답 유실 시 실제 queue/history의 소유 tuple을 조회한다. 자동 POST 재시도나 과거 raw digest의 자동 변환은 없으며 기존 SDK가 이 직접 연결 증거를 제공한다고 가정하지 않는다.
+- `comfy_adapter.py`(HTTP+WebSocket 직접 연결) — `config['transport']`는 `direct`만 지원한다(예전 `sdk` 값은 거부). 직접 연결은 POST 전에 client_id·숫자 정규화 workflow SHA를 영속화하고 응답 유실 시 실제 queue/history의 소유 tuple을 조회한다. 자동 POST 재시도나 과거 raw digest의 자동 변환은 없다.
 - `workflows.py`: ComfyUI API 그래프(`txt2img`, `inpaint`, `inpaint_sdxl`). `model_presets.py`: 모델 ID(`sdxl-base` 기본, `sd-turbo`, 수정 전용 `sdxl-inpaint-v01`은 `sdxl-base`의 CLIP/VAE를 함께 사용).
 - `model_lease.py`: Windows 읽기 잠금 fingerprint 정책(`windows_read_lock`). Mac은 `stat_cache`(`run_macos.py`가 설정): 프로세스당 처음 한 번 모델 전체 SHA256을 읽고, 이후 장치·inode·크기·mtime·ctime이 같으면 그 값을 재사용한다(`engine.ModelDigestCache`, metrics의 `fingerprint_reused`). `strict`는 매 요청 전체를 다시 읽는다.
 

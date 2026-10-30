@@ -209,9 +209,6 @@ class Engine:
             self.client_software = {'python': platform.python_version(), 'numpy': np.__version__, 'pillow': pillow_version}
             if client is not None:
                 self.client = client
-            elif self.config.get('transport', 'direct') == 'sdk':
-                from .sdk_adapter import SDKComfyClient
-                self.client = SDKComfyClient(base_url, root=self.root)
             elif self.config.get('transport', 'direct') == 'direct':
                 self.client = ComfyClient(base_url)
             else:
